@@ -3,10 +3,11 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import PlansView from './components/PlansView';
 import ClientsView from './components/ClientsView';
+import StaffView from './components/StaffView';
 import LoginModal from './components/LoginModal';
 
 function MainApp() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [currentView, setCurrentView] = useState('plans');
 
   if (!user) {
@@ -20,16 +21,16 @@ function MainApp() {
       <main className="main-content">
         <header className="topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--color-ink-600)' }}>
-              Ambiente Local · <strong>VIP CENTER FIT S.A.C.</strong>
+            <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              Base Operativa Sprint 1 · <strong>VIP CENTER FIT S.A.C.</strong>
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--color-ink-600)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
               Sesión activa: <strong>{user.email}</strong>
             </span>
-            <span className="badge badge-brand">
+            <span className="badge badge-gold">
               {user.roles && user.roles[0]}
             </span>
           </div>
@@ -38,6 +39,7 @@ function MainApp() {
         <div className="page-body">
           {currentView === 'plans' && <PlansView />}
           {currentView === 'clients' && <ClientsView />}
+          {currentView === 'staff' && isAdmin() && <StaffView />}
         </div>
       </main>
     </div>

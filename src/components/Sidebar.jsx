@@ -7,6 +7,7 @@ export default function Sidebar({ currentView, setCurrentView }) {
   const navItems = [
     { id: 'plans', label: 'Planes de Membresía', icon: '📋' },
     { id: 'clients', label: 'Socios y Clientes', icon: '👥' },
+    ...(isAdmin() ? [{ id: 'staff', label: 'Personal y Roles', icon: '🛡️' }] : []),
   ];
 
   return (

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from '../api/apiClient';
 
 const AuthContext = createContext();
 
@@ -15,9 +16,8 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/v1/auth/login', {
+      const response = await apiFetch('/api/v1/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
@@ -43,10 +43,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     if (token) {
       try {
-        await fetch('/api/v1/auth/logout', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await apiFetch('/api/v1/auth/logout', { method: 'POST' }, token);
       } catch (e) {
         // ignore logout errors
       }
