@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { apiFetch } from '../api/apiClient';
 
 export default function PlansView() {
   const { token, isAdmin } = useAuth();
@@ -24,9 +25,7 @@ export default function PlansView() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/plans', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch('/api/v1/plans', {}, token);
       if (!res.ok) throw new Error('Error al consultar los planes');
       const data = await res.json();
       setPlans(data);
@@ -91,20 +90,26 @@ export default function PlansView() {
       const url = editingPlan ? `/api/v1/plans/${editingPlan.id}` : '/api/v1/plans';
       const method = editingPlan ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      if (formName.toLowerCase().includes('mensual') && durationNum !== 30) {
+        setFormError('La duración de un plan mensual debe ser exactamente de 30 días');
+        setFormSubmitting(false);
+        return;
+      }
+
+      const res = await apiFetch(
+        url,
+        {
+          method,
+          body: JSON.stringify({
+            name: formName.trim(),
+            description: formDesc.trim(),
+            durationDays: durationNum,
+            pricePen: priceNum,
+            benefits: formBenefits.trim(),
+          }),
         },
-        body: JSON.stringify({
-          name: formName.trim(),
-          description: formDesc.trim(),
-          durationDays: durationNum,
-          pricePen: priceNum,
-          benefits: formBenefits.trim(),
-        }),
-      });
+        token
+      );
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
@@ -125,14 +130,14 @@ export default function PlansView() {
   const togglePlanStatus = async (plan) => {
     const nextStatus = plan.status === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     try {
-      const res = await fetch(`/api/v1/plans/${plan.id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const res = await apiFetch(
+        `/api/v1/plans/${plan.id}/status`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status: nextStatus }),
         },
-        body: JSON.stringify({ status: nextStatus }),
-      });
+        token
+      );
       if (!res.ok) throw new Error('No se pudo cambiar el estado');
       fetchPlans();
     } catch (err) {
