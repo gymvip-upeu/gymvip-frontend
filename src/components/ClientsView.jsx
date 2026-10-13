@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { apiFetch } from '../api/apiClient';
 
 export default function ClientsView() {
   const { token } = useAuth();
@@ -43,9 +44,7 @@ export default function ClientsView() {
     setError(null);
     try {
       const url = query ? `/api/v1/clients?query=${encodeURIComponent(query)}` : '/api/v1/clients';
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(url, {}, token);
       if (!res.ok) throw new Error('Error al consultar socios');
       const data = await res.json();
       setClients(data.content || []);
@@ -85,27 +84,27 @@ export default function ClientsView() {
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/clients', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const res = await apiFetch(
+        '/api/v1/clients',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            birthDate,
+            countryCode: 'PE',
+            documentType: docType,
+            documentNumber: docNumber.trim(),
+            phone: phone.trim(),
+            email: email.trim(),
+            termsAccepted,
+            privacyAccepted,
+            marketingEmailAccepted: marketingEmail,
+            marketingWhatsAppAccepted: marketingWhatsApp,
+          }),
         },
-        body: JSON.stringify({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          birthDate,
-          countryCode: 'PE',
-          documentType: docType,
-          documentNumber: docNumber.trim(),
-          phone: phone.trim(),
-          email: email.trim(),
-          termsAccepted,
-          privacyAccepted,
-          marketingEmailAccepted: marketingEmail,
-          marketingWhatsAppAccepted: marketingWhatsApp,
-        }),
-      });
+        token
+      );
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
