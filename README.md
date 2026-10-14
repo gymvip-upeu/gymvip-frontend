@@ -4,106 +4,104 @@
 > **Organización:** `gymvip-upeu`  
 > **Responsable del Incremento:** Andre Acosta (Base común + HU-01, HU-04, HU-06)  
 > **Rama de Desarrollo:** `base-acosta`  
-> **Stack Base:** React 18, Vite 5, JavaScript (ES Modules), Vanilla CSS Design System (Dark & Gold Luxury).
+> **Stack Base:** React 18, Vite 6, Vanilla CSS Luxury Dark/Gold Design System, Clean Architecture por Features.
 
 ---
 
 ## 1. Alcance Activo y Delimitación
 
-Este frontend implementa la interfaz de usuario modular correspondiente al incremento asignado a Acosta:
-1. **Base Común:** Cliente HTTP centralizado (`apiClient.js`) con resolución de `VITE_API_BASE_URL`, gestión reactiva de sesión y roles (`AuthContext.jsx`), navegación lateral adaptativa por permisos (`Sidebar.jsx`), y tokens visuales inspirados en el Design System Dark & Gold.
-2. **HU-01 — Registrar Clientes:** Formulario de alta con validación de mayoría de edad (≥ 18 años), selección de tipo documental (DNI, CE, PASAPORTE), consentimientos legales independientes (Términos, Privacidad Ley N° 29733, Marketing Email y Marketing WhatsApp desmarcados por defecto) y listado básico de lectura de socios registrados.
-3. **HU-04 — Roles y Gestión de Personal:** Pantalla administrativa `StaffView.jsx` (restringida a rol `ADMIN`): tabla del personal con estados, KPIs de cuentas activas/inactivas, modal para registrar colaboradores con rol inicial, acción para alternar roles (ADMIN / RECEPCION) y acción para inactivar cuentas con confirmación y retroalimentación de revocación de sesiones.
-4. **HU-06 — Catálogo de Planes:** Catálogo de planes `PlansView.jsx`: tarjetas y tabla con estado del plan, formulario modal para crear nuevo plan con regla de duración mensual (30 días exactos), modal para actualizar precio/condiciones (generando nueva versión inmutable) y toggle para inactivación lógica. Consulta habilitada para `RECEPCION` y acciones de mutación exclusivas para `ADMIN`.
-
-> [!IMPORTANT]
-> **Delimitación de Alcance:**  
-> Se han retirado del menú lateral y de las rutas activas todos los accesos a membresías activas, cobros/pagos, reportes financieros y notificaciones. No se dejan botones simulados ni mocks de módulos que corresponden a los otros compañeros de equipo.
+Este repositorio contiene la interfaz de usuario de la **Base Funcional Acosta**, delimitada a las tres Historias de Usuario autorizadas:
+1. **HU-01 — Registro de Clientes:** Alta modal de clientes mayores de edad (18+), unicidad documental con soporte a 409 Conflict, consulta paginada de socios y modal "Ver Ficha" con código de socio único `MAR-XXXXXX`. Se retiraron las casillas de términos y casillas de consentimiento conforme a la directriz final de UX.
+2. **HU-04 — Personal y Roles:** Nómina de colaboradores, asignación de roles operativos (`ADMIN` / `RECEPCION`), protección activa contra la inactivación del último administrador y revocación de sesiones. Protegido en frontend y backend (HTTP 403 para RECEPCION).
+3. **HU-06 — Catálogo de Planes:** Catálogo tarifario responsivo en Soles (PEN), visualización de versiones congeladas (`Versión N`), regla de 30 días en planes mensuales, y mutaciones exclusivas para `ADMIN` (alta, edición de tarifa incrementando versión e inactivación con confirmación). RECEPCION cuenta con vista de solo lectura.
+4. **Dashboard de Inicio:** Pantalla con métricas reales leídas desde los endpoints activos (socios totales, planes activos, personal en servicio) y accesos directos.
 
 ---
 
-## 2. Estructura Modular del Proyecto
+## 2. Organización Clean Architecture en Frontend
+
+Estructura modular por funcionalidades dentro de `src/`:
 
 ```
 src/
-├── api/
-│   └── apiClient.js        # Cliente Fetch desacoplado con interceptores de sesión y URL base
-├── assets/                 # Recursos gráficos
-├── components/
-│   ├── ClientsView.jsx     # Vista de Clientes (HU-01: Alta, consentimientos, listado)
-│   ├── PlansView.jsx       # Vista de Planes (HU-06: Catálogo, versionado, inactivación)
-│   ├── StaffView.jsx       # Vista de Personal y Roles (HU-04: Gestión ADMIN)
-│   └── Sidebar.jsx         # Menú lateral con filtrado dinámico por roles
-├── context/
-│   └── AuthContext.jsx     # Estado global de autenticación, usuario, rol y login/logout
-├── App.jsx                 # Layout principal, gestión de vistas activas y cabecera
-├── index.css               # Design System: tokens CSS, tipografía, botones, tablas y accesibilidad
-└── main.jsx                # Punto de entrada de la aplicación React
+├── app/
+│   ├── layout/
+│   │   └── AppLayout.jsx           # Shell: sidebar colapsable 256/76px, header 68px, drawer móvil
+│   └── providers/
+│       └── AuthProvider.jsx        # Context de autenticación, roles y manejo de 401
+├── features/
+│   ├── auth/                       # Autenticación de colaboradores
+│   │   ├── domain/user.js
+│   │   ├── infrastructure/authApi.js
+│   │   └── presentation/LoginModal.jsx
+│   ├── clients/                    # HU-01 Registro y consulta de socios
+│   │   ├── domain/client.js
+│   │   ├── infrastructure/clientApi.js
+│   │   └── presentation/ (ClientsPage.jsx, ClientRegisterModal.jsx, ClientDetailModal.jsx)
+│   ├── home/                       # Inicio y Métricas Reales
+│   │   └── presentation/HomePage.jsx
+│   ├── plans/                      # HU-06 Catálogo y tarifas
+│   │   ├── domain/plan.js
+│   │   ├── infrastructure/planApi.js
+│   │   └── presentation/ (PlansPage.jsx, PlanModal.jsx)
+│   └── staff/                      # HU-04 Personal y roles
+│       ├── domain/staff.js
+│       ├── infrastructure/staffApi.js
+│       └── presentation/ (StaffPage.jsx, StaffModal.jsx)
+├── shared/
+│   ├── config/environment.js       # Lectura de VITE_API_BASE_URL pública
+│   ├── http/httpClient.js          # Fetch centralizado con Authorization y 401 handler
+│   └── styles/index.css            # Tokens Dark & Gold, componentes, accesibilidad
+├── App.jsx                         # Ensamblador principal
+└── main.jsx                        # Punto de entrada React
 ```
 
 ---
 
-## 3. Design System Dark & Gold Luxury
+## 3. Shell y Diseño Luxury Dark & Gold
 
-La interfaz implementa las especificaciones cromáticas y de accesibilidad aprobadas:
-- **Fondo General:** `#0B0D12` (Negro profundo obsidiana).
-- **Superficies y Tarjetas:** `#151922` (Gris carbón) y bordes `#1D2330`.
-- **Acentos Dorados:** Primario `#D4AF37`, hover `#E5C158` y brillo de enfoque `#F3E5AB`.
-- **Tipografía y Textos:** Primario `#F5F5F4` (Blanco marfil), secundario `#B7BECA` y tenue `#717A8C`.
-- **Estados de Interfaz:** Cada vista contempla explícitamente los 4 estados:
-  - **Loading:** Indicador visual sobrio de carga.
-  - **Empty:** Mensajes explicativos cuando no hay registros disponibles.
-  - **Error:** Alertas de error con retroalimentación del servidor (400, 401, 403, 409).
-  - **Success:** Notificaciones de confirmación de operaciones.
-- **Accesibilidad:** Contraste WCAG AA, objetivos táctiles mínimos de 44px (`min-height: 44px`), navegación por teclado y soporte para reducción de movimiento (`prefers-reduced-motion`).
+- **Tokens Oficiales:**
+  - Fondo: `#0B0D12` | Superficies: `#151922` / `#1D2330` | Borde: `#303746`
+  - Dorado VIP: `#D4AF37` | Hover Dorado: `#E5C158`
+  - Texto Principal: `#F5F5F4` | Secundario: `#B7BECA`
+- **Sidebar Colapsable:**
+  - Ancho expandido: `256px` | Ancho colapsado: `76px`.
+  - Botón solo icono (`PanelLeftClose` / `PanelLeftOpen`) con `aria-expanded` y `aria-controls="app-sidebar"`. Sin texto visible "Contraer".
+  - Persistencia en `localStorage('gymvip_sidebar_collapsed')`.
+- **Drawer Móvil (< 768px):**
+  - Botón menú en cabecera, drawer deslizante sobre backdrop oscuro. Cierre al navegar o presionar `Escape`.
+- **Header Compacto:**
+  - Altura: `68px` con glassmorphism moderado (`backdrop-filter: blur(10px)`).
 
 ---
 
-## 4. Configuración de Variables de Entorno
+## 4. Configuración de Entorno (.env)
 
-El frontend se conecta al backend mediante una variable pública de Vite.  
-Crea el archivo `.env` en la raíz de `gymvip-frontend` tomando como referencia `.env.example`:
+El frontend solo utiliza la variable pública `VITE_API_BASE_URL`.
 
-```env
-VITE_API_BASE_URL=http://localhost:8080/api/v1
+### `.env.example`
+```properties
+# Dejar vacío en local para consumir el proxy relativo de Vite (puerto 8080)
+# En producción/Render: URL pública del backend (ej. https://gymvip-backend.onrender.com)
+VITE_API_BASE_URL=
 ```
 
 > [!CAUTION]
-> **Seguridad de Variables:**  
-> Ninguna credencial de base de datos, clave privada o secreto de servidor debe incluirse en variables con prefijo `VITE_`, ya que estas se compilan en el bundle público del navegador.
+> **Seguridad:** Las variables con prefijo `VITE_` se empaquetan en el bundle del navegador. **NUNCA** incluya credenciales de base de datos (`DB_PASSWORD`), claves secretas ni tokens privados en este archivo.
 
 ---
 
-## 5. Ejecución y Build
+## 5. Instrucciones de Ejecución y Compilación
 
-### Requisitos
-- Node.js 18+ (recomendado Node.js 22 LTS)
-- npm 9+
-
-### Instalación de Dependencias
-```powershell
+### 5.1 Iniciar en Modo Desarrollo
+```bash
 npm install
-```
-
-### Ejecutar en Modo Desarrollo
-```powershell
 npm run dev
 ```
-La aplicación iniciará por defecto en `http://localhost:5173`.
+La aplicación estará disponible en `http://localhost:5173`.
 
-### Compilación para Producción (Build)
-```powershell
+### 5.2 Compilar para Producción
+```bash
 npm run build
 ```
-**Resultado de Verificación Ejecutada:**
-- Compilación Vite completada con éxito.
-- Directorio `dist/` generado con bundles optimizados.
-- **0 errores de sintaxis, 0 fallos de importación.**
-
----
-
-## 6. Puntos de Extensión para Compañeros
-
-1. **Vistas de Membresías y Pagos:** Crear `MembershipsView.jsx` y `PaymentsView.jsx` en `src/components/`, registrándolas en `App.jsx` y añadiendo las opciones correspondientes en `Sidebar.jsx`.
-2. **Reutilización de Componentes:** Utilizar los estilos globales de `.btn-gold`, `.gym-card`, `.data-table`, `.badge` y `.modal-overlay` definidos en `src/index.css`.
-3. **Consumo API:** Reutilizar `apiClient.get()`, `apiClient.post()`, `apiClient.put()` definidos en `src/api/apiClient.js`, los cuales inyectan automáticamente el token de sesión activo.
+Genera el paquete estático optimizado en la carpeta `dist/`.
