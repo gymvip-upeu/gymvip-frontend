@@ -4,56 +4,46 @@
 > **Organización:** `gymvip-upeu`  
 > **Responsable del Incremento:** Andre Acosta (Base común + HU-01, HU-04, HU-06)  
 > **Rama de Desarrollo:** `base-acosta`  
-> **Stack Base:** React 18, Vite 6, Vanilla CSS Luxury Dark/Gold Design System, Clean Architecture por Features.
+> **Stack Base:** React 18, Vite 6, Vanilla CSS Luxury Dark/Gold Design System, Arquitectura por Capas Generales.
 
 ---
 
 ## 1. Alcance Activo y Delimitación
 
 Este repositorio contiene la interfaz de usuario de la **Base Funcional Acosta**, delimitada a las tres Historias de Usuario autorizadas:
-1. **HU-01 — Registro de Clientes:** Alta modal de clientes mayores de edad (18+), unicidad documental con soporte a 409 Conflict, consulta paginada de socios y modal "Ver Ficha" con código de socio único `MAR-XXXXXX`. Se retiraron las casillas de términos y casillas de consentimiento conforme a la directriz final de UX.
+1. **HU-01 — Registro de Clientes:** Alta modal de clientes mayores de edad (18+), unicidad documental con soporte a 409 Conflict, consulta paginada de socios y modal "Ver Ficha" con código de socio determinista `MAR-XXXXXX`. Formulario enfocado en datos reales del socio, sin casillas legales ficticias.
 2. **HU-04 — Personal y Roles:** Nómina de colaboradores, asignación de roles operativos (`ADMIN` / `RECEPCION`), protección activa contra la inactivación del último administrador y revocación de sesiones. Protegido en frontend y backend (HTTP 403 para RECEPCION).
-3. **HU-06 — Catálogo de Planes:** Catálogo tarifario responsivo en Soles (PEN), visualización de versiones congeladas (`Versión N`), regla de 30 días en planes mensuales, y mutaciones exclusivas para `ADMIN` (alta, edición de tarifa incrementando versión e inactivación con confirmación). RECEPCION cuenta con vista de solo lectura.
-4. **Dashboard de Inicio:** Pantalla con métricas reales leídas desde los endpoints activos (socios totales, planes activos, personal en servicio) y accesos directos.
+3. **HU-06 — Catálogo de Planes:** Catálogo tarifario responsivo en Soles (PEN), visualización de versiones congeladas (`Versión N`), regla de 30 días obligatorios en planes mensuales, y mutaciones exclusivas para `ADMIN` (alta, edición de tarifa incrementando versión e inactivación con confirmación). RECEPCION cuenta con vista de solo lectura.
+4. **Dashboard de Inicio:** Pantalla con métricas reales leídas desde los endpoints activos (socios totales, planes activos, personal en servicio) y delimitación de alcance.
+
+> [!IMPORTANT]
+> **Delimitación de Alcance:**  
+> Las tareas de asignación/contratación de membresías y cobro presencial (HU-07, HU-08, HU-10) corresponden a Alexander, y la búsqueda avanzada, edición de socios, cálculo de vigencias y verificación de acceso (HU-02, HU-09, HU-11, HU-12) corresponden a Jorge. Para el detalle exhaustivo, consulte [docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md).
 
 ---
 
-## 2. Organización Clean Architecture en Frontend
+## 2. Organización por Capas Generales y Responsabilidades
 
-Estructura modular por funcionalidades dentro de `src/`:
+El frontend organiza sus componentes bajo `src/` por responsabilidad técnica:
 
 ```
 src/
-├── app/
-│   ├── layout/
-│   │   └── AppLayout.jsx           # Shell: sidebar colapsable 256/76px, header 68px, drawer móvil
-│   └── providers/
-│       └── AuthProvider.jsx        # Context de autenticación, roles y manejo de 401
-├── features/
-│   ├── auth/                       # Autenticación de colaboradores
-│   │   ├── domain/user.js
-│   │   ├── infrastructure/authApi.js
-│   │   └── presentation/LoginModal.jsx
-│   ├── clients/                    # HU-01 Registro y consulta de socios
-│   │   ├── domain/client.js
-│   │   ├── infrastructure/clientApi.js
-│   │   └── presentation/ (ClientsPage.jsx, ClientRegisterModal.jsx, ClientDetailModal.jsx)
-│   ├── home/                       # Inicio y Métricas Reales
-│   │   └── presentation/HomePage.jsx
-│   ├── plans/                      # HU-06 Catálogo y tarifas
-│   │   ├── domain/plan.js
-│   │   ├── infrastructure/planApi.js
-│   │   └── presentation/ (PlansPage.jsx, PlanModal.jsx)
-│   └── staff/                      # HU-04 Personal y roles
-│       ├── domain/staff.js
-│       ├── infrastructure/staffApi.js
-│       └── presentation/ (StaffPage.jsx, StaffModal.jsx)
-├── shared/
-│   ├── config/environment.js       # Lectura de VITE_API_BASE_URL pública
-│   ├── http/httpClient.js          # Fetch centralizado con Authorization y 401 handler
-│   └── styles/index.css            # Tokens Dark & Gold, componentes, accesibilidad
-├── App.jsx                         # Ensamblador principal
-└── main.jsx                        # Punto de entrada React
+├── api/                # Clientes de transporte HTTP y llamadas a endpoints REST
+├── assets/             # Recursos estáticos locales (isotipo oficial de corona dorada)
+├── components/         # Componentes UI reutilizables (common, feedback, modals)
+├── config/             # Configuración pública de entorno (environment.js)
+├── contexts/           # Estado reactivo global compartido (AuthContext.jsx)
+├── hooks/              # Hooks desacoplados de estado y efectos (useClients, usePlans, useStaff)
+├── pages/              # Pantallas principales (HomePage, ClientsPage, PlansPage, StaffPage)
+├── routes/             # Enrutamiento de vistas y guardas de navegación (AppRoutes.jsx)
+├── services/           # Lógica y orquestación de operaciones de negocio (auth, client, plan, staff)
+├── templates/          # Composición de layout (AdminLayout, Header, Sidebar colapsable)
+├── themes/             # Tokens del sistema de diseño (tokens.js)
+├── utils/              # Funciones auxiliares puras de formato y fechas (formatters, dateUtils)
+├── validators/         # Validación UX de formularios previa al envío HTTP
+├── App.jsx             # Punto de entrada reactivo con AuthProvider
+├── index.css           # Estilos globales y tokens CSS Vanilla Dark & Gold
+└── main.jsx            # Montaje React 18 createRoot
 ```
 
 ---
@@ -105,3 +95,12 @@ La aplicación estará disponible en `http://localhost:5173`.
 npm run build
 ```
 Genera el paquete estático optimizado en la carpeta `dist/`.
+
+---
+
+## 6. Documentación Canónica
+
+El documento único consolidado de estado técnico dentro del frontend se ubica en:
+👉 **[docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md)**
+
+La documentación integral de arquitectura, análisis, diseño y producto de GYM VIP se centraliza en la carpeta canónica de la raíz del workspace: `GYMVIP/documentos/` (`ARCHITECTURE.md`, `C4_BASE_ACTUAL.md`, `ERD_BASE_ACTUAL.md`, `DESIGN_SYSTEM.md`, `PRD.md`, `HANDOFF_BASE_SPRINT1.md`).
