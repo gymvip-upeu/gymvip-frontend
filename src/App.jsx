@@ -1,22 +1,15 @@
+// ==============================================================================
+// GYM VIP — Punto de Entrada de la Aplicación React
+// ==============================================================================
+
 import React from 'react';
-import { AuthProvider, useAuth } from './app/providers/AuthProvider';
-import AppLayout from './app/layout/AppLayout';
-import LoginModal from './features/auth/presentation/LoginModal';
-
-function AppRoot() {
-  const { user } = useAuth();
-
-  if (!user) {
-    return <LoginModal />;
-  }
-
-  return <AppLayout />;
-}
+import { AuthProvider } from './contexts/AuthContext';
+import { AppRoutes } from './routes/AppRoutes';
 
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoot />
+      <AppRoutes />
     </AuthProvider>
   );
 }
