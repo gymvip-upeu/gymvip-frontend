@@ -38,3 +38,7 @@ lerna-debug.log*
 *.dump
 *.backup
 *.tmp
+
+# 6. Documentación canónica: limitar docs/ al estado consolidado
+/docs/*
+!/docs/ESTADO_FRONTEND_SPRINT1.md
