@@ -1,106 +1,149 @@
-# GYM VIP — Frontend Web (Base Funcional Sprint 1 — Acosta)
+# GYM VIP â€” Frontend Web (Base Funcional Sprint 1 â€” Acosta)
 
-> **Repositorio Oficial:** [gymvip-frontend](https://github.com/gymvip-upeu/gymvip-frontend.git)  
-> **Organización:** `gymvip-upeu`  
-> **Responsable del Incremento:** Andre Acosta (Base común + HU-01, HU-04, HU-06)  
-> **Rama de Desarrollo:** `base-acosta`  
-> **Stack Base:** React 18, Vite 6, Vanilla CSS Luxury Dark/Gold Design System, Arquitectura por Capas Generales.
+> **Repositorio Oficial:** [gymvip-frontend](https://github.com/gymvip-upeu/gymvip-frontend.git)
+> **OrganizaciÃ³n:** `gymvip-upeu`
+> **Responsable del Incremento:** Andre Acosta (Base comÃºn + HU-01, HU-04, HU-06)
+> **Rama Publicada de Entrega:** `feature/s1-andre-hu01-hu04-hu06`
+> **Stack Base:** React 18.3.1, Vite 6.4.4, Vanilla CSS Luxury Dark/Gold Design System, Arquitectura por Capas Generales.
 
 ---
 
-## 1. Alcance Activo y Delimitación
-
-Este repositorio contiene la interfaz de usuario de la **Base Funcional Acosta**, delimitada a las tres Historias de Usuario autorizadas:
-1. **HU-01 — Registro de Clientes:** Alta modal de clientes mayores de edad (18+), unicidad documental con soporte a 409 Conflict, consulta paginada de socios y modal "Ver Ficha" con código de socio determinista `MAR-XXXXXX`. Formulario enfocado en datos reales del socio, sin casillas legales ficticias.
-2. **HU-04 — Personal y Roles:** Nómina de colaboradores, asignación de roles operativos (`ADMIN` / `RECEPCION`), protección activa contra la inactivación del último administrador y revocación de sesiones. Protegido en frontend y backend (HTTP 403 para RECEPCION).
-3. **HU-06 — Catálogo de Planes:** Catálogo tarifario responsivo en Soles (PEN), visualización de versiones congeladas (`Versión N`), regla de 30 días obligatorios en planes mensuales, y mutaciones exclusivas para `ADMIN` (alta, edición de tarifa incrementando versión e inactivación con confirmación). RECEPCION cuenta con vista de solo lectura.
-4. **Dashboard de Inicio:** Pantalla con métricas reales leídas desde los endpoints activos (socios totales, planes activos, personal en servicio) y delimitación de alcance.
+## 1. PolÃ­tica de Ramas y Acceso al CÃ³digo
 
 > [!IMPORTANT]
-> **Delimitación de Alcance:**  
-> Las tareas de asignación/contratación de membresías y cobro presencial (HU-07, HU-08, HU-10) corresponden a Alexander, y la búsqueda avanzada, edición de socios, cálculo de vigencias y verificación de acceso (HU-02, HU-09, HU-11, HU-12) corresponden a Jorge. Para el detalle exhaustivo, consulte [docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md).
+> **IMPORTANTE â€” CÃ³mo obtener la aplicaciÃ³n:**
+> Las ramas `main` y `develop` han sido inicializadas con un **Ã¡rbol de archivos vacÃ­o** de acuerdo con la estrategia de integraciÃ³n diferida del equipo. Clonar `main` o `develop` no entrega el cÃ³digo funcional en esta etapa.
+> Para descargar y trabajar sobre la base completa entregada por AndrÃ©:
+> ```bash
+> git clone https://github.com/gymvip-upeu/gymvip-frontend.git
+> cd gymvip-frontend
+> git checkout feature/s1-andre-hu01-hu04-hu06
+> ```
+
+- **`main`**: Contiene el commit inicial con Ã¡rbol vacÃ­o. Reservada para despliegues de producciÃ³n unificados.
+- **`develop`**: Apunta inicialmente al commit vacÃ­o de `main`. Reservada para la integraciÃ³n posterior del equipo.
+- **`feature/s1-andre-hu01-hu04-hu06`**: Rama oficial con la base de interfaz, diseÃ±o, componentes, vistas y validaciones de HU-01, HU-04 y HU-06.
+- **Ramas de Alexander y Jorge**: DeberÃ¡n crearse a partir de `origin/feature/s1-andre-hu01-hu04-hu06` (nunca desde `develop` mientras estÃ© vacÃ­a).
 
 ---
 
-## 2. Organización por Capas Generales y Responsabilidades
+## 2. Alcance Activo y MÃ³dulos de Interfaz
 
-El frontend organiza sus componentes bajo `src/` por responsabilidad técnica:
+Este repositorio contiene la interfaz de usuario de la **Base Funcional Acosta**, delimitada a las tres Historias de Usuario autorizadas:
 
+1. **Dashboard de Inicio (`HomePage.jsx`):**
+   - Tarjetas de mÃ©tricas vivas conectadas al backend (Socios registrados, Planes en catÃ¡logo, Colaboradores en nÃ³mina).
+   - Banner de delimitaciÃ³n de alcance del Sprint 1 y estado del sistema.
+2. **HU-01 â€” Registro de Clientes (`ClientsPage.jsx`):**
+   - Formulario modal de alta de socio con validaciÃ³n UX en tiempo real.
+   - RestricciÃ³n estricta de mayorÃ­a de edad (â‰¥ 18 aÃ±os).
+   - Soporte a respuesta HTTP 409 Conflict ante duplicados documentales.
+   - Formato de DNI peruano de exactamente 8 dÃ­gitos numÃ©ricos.
+   - Campos de telÃ©fono y correo opcionales.
+   - Tabla paginada de socios con buscador y modal "Ver Ficha" con cÃ³digo de socio (ej. `JOA-W38DM6`).
+3. **HU-04 â€” Roles y Personal (`StaffPage.jsx`):**
+   - NÃ³mina de colaboradores con roles operativos (`ADMIN` / `RECEPCION`).
+   - Modal de alta con contraseÃ±as enmascaradas y confirmaciÃ³n.
+   - Cambio de rol y estado activo/inactivo con confirmaciÃ³n.
+   - ProtecciÃ³n activa contra la inactivaciÃ³n del Ãºltimo administrador y revocaciÃ³n de sesiones.
+   - Restringido en interfaz y rechazado con HTTP 403 en backend si accede `RECEPCION`.
+4. **HU-06 â€” CatÃ¡logo de Planes (`PlansPage.jsx`):**
+   - CatÃ¡logo tarifario responsivo con precios en Soles (PEN).
+   - Indicador visual de versiones histÃ³ricas (`VersiÃ³n N`).
+   - Regla inquebrantable de 30 dÃ­as para planes mensuales.
+   - Mutaciones exclusivas para rol `ADMIN`: alta, ediciÃ³n de tarifa (incrementando versiÃ³n) e inactivaciÃ³n lÃ³gica.
+   - Vista de solo lectura para rol `RECEPCION`.
+
+> [!IMPORTANT]
+> **DelimitaciÃ³n de Alcance â€” Tareas Pendientes:**
+> - **Alexander (Parte 2):** Modales y flujos para asignaciÃ³n/contrataciÃ³n de membresÃ­as (HU-07), cobro presencial (HU-08) y renovaciÃ³n (HU-10).
+> - **Jorge (Parte 3):** EdiciÃ³n de datos de contacto de socios en ficha (HU-02), badges de vigencia (HU-09), reporte de prÃ³ximos a vencer (HU-11) y pantalla de control manual de acceso en recepciÃ³n (HU-12).
+> - Para el detalle exhaustivo, consulte [docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md).
+
+---
+
+## 3. Arquitectura y Stack TecnolÃ³gico
+
+### 3.1 Versiones segÃºn Manifests y Lockfile
+- **React:** `18.3.1` (segÃºn `package.json` y `package-lock.json`)
+- **React DOM:** `18.3.1`
+- **Vite:** `6.4.4`
+- **Plugin React:** `@vitejs/plugin-react: 4.3.4`
+- **Iconos:** `lucide-react: 1.16.0`
+- **Gestor de Paquetes:** npm compatible con lockfile v3 (`npm ci` recomendado).
+
+### 3.2 Estructura por Capas Generales
 ```
 src/
-├── api/                # Clientes de transporte HTTP y llamadas a endpoints REST
-├── assets/             # Recursos estáticos locales (isotipo oficial de corona dorada)
-├── components/         # Componentes UI reutilizables (common, feedback, modals)
-├── config/             # Configuración pública de entorno (environment.js)
-├── contexts/           # Estado reactivo global compartido (AuthContext.jsx)
-├── hooks/              # Hooks desacoplados de estado y efectos (useClients, usePlans, useStaff)
-├── pages/              # Pantallas principales (HomePage, ClientsPage, PlansPage, StaffPage)
-├── routes/             # Enrutamiento de vistas y guardas de navegación (AppRoutes.jsx)
-├── services/           # Lógica y orquestación de operaciones de negocio (auth, client, plan, staff)
-├── templates/          # Composición de layout (AdminLayout, Header, Sidebar colapsable)
-├── themes/             # Tokens del sistema de diseño (tokens.js)
-├── utils/              # Funciones auxiliares puras de formato y fechas (formatters, dateUtils)
-├── validators/         # Validación UX de formularios previa al envío HTTP
-├── App.jsx             # Punto de entrada reactivo con AuthProvider
-├── index.css           # Estilos globales y tokens CSS Vanilla Dark & Gold
-└── main.jsx            # Montaje React 18 createRoot
+â”œâ”€â”€ api/                # Transporte HTTP (apiClient.js, authApi.js, clientApi.js, planApi.js, staffApi.js)
+â”œâ”€â”€ assets/             # Recursos estÃ¡ticos locales
+â”œâ”€â”€ components/         # Componentes UI reutilizables (common, feedback, modals)
+â”œâ”€â”€ config/             # ConfiguraciÃ³n de entorno pÃºblico (environment.js)
+â”œâ”€â”€ contexts/           # Contexto reactivo global (AuthContext.jsx)
+â”œâ”€â”€ hooks/              # Custom hooks desacoplados (useClients, usePlans, useStaff)
+â”œâ”€â”€ pages/              # Vistas principales (HomePage, ClientsPage, PlansPage, StaffPage)
+â”œâ”€â”€ routes/             # Enrutamiento y guardas de navegaciÃ³n (AppRoutes.jsx)
+â”œâ”€â”€ services/           # OrquestaciÃ³n de casos de uso
+â”œâ”€â”€ templates/          # Layout principal (AdminLayout, Header, Sidebar colapsable)
+â”œâ”€â”€ themes/             # Tokens del sistema de diseÃ±o (tokens.js)
+â”œâ”€â”€ utils/              # Funciones auxiliares puras (formatters.js, dateUtils.js)
+â”œâ”€â”€ validators/         # Validadores de formularios previa peticiÃ³n HTTP
+â”œâ”€â”€ App.jsx             # Punto de entrada con AuthProvider
+â”œâ”€â”€ index.css           # Estilos globales y tokens CSS Vanilla Dark & Gold
+â””â”€â”€ main.jsx            # Montaje createRoot
 ```
 
----
-
-## 3. Shell y Diseño Luxury Dark & Gold
-
-- **Tokens Oficiales:**
-  - Fondo: `#0B0D12` | Superficies: `#151922` / `#1D2330` | Borde: `#303746`
-  - Dorado VIP: `#D4AF37` | Hover Dorado: `#E5C158`
-  - Texto Principal: `#F5F5F4` | Secundario: `#B7BECA`
-- **Sidebar Colapsable:**
-  - Ancho expandido: `256px` | Ancho colapsado: `76px`.
-  - Botón solo icono (`PanelLeftClose` / `PanelLeftOpen`) con `aria-expanded` y `aria-controls="app-sidebar"`. Sin texto visible "Contraer".
-  - Persistencia en `localStorage('gymvip_sidebar_collapsed')`.
-- **Drawer Móvil (< 768px):**
-  - Botón menú en cabecera, drawer deslizante sobre backdrop oscuro. Cierre al navegar o presionar `Escape`.
-- **Header Compacto:**
-  - Altura: `68px` con glassmorphism moderado (`backdrop-filter: blur(10px)`).
+### 3.3 Shell y Sistema de DiseÃ±o Luxury Dark & Gold
+- Paleta: Fondo (`#0B0D12`), Superficies (`#151922` / `#1D2330`), Bordes (`#303746`), Acento Dorado (`#D4AF37`, hover `#E5C158`).
+- Sidebar colapsable (256px / 76px) con persistencia en `localStorage` y accesibilidad ARIA (`aria-expanded`, `aria-controls`).
+- Drawer mÃ³vil (< 768px) con backdrop oscuro y tecla Escape.
 
 ---
 
-## 4. Configuración de Entorno (.env)
+## 4. ConfiguraciÃ³n de Entorno, Puertos y Flujo de Datos
 
-El frontend solo utiliza la variable pública `VITE_API_BASE_URL`.
+### 4.1 Flujo Seguro de Datos
+```
+[Frontend (Vite :5173)] â”€â”€(HTTP/JSON)â”€â”€> [Backend (Spring Boot :8081)] â”€â”€(JDBC/TLS)â”€â”€> [PostgreSQL 17 (Render)]
+```
+- El frontend se comunica **exclusivamente con el backend**; nunca accede directamente a PostgreSQL.
 
-### `.env.example`
+### 4.2 ConfiguraciÃ³n `.env.example`
 ```properties
-# Dejar vacío en local para consumir el proxy relativo de Vite (puerto 8080)
-# En producción/Render: URL pública del backend (ej. https://gymvip-backend.onrender.com)
+# Dejar vacÃ­o en desarrollo local para consumir el proxy relativo de Vite (redirige a http://localhost:8081)
+# En despliegue en la nube: URL pÃºblica del backend (ej. https://gymvip-backend.onrender.com)
 VITE_API_BASE_URL=
 ```
 
 > [!CAUTION]
-> **Seguridad:** Las variables con prefijo `VITE_` se empaquetan en el bundle del navegador. **NUNCA** incluya credenciales de base de datos (`DB_PASSWORD`), claves secretas ni tokens privados en este archivo.
+> **Seguridad Estricta:** En Vite, cualquier variable con prefijo `VITE_` se expone directamente en el cÃ³digo JavaScript compilado al cliente. **NUNCA** coloque credenciales de base de datos (`DB_PASSWORD`), claves secretas ni tokens de servicio en variables `VITE_*`.
 
 ---
 
-## 5. Instrucciones de Ejecución y Compilación
+## 5. Instrucciones de CompilaciÃ³n y EjecuciÃ³n
 
-### 5.1 Iniciar en Modo Desarrollo
 ```bash
-npm install
+# 1. Instalar dependencias exactas del lockfile
+npm ci
+
+# 2. Iniciar servidor de desarrollo (puerto 5173)
 npm run dev
-```
-La aplicación estará disponible en `http://localhost:5173`.
 
-### 5.2 Compilar para Producción
-```bash
+# 3. Compilar bundle de producciÃ³n
 npm run build
+
+# 4. Previsualizar bundle de producciÃ³n localmente
+npm run preview
 ```
-Genera el paquete estático optimizado en la carpeta `dist/`.
 
 ---
 
-## 6. Documentación Canónica
+## 6. Estado de VerificaciÃ³n y Pendientes
 
-El documento único consolidado de estado técnico dentro del frontend se ubica en:
-👉 **[docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md)**
+- **CompilaciÃ³n de ProducciÃ³n (`npm run build`):** **APROBADO** (0 errores, 0 warnings).
+- **Prueba End-to-End en Vivo con Subagente de Navegador:** **APROBADO** (Probado contra backend en puerto 8081 y PostgreSQL 17.11 en Render; flujo completado: login demo ADMIN, navegaciÃ³n a Socios, registro de cliente `Joaquin Vega Silva` `JOA-W38DM6` con validaciÃ³n de 31 aÃ±os y datos opcionales, y confirmaciÃ³n de persistencia fÃ­sica en Render).
+  - *Nota:* Esta prueba certifica el flujo real de autenticaciÃ³n y alta de socio. No se atribuye cobertura E2E exhaustiva a vistas secundarias no probadas interactivamente.
+- **RevisiÃ³n Visual y de AceptaciÃ³n por Wagner:** **PENDIENTE** (Pendiente de sesiÃ³n formal de evaluaciÃ³n y firma de criterios).
 
-La documentación integral de arquitectura, análisis, diseño y producto de GYM VIP se centraliza en la carpeta canónica de la raíz del workspace: `GYMVIP/documentos/` (`ARCHITECTURE.md`, `C4_BASE_ACTUAL.md`, `ERD_BASE_ACTUAL.md`, `DESIGN_SYSTEM.md`, `PRD.md`, `HANDOFF_BASE_SPRINT1.md`).
+Consulte la bitÃ¡cora tÃ©cnica de frontend en:
+ðŸ‘‰ **[docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md)**

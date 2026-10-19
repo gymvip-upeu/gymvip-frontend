@@ -22,6 +22,7 @@ lerna-debug.log*
 !.vscode/extensions.json
 .idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
@@ -38,7 +39,5 @@ lerna-debug.log*
 *.dump
 *.backup
 *.tmp
-
-# 6. Documentación canónica: limitar docs/ al estado consolidado
-/docs/*
-!/docs/ESTADO_FRONTEND_SPRINT1.md
+coverage/
+.eslintcache
