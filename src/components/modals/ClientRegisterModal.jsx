@@ -13,15 +13,15 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
   const [lastName, setLastName] = useState('');
   const [documentType, setDocumentType] = useState('DNI');
   const [documentNumber, setDocumentNumber] = useState('');
-  const [birthDate, setBirthDate] = useState('2000-01-15');
-  const [phone, setPhone] = useState('+51987654321');
+  const [birthDate, setBirthDate] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const age = calculateAge(birthDate);
-  const isEligible = isAdult(birthDate);
+  const age = birthDate ? calculateAge(birthDate) : null;
+  const isEligible = birthDate ? isAdult(birthDate) : false;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -167,7 +167,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 onChange={(e) => setBirthDate(e.target.value)}
                 required
               />
-              {!isEligible && (
+              {birthDate && !isEligible && (
                 <span style={{ fontSize: '11px', color: 'var(--color-danger)', marginTop: '4px', display: 'block' }}>
                   Solo socios mayores de 18 años permitidos en esta base.
                 </span>
@@ -176,7 +176,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
 
             <div className="form-group">
               <label className="form-label" htmlFor="client-phone">
-                Teléfono de Contacto *
+                Teléfono de Contacto (Opcional)
               </label>
               <input
                 id="client-phone"
@@ -185,7 +185,6 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+51987654321"
-                required
               />
             </div>
           </div>

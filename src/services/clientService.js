@@ -25,7 +25,7 @@ export async function registerNewClient(clientData, token = null) {
     documentType: clientData.documentType,
     documentNumber: clientData.documentNumber.trim(),
     birthDate: clientData.birthDate,
-    phone: clientData.phone.trim(),
+    phone: clientData.phone && clientData.phone.trim() ? clientData.phone.trim() : null,
     email: clientData.email && clientData.email.trim() ? clientData.email.trim() : null,
   };
 

@@ -29,6 +29,8 @@ export function validateClientRegistration(data) {
 
   if (!data.documentNumber || !data.documentNumber.trim()) {
     errors.push('El número de documento es obligatorio.');
+  } else if (data.documentType === 'DNI' && !/^[0-9]{8}$/.test(data.documentNumber.trim())) {
+    errors.push('El DNI peruano debe contener exactamente 8 dígitos numéricos.');
   }
 
   if (!data.birthDate) {
@@ -37,12 +39,13 @@ export function validateClientRegistration(data) {
     errors.push('No se puede registrar a un menor de edad. La edad mínima requerida es 18 años.');
   }
 
-  if (!data.phone || !data.phone.trim()) {
-    errors.push('El número telefónico de contacto es obligatorio.');
+  // Teléfono opcional: solo se valida formato si fue ingresado
+  if (data.phone && data.phone.trim() && !/^[+0-9 -]{7,20}$/.test(data.phone.trim())) {
+    errors.push('Si proporciona un teléfono de contacto, debe tener un formato válido (7 a 20 dígitos).');
   }
 
   // Correo opcional: solo se valida formato si fue ingresado
-  if (data.email && data.email.trim() && !data.email.includes('@')) {
+  if (data.email && data.email.trim() && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(data.email.trim())) {
     errors.push('Si proporciona un correo electrónico, debe tener un formato válido.');
   }
 

@@ -9,7 +9,10 @@
  */
 export function calculateAge(birthDateString) {
   if (!birthDateString) return null;
-  const birthDate = new Date(birthDateString);
+  const parts = String(birthDateString).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [year, month, day] = parts;
+  const birthDate = new Date(year, month - 1, day);
   if (isNaN(birthDate.getTime())) return null;
 
   const today = new Date();
