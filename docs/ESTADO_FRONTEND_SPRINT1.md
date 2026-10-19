@@ -3,8 +3,8 @@
 > **Proyecto:** GYM VIP (VIP CENTER FIT)  
 > **Componente:** Frontend Web Administrativo y de Recepción (React 18 + Vite)  
 > **Responsable:** Andre Acosta  
-> **Fecha de Intervención:** 15 de Octubre de 2026  
-> **Rama de Trabajo:** `base-acosta` (desarrollada en `refactor/layered-architecture-frontend`)  
+> **Fecha de Intervención:** 19 de Octubre de 2026  
+> **Rama de Trabajo:** `base-acosta`  
 > **Repositorio Remoto:** `https://github.com/gymvip-upeu/gymvip-frontend.git`  
 > **Fuente Canónica del Proyecto:** `GYMVIP/documentos/` (en la raíz del workspace, fuera de Git)
 
@@ -17,7 +17,12 @@ Esta intervención refactoriza la estructura interna del frontend de una organiz
 ### Distinción de Estados
 - **Reportado:** Documentos anteriores declaraban compilación React exitosa y contratos con el backend en Clean Architecture modular.
 - **Observado:** Se observó que el frontend contaba con carpetas `features/` (auth, clients, plans, staff, home), archivos residuales (`ESTADO_FRONTEND_BASE.md`, subcarpetas `docs/ux/`) y referencias a endpoints.
-- **Probado / Ejecutado:** Se reorganizó la totalidad del código bajo carpetas generales (`api`, `assets`, `components`, `config`, `contexts`, `hooks`, `pages`, `routes`, `services`, `templates`, `themes`, `utils`, `validators`), se verificó la compilación de producción con Vite (`npm run build` PASS en 7.26s, 64 módulos transformados) y la ausencia de errores de resolución o imports rotos.
+- **Probado / Ejecutado:** Se reorganizó la totalidad del código bajo carpetas generales (`api`, `assets`, `components`, `config`, `contexts`, `hooks`, `pages`, `routes`, `services`, `templates`, `themes`, `utils`, `validators`), se verificó la compilación de producción con Vite (`npm run build` PASS en 3.38s, 64 módulos transformados) y la ausencia de errores de resolución o imports rotos.
+- **Depurado y Corregido (19/10/2026):**
+  - Corrección de cálculo de edad en `src/utils/dateUtils.js`: ahora parsea fechas `YYYY-MM-DD` de forma determinista en hora local, resolviendo el bug de desfase UTC-5 de medianoche que descalificaba a usuarios que cumplían 18 años el día de la consulta.
+  - Ajuste de contacto en `src/validators/clientValidator.js` y `src/components/modals/ClientRegisterModal.jsx`: el teléfono y correo ahora son estrictamente opcionales; el teléfono se valida sólo si se ingresa (7–15 dígitos) y el DNI exige exactamente 8 dígitos numéricos.
+  - Manejo seguro de cadenas nulas/indefinidas en `src/services/clientService.js`.
+  - Validación de pase diario en `src/validators/planValidator.js`: duración obligatoria de exactamente 1 día.
 
 > [!IMPORTANT]
 > **Límites de Alcance:**  
@@ -71,11 +76,11 @@ src/
 │   └── tokens.js       # Constantes JavaScript de colores, layout y tipografía
 ├── utils/              # Funciones auxiliares puras reutilizables
 │   ├── formatters.js   # Formato de moneda Soles (S/ PEN), fechas y documentos
-│   └── dateUtils.js    # Cálculo determinista de edad y comprobación de mayoría de edad
+│   └── dateUtils.js    # Cálculo determinista de edad en hora local y mayoría de edad (18+)
 ├── validators/         # Validación UX de formularios previa al envío HTTP
 │   ├── authValidator.js   # Correo institucional y contraseña requeridos
-│   ├── clientValidator.js # Mayoría de edad (18+), obligatorios y correo opcional
-│   ├── planValidator.js   # Precio PEN > 0, duración > 0 e invariante de 30 días para mensualidades
+│   ├── clientValidator.js # Mayoría de edad (18+), DNI 8 dígitos, teléfono y correo opcionales
+│   ├── planValidator.js   # Precio PEN > 0, duración > 0, 30 días para mensualidades y 1 día para diario
 │   └── staffValidator.js  # Validación de roles autorizados (ADMIN / RECEPCION)
 ├── App.jsx             # Punto de entrada reactivo con AuthProvider
 ├── index.css           # Estilos globales y tokens CSS Vanilla
@@ -109,9 +114,9 @@ src/
 ## D. Estado Funcional de las HU de Acosta Conectadas a la API
 
 ### 1. HU-01: Registro y Consulta de Clientes
-- **Implementado en Frontend:** Formulario modal en `ClientRegisterModal.jsx` solicitando estrictamente: Nombres, Apellidos, Tipo de Documento (DNI/CE/Pasaporte), Número de Documento, Fecha de Nacimiento, Teléfono y Correo Electrónico (claramente rotulado como **Opcional**). **Sin casillas de consentimiento legal ficticias.**
-- **Validación en Cliente:** Bloqueo inmediato con badge rojo si la fecha de nacimiento corresponde a un menor de 18 años.
-- **Conexión API:** `POST /api/v1/clients` enviando los datos limpios. Captura de error HTTP 409 Conflict ante documento duplicado con mensaje amigable.
+- **Implementado en Frontend:** Formulario modal en `ClientRegisterModal.jsx` solicitando estrictamente: Nombres, Apellidos, Tipo de Documento (DNI/CE/Pasaporte), Número de Documento (DNI de exactamente 8 dígitos), Fecha de Nacimiento, Teléfono (rotulado como **Opcional**) y Correo Electrónico (rotulado como **Opcional**). **Sin casillas de consentimiento legal ficticias.**
+- **Validación en Cliente:** Bloqueo inmediato con badge rojo si la fecha de nacimiento corresponde a un menor de 18 años calculado en hora local.
+- **Conexión API:** `POST /api/v1/clients` enviando los datos limpios y normalizados. Captura de error HTTP 409 Conflict ante documento duplicado con mensaje amigable.
 - **Visualización:** Tabla de socios con código de socio (ej. `MAR-XXXXXX`), búsqueda interactiva por código, nombre o documento, y modal `ClientDetailModal.jsx` para ver la ficha completa.
 - **Pendiente:** Inscripción de menores con apoderado/tutor legal (diferida para sprints posteriores según el plan).
 
@@ -128,7 +133,7 @@ src/
 - **Implementado en Frontend:** Pantalla `PlansPage.jsx` con grid de tarjetas de tarifas en PEN.
 - **Operaciones Conectadas:**
   - `GET /api/v1/plans`: Listado de planes con filtro de estado (`Todos`, `Activos`, `Inactivos`).
-  - `POST /api/v1/plans`: Creación de tarifas con validación estricta de precio positivo y regla de **exactamente 30 días** si el nombre incluye denominación mensual.
+  - `POST /api/v1/plans`: Creación de tarifas con validación estricta de precio positivo, regla de **exactamente 30 días** si el nombre incluye denominación mensual, y regla de **exactamente 1 día** si es diario.
   - `PUT /api/v1/plans/{id}`: Edición que incrementa la versión inmutable conservando el historial.
   - `PATCH /api/v1/plans/{id}/status`: Toggle de activación/inactivación con modal de confirmación.
 - **Permisos UI:** Recepción puede consultar tarifas pero los botones de edición y nuevo plan quedan ocultos (solo lectura).
@@ -180,10 +185,11 @@ npm run preview
 ```
 
 ### Resultados de Verificación
-- **Compilación de Producción (`npm run build`):** **APROBADO** (7.26s, 64 módulos transformados, 0 errores, 0 warnings).
-- **Inspección de Dependencias (`npm ls`):** **APROBADO** (React 18.3.1, ReactDOM 18.3.1, Vite 6.4.4, `@vitejs/plugin-react` 4.3.4).
+- **Compilación de Producción (`npm run build`):** **APROBADO** (3.38s, 64 módulos transformados, 0 errores, 0 warnings).
+- **Inspección de Dependencias (`npm ls`):** **APROBADO** (React 18.3.1, ReactDOM 18.3.1, Vite 6.4.4, `@vitejs/plugin-react` 4.3.4 resueltos con npm 11.5.2).
 - **Resolución de Rutas y Navegación:** **APROBADO** (`AppRoutes.jsx`, `AdminLayout.jsx`).
-- **Navegador en Vivo / End-to-End con API Activa:** **NO EJECUTADO** (Requiere el backend levantado en el puerto 8080 con PostgreSQL).
+- **Verificación UI en Navegador en Vivo:** **APROBADO** (Probado mediante `browser_subagent` con servidor Vite local en puerto 5173; renderizado exitoso de LoginModal, tokens Dark & Gold Luxury, inputs de acceso, botones de demo y validaciones de formulario. Grabación de sesión WebP y capturas PNG almacenadas en artefactos).
+- **End-to-End Integrado con API Activa y PostgreSQL:** **NO EJECUTADO** (Requiere el backend con instancia de PostgreSQL en puerto 5432 / Render en nube).
 
 ---
 
