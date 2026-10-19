@@ -189,7 +189,7 @@ npm run preview
 - **Inspección de Dependencias (`npm ls`):** **APROBADO** (React 18.3.1, ReactDOM 18.3.1, Vite 6.4.4, `@vitejs/plugin-react` 4.3.4 resueltos con npm 11.5.2).
 - **Resolución de Rutas y Navegación:** **APROBADO** (`AppRoutes.jsx`, `AdminLayout.jsx`).
 - **Verificación UI en Navegador en Vivo:** **APROBADO** (Probado mediante `browser_subagent` con servidor Vite local en puerto 5173; renderizado exitoso de LoginModal, tokens Dark & Gold Luxury, inputs de acceso, botones de demo y validaciones de formulario. Grabación de sesión WebP y capturas PNG almacenadas en artefactos).
-- **End-to-End Integrado con API Activa y PostgreSQL:** **NO EJECUTADO** (Requiere el backend con instancia de PostgreSQL en puerto 5432 / Render en nube).
+- **End-to-End Integrado con API Activa y PostgreSQL:** **APROBADO** (Ejecutado con backend en puerto 8081 y PostgreSQL 17.11 en Render nube mediante subagente de navegador en vivo. Flujo completo: Login con credenciales demo `admin@vipcenterfit.pe`, navegación a Socios, registro de nuevo socio `Joaquin Vega Silva` con DNI `78901234`, validación de mayoría de edad (31 años), datos de contacto opcionales, generación de código `JOA-W38DM6` y verificación de persistencia en PostgreSQL de Render con ID `dc82a49b-07f8-44a4-a5a7-578fd2784b1a`. Grabación de sesión: `postgres_e2e_full_verification_1792430845645.webp`, capturas: `after_submit_1792433007611.png`).
 
 ---
 
