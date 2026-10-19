@@ -34,5 +34,10 @@ export function validatePlanInputs(name, durationDays, pricePen) {
     errors.push('Los planes con denominación mensual deben tener una duración estándar de exactamente 30 días.');
   }
 
+  // Regla de negocio de gimnasio: denominación diaria = exactamente 1 día
+  if (name && /diario|dia|1 dia|daily/i.test(name) && duration !== 1) {
+    errors.push('Los planes con denominación diaria deben tener una duración estándar de exactamente 1 día.');
+  }
+
   return errors;
 }
