@@ -261,3 +261,7 @@ j) **ProhibiciÃ³n de fusiÃ³n prematura:** **NO fusionar todavÃ­a a `develo
 ## Continuidad de Alexander — 26/10/2026
 
 HU-07/08/10 añadidas en su rama individual. Ver [estado actual](ESTADO_ALEXANDER_SPRINT1.md) y [matriz](MATRIZ_ALEXANDER_S1.md). Esta actualización no atribuye a André ni a Wagner aceptación del incremento nuevo.
+
+## Continuidad Jorge — 26/10/2026
+
+Edición y auditoría en ficha, paginación de clientes, vigencias/vencimientos y verificación manual conectadas con API real. Validación y pendientes en [ESTADO_JORGE_SPRINT1.md](ESTADO_JORGE_SPRINT1.md). Este apartado no sustituye la aceptación de Wagner.

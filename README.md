@@ -149,3 +149,7 @@ npm run preview
 
 Consulte la bitÃ¡cora tÃ©cnica de frontend en:
 ðŸ‘‰ **[docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md)**
+
+## Incremento Jorge — 26/10/2026
+
+La rama `feature/s1-jorge-hu02-hu09-hu11-hu12` integra la base de André y la dependencia de Alexander, y añade edición/auditoría de clientes, vigencias, listado de vencimientos y verificación manual. Se mantiene el stack y el lockfile heredados. Ver [estado y pruebas de Jorge](docs/ESTADO_JORGE_SPRINT1.md), [contrato API](docs/CONTRATO_JORGE_S1.md) y [matriz de los 72 criterios](docs/MATRIZ_JORGE_S1.md). Validación técnica local realizada; revisión del equipo/Wagner y Render pendientes. No implica merge a main/develop ni despliegue.

@@ -1,0 +1,14 @@
+.modal-content.jorge-modal { max-width: 900px; padding: 28px; max-height: 90vh; overflow-y: auto; }
+.jorge-toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 16px 0; }
+.jorge-toolbar h2 { flex: 1; }
+.jorge-grid, .jorge-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 18px 0; }
+.jorge-details dt { color: var(--color-text-secondary); font-size: 13px; }
+.jorge-details dd { margin: 5px 0; overflow-wrap: anywhere; }
+.jorge-grid label, .jorge-filters label, .jorge-toolbar label { display: grid; gap: 8px; }
+.jorge-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; padding: 20px; margin: 20px 0; }
+.jorge-table { overflow-x: auto; }
+.jorge-grow { flex: 1; min-width: 200px; }
+.coverage-result { padding: 20px; border: 1px solid var(--color-border); border-radius: var(--radius-md); margin: 20px 0; background: var(--color-surface-input); }
+.coverage-allowed { border-left: 5px solid var(--color-success, #42b883); }
+.coverage-denied { border-left: 5px solid var(--color-danger, #ef6b73); }
+@media (max-width: 600px) { .modal-content.jorge-modal { padding: 16px; } .jorge-filters label { width: 100%; } }

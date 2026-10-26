@@ -94,6 +94,7 @@ export default function MembershipsPage() {
       }
       const result = await sellMembership(attempt.body, attempt.key, token);
       sessionStorage.removeItem(storageKey); setPending(null); setReceipt(result); setQuote(null); setAccepted(false);
+      window.dispatchEvent(new Event('gymvip-membership-changed'));
       const rows = await getMembershipHistory(result.clientId, token);
       if (!client || client.id === result.clientId) setHistory(rows);
     } catch (e) {

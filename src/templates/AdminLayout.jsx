@@ -41,7 +41,11 @@ export function AdminLayout({ currentView, onNavigate, children }) {
 
   const navItems = [
     { id: 'home', label: 'Inicio', icon: '🏠', title: 'Panel de Control Principal' },
-    { id: 'clients', label: 'Clientes (HU-01)', icon: '👥', title: 'Registro y Consulta de Socios' },
+    { id: 'clients', label: 'Clientes', icon: '👥', title: 'Registro, Consulta y Edición de Socios' },
+    ...(isAdmin() || isRecepcion() ? [
+      { id: 'coverage', label: 'Vigencias y vencimientos', icon: '📅', title: 'Seguimiento de Membresías' },
+      { id: 'verification', label: 'Verificar ingreso', icon: '✓', title: 'Verificación Manual de Membresía' },
+    ] : []),
     { id: 'plans', label: 'Planes (HU-06)', icon: '📋', title: 'Catálogo de Tarifas y Membresías' },
     ...(isAdmin() || isRecepcion() ? [{ id: 'memberships', label: 'Membresías y cobros', icon: '💳', title: 'Contratación, Cobros y Renovaciones' }] : []),
     ...(isAdmin() ? [{ id: 'staff', label: 'Personal (HU-04)', icon: '🛡️', title: 'Personal y Control de Roles' }] : []),

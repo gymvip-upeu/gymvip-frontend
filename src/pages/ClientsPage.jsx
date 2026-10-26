@@ -11,12 +11,14 @@ import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { LoadingState, EmptyState } from '../components/feedback/LoadingState';
 import ClientRegisterModal from '../components/modals/ClientRegisterModal';
-import ClientDetailModal from '../components/modals/ClientDetailModal';
+import ClientDetailModal from '../components/modals/ClientManageModal';
 
 export default function ClientsPage() {
   const { token } = useAuth();
   const {
     clients,
+    page,
+    totalPages,
     searchQuery,
     setSearchQuery,
     loading,
@@ -46,7 +48,7 @@ export default function ClientsPage() {
             Socios y Clientes
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
-            HU-01: Registro único, emisión de código de socio y consulta básica.
+            Registro, consulta y actualización de datos de socios.
           </p>
         </div>
 
@@ -143,7 +145,7 @@ export default function ClientsPage() {
                     </td>
                     <td>
                       <span style={{ fontSize: '13px' }}>
-                        {c.documentType || 'DNI'} {c.documentNumber}
+                        {c.documents?.map(d => `${d.documentType} ${d.documentNumber}`).join(' · ') || 'Sin documento'}
                       </span>
                     </td>
                     <td>
@@ -171,6 +173,11 @@ export default function ClientsPage() {
         )}
       </div>
 
+      <div className="jorge-toolbar">
+        <Button variant="secondary" disabled={loading || page === 0} onClick={() => loadClients(searchQuery, page - 1)}>Anterior</Button>
+        <span>Página {page + 1} de {Math.max(totalPages, 1)}</span>
+        <Button variant="secondary" disabled={loading || page + 1 >= totalPages} onClick={() => loadClients(searchQuery, page + 1)}>Siguiente</Button>
+      </div>
       {/* Modal Alta */}
       {isRegisterOpen && (
         <ClientRegisterModal
@@ -185,6 +192,7 @@ export default function ClientsPage() {
         <ClientDetailModal
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
+          onUpdated={() => loadClients(searchQuery)}
         />
       )}
     </div>
