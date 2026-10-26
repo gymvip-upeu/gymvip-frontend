@@ -9,10 +9,12 @@ import HomePage from '../pages/HomePage';
 import ClientsPage from '../pages/ClientsPage';
 import PlansPage from '../pages/PlansPage';
 import StaffPage from '../pages/StaffPage';
+import MembershipsPage from '../pages/MembershipsPage';
+import '../themes/memberships.css';
 import LoginModal from '../components/modals/LoginModal';
 
 export function AppRoutes() {
-  const { user } = useAuth();
+  const { user, isAdmin, isRecepcion } = useAuth();
   const [currentView, setCurrentView] = useState('home');
 
   if (!user) {
@@ -24,6 +26,7 @@ export function AppRoutes() {
       {currentView === 'home' && <HomePage onNavigate={setCurrentView} />}
       {currentView === 'clients' && <ClientsPage />}
       {currentView === 'plans' && <PlansPage />}
+      {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage />}
       {currentView === 'staff' && <StaffPage />}
     </AdminLayout>
   );

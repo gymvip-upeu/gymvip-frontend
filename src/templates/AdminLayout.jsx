@@ -8,7 +8,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
 export function AdminLayout({ currentView, onNavigate, children }) {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isRecepcion } = useAuth();
 
   // Preferencia de plegado persistida en localStorage
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -43,6 +43,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     { id: 'home', label: 'Inicio', icon: '🏠', title: 'Panel de Control Principal' },
     { id: 'clients', label: 'Clientes (HU-01)', icon: '👥', title: 'Registro y Consulta de Socios' },
     { id: 'plans', label: 'Planes (HU-06)', icon: '📋', title: 'Catálogo de Tarifas y Membresías' },
+    ...(isAdmin() || isRecepcion() ? [{ id: 'memberships', label: 'Membresías y cobros', icon: '💳', title: 'Contratación, Cobros y Renovaciones' }] : []),
     ...(isAdmin() ? [{ id: 'staff', label: 'Personal (HU-04)', icon: '🛡️', title: 'Personal y Control de Roles' }] : []),
   ];
 
