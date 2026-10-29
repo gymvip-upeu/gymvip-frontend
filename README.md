@@ -14,6 +14,7 @@
 > **IMPORTANTE â€” CÃ³mo obtener la aplicaciÃ³n:**
 > Las ramas `main` y `develop` han sido inicializadas con un **Ã¡rbol de archivos vacÃ­o** de acuerdo con la estrategia de integraciÃ³n diferida del equipo. Clonar `main` o `develop` no entrega el cÃ³digo funcional en esta etapa.
 > Para descargar y trabajar sobre la base completa entregada por AndrÃ©:
+>
 > ```bash
 > git clone https://github.com/gymvip-upeu/gymvip-frontend.git
 > cd gymvip-frontend
@@ -56,6 +57,7 @@ Este repositorio contiene la interfaz de usuario de la **Base Funcional Acosta**
 
 > [!IMPORTANT]
 > **DelimitaciÃ³n de Alcance â€” Tareas Pendientes:**
+>
 > - **Alexander (Parte 2):** Modales y flujos para asignaciÃ³n/contrataciÃ³n de membresÃ­as (HU-07), cobro presencial (HU-08) y renovaciÃ³n (HU-10).
 > - **Jorge (Parte 3):** EdiciÃ³n de datos de contacto de socios en ficha (HU-02), badges de vigencia (HU-09), reporte de prÃ³ximos a vencer (HU-11) y pantalla de control manual de acceso en recepciÃ³n (HU-12).
 > - Para el detalle exhaustivo, consulte [docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md).
@@ -65,6 +67,7 @@ Este repositorio contiene la interfaz de usuario de la **Base Funcional Acosta**
 ## 3. Arquitectura y Stack TecnolÃ³gico
 
 ### 3.1 Versiones segÃºn Manifests y Lockfile
+
 - **React:** `18.3.1` (segÃºn `package.json` y `package-lock.json`)
 - **React DOM:** `18.3.1`
 - **Vite:** `6.4.4`
@@ -73,6 +76,7 @@ Este repositorio contiene la interfaz de usuario de la **Base Funcional Acosta**
 - **Gestor de Paquetes:** npm compatible con lockfile v3 (`npm ci` recomendado).
 
 ### 3.2 Estructura por Capas Generales
+
 ```
 src/
 â”œâ”€â”€ api/                # Transporte HTTP (apiClient.js, authApi.js, clientApi.js, planApi.js, staffApi.js)
@@ -94,6 +98,7 @@ src/
 ```
 
 ### 3.3 Shell y Sistema de DiseÃ±o Luxury Dark & Gold
+
 - Paleta: Fondo (`#0B0D12`), Superficies (`#151922` / `#1D2330`), Bordes (`#303746`), Acento Dorado (`#D4AF37`, hover `#E5C158`).
 - Sidebar colapsable (256px / 76px) con persistencia en `localStorage` y accesibilidad ARIA (`aria-expanded`, `aria-controls`).
 - Drawer mÃ³vil (< 768px) con backdrop oscuro y tecla Escape.
@@ -103,12 +108,15 @@ src/
 ## 4. ConfiguraciÃ³n de Entorno, Puertos y Flujo de Datos
 
 ### 4.1 Flujo Seguro de Datos
+
 ```
 [Frontend (Vite :5173)] â”€â”€(HTTP/JSON)â”€â”€> [Backend (Spring Boot :8081)] â”€â”€(JDBC/TLS)â”€â”€> [PostgreSQL 17 (Render)]
 ```
+
 - El frontend se comunica **exclusivamente con el backend**; nunca accede directamente a PostgreSQL.
 
 ### 4.2 ConfiguraciÃ³n `.env.example`
+
 ```properties
 # Dejar vacÃ­o en desarrollo local para consumir el proxy relativo de Vite (redirige a http://localhost:8081)
 # En despliegue en la nube: URL pÃºblica del backend (ej. https://gymvip-backend.onrender.com)
@@ -142,7 +150,7 @@ npm run preview
 
 - **CompilaciÃ³n de ProducciÃ³n (`npm run build`):** **APROBADO** (0 errores, 0 warnings).
 - **Prueba End-to-End en Vivo con Subagente de Navegador:** **APROBADO** (Probado contra backend en puerto 8081 y PostgreSQL 17.11 en Render; flujo completado: login demo ADMIN, navegaciÃ³n a Socios, registro de cliente `Joaquin Vega Silva` `JOA-W38DM6` con validaciÃ³n de 31 aÃ±os y datos opcionales, y confirmaciÃ³n de persistencia fÃ­sica en Render).
-  - *Nota:* Esta prueba certifica el flujo real de autenticaciÃ³n y alta de socio. No se atribuye cobertura E2E exhaustiva a vistas secundarias no probadas interactivamente.
+  - _Nota:_ Esta prueba certifica el flujo real de autenticaciÃ³n y alta de socio. No se atribuye cobertura E2E exhaustiva a vistas secundarias no probadas interactivamente.
 - **RevisiÃ³n Visual y de AceptaciÃ³n por Wagner:** **PENDIENTE** (Pendiente de sesiÃ³n formal de evaluaciÃ³n y firma de criterios).
 
 Consulte la bitÃ¡cora tÃ©cnica de frontend en:
