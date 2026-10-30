@@ -1,0 +1,186 @@
+@startuml c1_context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Contexto del Sistema (C1) — GYM VIP (VIP Center Fit)
+
+Person(admin, "Administrador", "Gestiona personal, roles, tarifas de planes y supervisa auditoría de clientes.")
+Person(recepcion, "Recepcionista", "Registra socios, realiza cobros presenciales, gestiona renovaciones y verifica accesos.")
+Person_Ext(socio_futuro, "Socio del Gimnasio [FUTURO]", "Consulta sus membresías y reservas desde la app móvil.")
+
+System(gymvip, "Sistema de Gestión GYM VIP", "Plataforma integral (Web React + API Spring Boot + PostgreSQL) que administra clientes, planes, membresías, cobros y control de acceso.")
+
+System_Ext(app_movil, "Aplicación Móvil Socios [FUTURO / SPRINT 3]", "App móvil (KMP / Compose Multiplatform) para socios.")
+System_Ext(pasarela, "Pasarela de Pagos Online [FUTURO / SPRINT 3]", "Procesador de pagos en línea con tarjeta o billeteras digitales.")
+System_Ext(notificaciones, "Servicio de Mensajería [FUTURO / SPRINT 2]", "Envío de recordatorios automáticos por WhatsApp y correo electrónico.")
+
+Rel(admin, gymvip, "Administra personal, planes y auditoría", "HTTPS / Web")
+Rel(recepcion, gymvip, "Registra socios, cobra y verifica acceso", "HTTPS / Web")
+Rel_Back(socio_futuro, app_movil, "Consulta membresía y reservas", "HTTPS / Móvil")
+Rel(gymvip, notificaciones, "Disparará alertas de vencimiento [Planificado]", "REST / HTTPS")
+Rel(gymvip, pasarela, "Procesará pagos online diferidos [Planificado]", "REST / HTTPS")
+
+@enduml
+
+@startuml c2_containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Contenedores (C2) — GYM VIP
+
+Person(usuario, "Personal del Gimnasio", "Administrador o Recepcionista en recepción.")
+
+System_Boundary(c1, "Frontera del Sistema GYM VIP") {
+    Container(spa, "Single Page Application (SPA)", "React 18.3.1, Vite 6.4.4, Vanilla CSS", "Interfaz web administrativa responsiva con diseño Luxury Dark & Gold. Puerto local :5173.")
+    Container(api, "API Backend REST", "Spring Boot 3.4.3, Java 21 LTS", "Servicios REST desacoplados por capas: controller, service, repository, entity, security. Puerto local :8081.")
+    ContainerDb(db, "Base de Datos Relacional", "PostgreSQL 17.x, Flyway V1-V5", "Persistencia transaccional de cuentas, clientes, planes, ventas, membresías y auditoría. Puerto :5432.")
+}
+
+System_Ext(app_movil_c2, "App Móvil Multiplataforma [FUTURO]", "Kotlin Multiplatform / Compose")
+
+Rel(usuario, spa, "Interactúa en navegador web", "HTTPS")
+Rel(spa, api, "Consume endpoints REST con tokens stateless", "JSON / HTTPS o HTTP / Puerto 8081")
+Rel(api, db, "Lectura y escritura transaccional", "JDBC / TLS / HikariCP / Puerto 5432")
+Rel_Back(app_movil_c2, api, "Consumirá endpoints de socios [FUTURO]", "JSON / HTTPS")
+
+@enduml
+
+@startuml c3_components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Componentes Backend (C3) — Spring Boot API por Capas
+
+Container_Boundary(b1, "gymvip-backend (Spring Boot 3.4.3)") {
+    Component(security, "SecurityFilter & AuthProvider", "Spring Security 6", "Filtra peticiones stateless, valida tokens Bearer/X-Auth-Token y autoriza roles ADMIN/RECEPCION.")
+    
+    Component(auth_ctrl, "AuthController", "Spring REST Controller", "Endpoints de login, logout y consulta de sesión.")
+    Component(client_ctrl, "ClientController & ClientEditingController", "Spring REST Controller", "Endpoints de alta, consulta, edición optimista de socios e historial de cambios.")
+    Component(plan_ctrl, "PlanController", "Spring REST Controller", "Endpoints de consulta pública y mutación administrativa de catálogo tarifario.")
+    Component(member_ctrl, "MembershipController", "Spring REST Controller", "Endpoints de cotización, venta atómica presencial, renovación e historial.")
+    Component(cov_ctrl, "CoverageController", "Spring REST Controller", "Endpoints de verificación manual de ingreso y reporte paginado de vigencias.")
+
+    Component(client_srv, "ClientService & ClientEditingService", "Spring Service (@Transactional)", "Reglas de mayoría de edad (>=18), DNI 8 dígitos, unicidad documental y auditoría campo por campo.")
+    Component(plan_srv, "PlanService", "Spring Service (@Transactional)", "Regla de 30 días mensuales y 1 día pase diario; generación inmutable de PlanVersion.")
+    Component(member_srv, "MembershipService", "Spring Service (@Transactional)", "Venta atómica de membresía, idempotencia con clave, continuidad de fechas y emisión de constancia VIP.")
+    Component(cov_srv, "CoverageService & CoveragePolicy", "Spring Service / Domain Policy", "Consolidación de bloques pagados en zona America/Lima, intervalo inicio incluido/fin excluido y umbral de 7 días.")
+
+    Component(client_repo, "ClientRepository & DocumentRepository", "Spring Data JPA", "Persistencia de entidades Client, Document y auditoría client_changes.")
+    Component(plan_repo, "PlanRepository & PlanVersionRepository", "Spring Data JPA", "Persistencia de entidades Plan y PlanVersion.")
+    Component(member_repo, "MembershipPeriodRepository & SaleRepository", "Spring Data JPA", "Persistencia de MembershipPeriod, MembershipSale y términos comerciales.")
+    Component(cov_repo, "CoverageRepository", "Spring Data / JDBC Nativo", "Consultas optimizadas de periodos pagados y clientes para evaluación de cobertura.")
+}
+
+ContainerDb(db_c3, "PostgreSQL 17", "PostgreSQL", "Esquema versionado por Flyway V1-V5.")
+
+Rel(security, auth_ctrl, "Encamina y autoriza")
+Rel(security, client_ctrl, "Encamina y autoriza")
+Rel(security, plan_ctrl, "Encamina y autoriza")
+Rel(security, member_ctrl, "Encamina y autoriza")
+Rel(security, cov_ctrl, "Encamina y autoriza")
+
+Rel(auth_ctrl, security, "Valida credenciales")
+Rel(client_ctrl, client_srv, "Invoca lógica de clientes")
+Rel(plan_ctrl, plan_srv, "Invoca catálogo y tarifas")
+Rel(member_ctrl, member_srv, "Invoca ventas y renovaciones")
+Rel(cov_ctrl, cov_srv, "Invoca cálculo de cobertura")
+
+Rel(client_srv, client_repo, "Acceso a datos")
+Rel(plan_srv, plan_repo, "Acceso a datos")
+Rel(member_srv, member_repo, "Acceso a datos")
+Rel(cov_srv, cov_repo, "Acceso a datos")
+
+Rel(client_repo, db_c3, "JDBC SQL")
+Rel(plan_repo, db_c3, "JDBC SQL")
+Rel(member_repo, db_c3, "JDBC SQL")
+Rel(cov_repo, db_c3, "JDBC SQL")
+
+@enduml
+
+@startuml c4_code
+title Diagrama de Clases Comprobadas del Backend (C4) — Dominio y Entidades Principales
+
+package "com.gymvip.entity" {
+    class Client {
+        - UUID id
+        - String memberCode
+        - String firstName
+        - String lastName
+        - LocalDate birthDate
+        - String phone
+        - String email
+        - String status
+        - Long version
+        - Instant createdAt
+    }
+
+    class Document {
+        - UUID id
+        - String countryCode
+        - String documentType
+        - String documentNumber
+        - boolean isPrimary
+    }
+
+    class Plan {
+        - UUID id
+        - String name
+        - String status
+        - Long version
+    }
+
+    class PlanVersion {
+        - UUID id
+        - Plan plan
+        - Integer versionNumber
+        - Integer durationDays
+        - BigDecimal pricePen
+        - String benefits
+        - Instant effectiveFrom
+    }
+
+    class MembershipPeriod {
+        - UUID id
+        - UUID clientId
+        - UUID planVersionId
+        - LocalDate startDate
+        - LocalDate endExclusive
+        - String status
+    }
+
+    class MembershipSale {
+        - UUID id
+        - String receiptCode
+        - UUID clientId
+        - BigDecimal amountPaidPen
+        - String paymentMethod
+        - String paymentReference
+        - String operatorEmail
+        - Instant paidAtUtc
+    }
+}
+
+package "com.gymvip.util" {
+    class CoveragePolicy {
+        + {static} EvaluationResult evaluate(List<MembershipPeriod> periods, String contractStatus, String clientStatus, Clock clock, int thresholdDays)
+    }
+
+    class MembershipDates {
+        + {static} LocalDate calculateEndExclusive(LocalDate startDate, int durationDays)
+    }
+
+    class MemberCodeGenerator {
+        + {static} String generate(String firstName)
+    }
+}
+
+Client "1" *-- "many" Document : posee >
+Plan "1" *-- "many" PlanVersion : versiona >
+MembershipPeriod "many" --> "1" Client : asignado a >
+MembershipSale "1" --> "1" MembershipPeriod : cobra >
+
+@enduml
+

@@ -2,8 +2,8 @@
 
 > **Sistema:** GYM VIP (VIP Center Fit) — Gestión Integral de Gimnasio Luxury Fitness<br>
 > **Repositorio:** [gymvip-frontend](https://github.com/gymvip-upeu/gymvip-frontend.git)<br>
-> **Rama documentada:** `feature/s1-jorge-hu02-hu09-hu11-hu12`<br>
-> **Estado del incremento:** Base consolidada de Sprint 1 con los aportes integrados de André Acosta, Alexander y Jorge.
+> **Rama documentada:** `feature/ajustes-diseno-documentacion-seguridad`<br>
+> **Estado del incremento:** Base consolidada de Sprint 1 con rediseño Figma Dark & Gold, pantalla de acceso centrada, bloqueo por inactividad y suite de pruebas robusta.
 
 ---
 
@@ -147,35 +147,29 @@ npm run preview
 ## 6. Estado de Verificación y Pendientes
 
 ### 6.1 Implementado en Código en esta Rama
-- ✅ **Shell y autenticación:** Layout responsivo, navegación controlada por roles, login modal y tokens.
-- ✅ **HU-01, HU-04, HU-06 (André):** Registro de clientes, nómina de staff y catálogo tarifario con versionado.
-- ✅ **HU-07, HU-08, HU-10 (Alexander):** Afiliación con calendario, cobro presencial multimoneda e idempotencia, y renovación continua.
+- ✅ **Acceso Seguro y Bloqueo:** Pantalla de login centrada con fondo fotográfico del atleta, eliminación total de demos/atajos, pantalla de bloqueo por inactividad (`LockScreenModal.jsx`) y reautenticación segura.
+- ✅ **HU-01, HU-04, HU-06 (André):** Registro de socios, nómina de staff y catálogo tarifario con versionado.
+- ✅ **HU-07, HU-08, HU-10 (Alexander):** Afiliación con calendario, cobro presencial con constancia interna e idempotencia, y renovación continua.
 - ✅ **HU-02, HU-09, HU-11, HU-12 (Jorge):** Edición con auditoría en `ClientManageModal.jsx`, badges de vigencia, vista de vencimientos con filtros en `CoveragePage.jsx` y verificación manual en `VerificationPage.jsx`.
 
 ### 6.2 Pruebas Ejecutadas en este Entorno
-- **Pruebas automatizadas (`npm test`):** **APROBADO** (11 pruebas ejecutadas con el runner nativo de Node; 11 pass, 0 fail, 0 canceled).
+- **Pruebas automatizadas (`npm test`):** **APROBADO** (16 pruebas ejecutadas con el runner nativo de Node; 16 pass, 0 fail, 0 canceled en ~460ms).
+  - 5 pruebas de autenticación y sesión (`tests/authSession.test.js`): bloqueo por inactividad, revalidación exitosa con obtención de nuevo token, rechazo de contraseña incorrecta, rechazo de cuenta inactiva y fallos de red.
   - 6 pruebas de Jorge (`tests/jorgeApi.test.js`): control de respuestas truncadas, manejo de fallos de red sin autorizaciones falsas, preservación de errores 409 para el formulario y codificación de filtros.
   - 5 pruebas de Alexander (`tests/membershipApi.test.js`): respuestas parciales, retención de clave de idempotencia, manejo de conflictos y propagación de fallos de red.
-- **Compilación de producción (`npm run build`):** **APROBADO** (74 módulos transformados, 0 errores, 0 warnings; bundle generado en `dist/` en 7.67s).
-
-### 6.3 Pruebas Reportadas en Documentos Técnicos Previos
-- **Validación E2E en Chrome por Jorge (26/10/2026):** Edición de cliente con concurrencia optimista (409), visualización de auditoría para `ADMIN`, verificación manual de acceso con rechazo seguro y navegación con persistencia de filtros al ir a renovar. Comprobado en viewport de escritorio y móvil (390px).
-- **Validación E2E de Alexander (26/10/2026):** Contratación en efectivo y renovación con Yape mediante Vite 5173 → Spring Boot 8081 → PostgreSQL local con emisión de constancias `VIP-...`.
-- **Validación E2E de André (19/10/2026):** Flujo completo de login, alta de socio y comprobación de persistencia contra PostgreSQL 17.11 en Render.
-
-### 6.4 Pendientes de Aceptación Formal
-- **Revisión Visual y de Aceptación por el Product Owner (Wagner):** Presentación formal de interfaces, experiencia de usuario y validación de criterios de aceptación con el cliente/patrocinador.
-- **Validación E2E en Entorno Cloud Oficial:** Verificación integral del frontend conectado al backend y PostgreSQL 17.11 desplegados en Render.
-- **Revisión de Código e Integración:** Aprobación entre pares (*code review*) y posterior integración de la rama del sprint a `develop` y `main` (sin realizar fusiones en esta fase).
+- **Compilación de producción (`npm run build`):** **APROBADO** (79 módulos transformados, 0 errores, 0 warnings; bundle generado en `dist/` en 3.72s).
 
 ---
 
-## 7. Documentación Técnica Detallada
+## 7. Documentación Técnica Canónica (Los 7 Markdown Oficiales)
 
-Para consultar el detalle de contratos de interfaz, matrices de criterios de aceptación y bitácoras del frontend:
-- [Contrato de Interfaces y Flujos de Jorge (HU-02, 09, 11, 12)](docs/CONTRATO_JORGE_S1.md)
-- [Estado Técnico de Jorge y Resultados Frontend](docs/ESTADO_JORGE_SPRINT1.md)
-- [Matriz de Criterios de Aceptación de Jorge (72 criterios)](docs/MATRIZ_JORGE_S1.md)
-- [Estado Técnico de Alexander (HU-07, 08, 10)](docs/ESTADO_ALEXANDER_SPRINT1.md)
-- [Matriz de Criterios de Alexander (54 criterios)](docs/MATRIZ_ALEXANDER_S1.md)
-- [Bitácora de Frontend de André (Base Funcional)](docs/ESTADO_FRONTEND_SPRINT1.md)
+Toda la documentación viva del proyecto se encuentra centralizada en la carpeta [`documentos/`](./documentos/):
+1. [Reglas de Negocio, Alcance y DoD](documentos/REGLAS.md)
+2. [Catálogo Oficial de Endpoints de API](documentos/APIDOCUMENTATION.md)
+3. [Sistema de Diseño Visual y Figma](documentos/DESIGN.md)
+4. [Ficha Técnica y Matriz de Infraestructura](documentos/FICHA_TECNICA.md)
+5. [Arquitectura por Capas, ERD y Modelos de Ingeniería](documentos/ARQUITECTURA_Y_MODELOS.md)
+6. [Matriz de Evidencias de QA y Seguridad](documentos/EVIDENCIAS_QA_SEGURIDAD.md)
+7. [Estado del Proyecto y Trazabilidad de HU](documentos/ESTADO_PROYECTO.md)
+- [Fuente de Diagramas C4 en PlantUML](documentos/c4.uml)
+- [Archivos Históricos del Equipo](documentos/historico/)
