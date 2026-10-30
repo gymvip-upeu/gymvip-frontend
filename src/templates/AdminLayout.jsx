@@ -40,15 +40,16 @@ export function AdminLayout({ currentView, onNavigate, children }) {
   }, [isMobileOpen]);
 
   const navItems = [
-    { id: 'home', label: 'Inicio', icon: '🏠', title: 'Panel de Control Principal' },
-    { id: 'clients', label: 'Clientes', icon: '👥', title: 'Registro, Consulta y Edición de Socios' },
+    { id: 'home', label: 'Inicio', iconName: 'home', title: 'Panel de Control Principal' },
+    { id: 'clients', label: 'Clientes', iconName: 'users', title: 'Directorio y Registro de Socios' },
     ...(isAdmin() || isRecepcion() ? [
-      { id: 'coverage', label: 'Vigencias y vencimientos', icon: '📅', title: 'Seguimiento de Membresías' },
-      { id: 'verification', label: 'Verificar ingreso', icon: '✓', title: 'Verificación Manual de Membresía' },
+      { id: 'coverage', label: 'Vigencias y alertas', iconName: 'calendar', title: 'Seguimiento y Alertas de Membresías' },
+      { id: 'verification', label: 'Verificar ingreso', iconName: 'check-circle', title: 'Control Manual de Acceso en Recepción' },
     ] : []),
-    { id: 'plans', label: 'Planes (HU-06)', icon: '📋', title: 'Catálogo de Tarifas y Membresías' },
-    ...(isAdmin() || isRecepcion() ? [{ id: 'memberships', label: 'Membresías y cobros', icon: '💳', title: 'Contratación, Cobros y Renovaciones' }] : []),
-    ...(isAdmin() ? [{ id: 'staff', label: 'Personal (HU-04)', icon: '🛡️', title: 'Personal y Control de Roles' }] : []),
+    { id: 'plans', label: 'Planes y tarifas', iconName: 'tag', title: 'Catálogo Tarifario y Versiones de Planes' },
+    ...(isAdmin() || isRecepcion() ? [{ id: 'memberships', label: 'Membresías y cobros', iconName: 'credit-card', title: 'Contratación, Cobros y Renovaciones' }] : []),
+    ...(isAdmin() ? [{ id: 'staff', label: 'Personal y roles', iconName: 'shield-check', title: 'Colaboradores y Control de Privilegios' }] : []),
+    { id: 'settings', label: 'Configuración', iconName: 'settings', title: 'Parámetros Operativos del Sistema' },
   ];
 
   const currentItem = navItems.find((item) => item.id === currentView) || navItems[0];
@@ -77,9 +78,10 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       <div className="app-main-wrapper">
         <Header
           title={currentItem.title}
-          subtitle="VIP CENTER FIT · BASE SPRINT 1"
+          subtitle="VIP CENTER FIT · LUXURY FITNESS"
           user={user}
           onOpenMobileMenu={() => setIsMobileOpen(true)}
+          onLogout={logout}
         />
 
         <main className="app-content-body" tabIndex="-1">

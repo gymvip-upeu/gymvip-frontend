@@ -1,9 +1,10 @@
 // ==============================================================================
-// GYM VIP — Plantilla: Sidebar Colapsable y Drawer Móvil
+// GYM VIP — Plantilla: Sidebar Colapsable y Drawer Móvil Luxury Dark & Gold
 // ==============================================================================
 
 import React from 'react';
 import { Badge } from '../components/common/Badge';
+import { Icon } from '../components/common/Icons';
 
 export function Sidebar({
   isCollapsed,
@@ -35,7 +36,9 @@ export function Sidebar({
       >
         <div className="sidebar-top">
           <div className="sidebar-brand">
-            <span className="brand-logo" aria-hidden="true">👑</span>
+            <span className="brand-logo" aria-hidden="true">
+              <Icon name="crown" size={24} color="var(--color-gold)" />
+            </span>
             {!isCollapsed && (
               <div className="brand-text">
                 <span className="brand-title">GYM VIP</span>
@@ -44,34 +47,32 @@ export function Sidebar({
             )}
           </div>
 
-          {/* Botón solo icono para alternar plegado (sin texto 'Contraer') */}
+          {/* Botón solo icono para alternar plegado */}
           <button
             type="button"
             className="sidebar-toggle-btn"
             onClick={onToggleCollapse}
-            aria-expanded={!isCollapsed}
-            aria-controls="app-sidebar"
-            aria-label={isCollapsed ? 'Expandir menú lateral' : 'Contraer menú lateral'}
-            title={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
+            aria-label={isCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
+            title={isCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
           >
-            {isCollapsed ? (
-              /* Icono PanelLeftOpen */
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M9 3v18" />
-                <path d="m14 9 3 3-3 3" />
-              </svg>
-            ) : (
-              /* Icono PanelLeftClose */
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M9 3v18" />
-                <path d="m16 15-3-3 3-3" />
-              </svg>
-            )}
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ transform: isCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform var(--transition-fast)' }}
+              aria-hidden="true"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
           </button>
         </div>
 
+        {/* Lista de Navegación */}
         <nav className="sidebar-nav">
           {navItems.map((item) => {
             const isActive = currentView === item.id;
@@ -84,19 +85,28 @@ export function Sidebar({
                 aria-current={isActive ? 'page' : undefined}
                 title={isCollapsed ? item.label : undefined}
               >
-                <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+                <span className="nav-icon">
+                  <Icon
+                    name={item.iconName || 'home'}
+                    size={19}
+                    color={isActive ? 'var(--color-gold)' : 'var(--color-text-secondary)'}
+                  />
+                </span>
                 {!isCollapsed && <span className="nav-label">{item.label}</span>}
               </button>
             );
           })}
         </nav>
 
+        {/* Zona Inferior: Información del Usuario y Logout */}
         <div className="sidebar-bottom">
           {!isCollapsed && (
             <div className="user-info-box">
-              <span className="user-email" title={user?.email}>{user?.email}</span>
+              <span className="user-email" title={user?.email}>
+                {user?.email}
+              </span>
               <div style={{ marginTop: '4px' }}>
-                <Badge variant="gold" style={{ fontSize: '10px' }}>
+                <Badge variant={user?.roles?.[0] === 'ADMIN' ? 'gold' : 'neutral'} style={{ fontSize: '10px' }}>
                   {user?.roles?.[0] || 'COLABORADOR'}
                 </Badge>
               </div>
@@ -105,12 +115,12 @@ export function Sidebar({
 
           <button
             type="button"
-            className="btn btn-secondary sidebar-logout-btn"
+            className="btn btn-secondary btn-sm sidebar-logout-btn"
             onClick={onLogout}
-            aria-label="Cerrar sesión activa"
             title="Cerrar sesión"
+            aria-label="Cerrar sesión"
           >
-            <span aria-hidden="true">🚪</span>
+            <Icon name="log-out" size={16} color="var(--color-danger)" />
             {!isCollapsed && <span>Cerrar Sesión</span>}
           </button>
         </div>
