@@ -9,6 +9,7 @@ import { formatDate } from '../utils/formatters';
 import { Alert } from '../components/common/Alert';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
+import { Icon } from '../components/common/Icons';
 import { LoadingState, EmptyState } from '../components/feedback/LoadingState';
 import StaffModal from '../components/modals/StaffModal';
 
@@ -35,12 +36,14 @@ export default function StaffPage() {
 
   if (!isAdmin()) {
     return (
-      <div className="card" style={{ padding: '48px', textAlign: 'center' }}>
-        <span style={{ fontSize: '36px' }}>🛡️</span>
-        <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, margin: '12px 0 6px 0' }}>
+      <div className="card" style={{ padding: '48px', textAlign: 'center', maxWidth: '600px', margin: '40px auto' }}>
+        <div style={{ color: 'var(--color-gold)', marginBottom: '14px' }}>
+          <Icon name="shield-check" size={48} />
+        </div>
+        <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, margin: '12px 0 6px 0', color: 'var(--color-text-primary)' }}>
           Acceso Restringido (HTTP 403)
         </h2>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', maxWidth: '420px', margin: '0 auto' }}>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', lineHeight: 1.6, margin: '0 auto' }}>
           La administración de personal, asignación de roles y control de cuentas requiere credenciales de Administrador (HU-04).
         </p>
       </div>
@@ -66,23 +69,24 @@ export default function StaffPage() {
   };
 
   return (
-    <div>
+    <div className="staff-page" style={{ maxWidth: '1120px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, margin: 0 }}>
-            Personal y Control de Roles
+          <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
+            Nómina de Personal y Roles
           </h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
-            HU-04: Nómina de colaboradores, asignación de roles ADMIN/RECEPCION y protección del último administrador.
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
+            HU-04: Gestión de colaboradores, asignación de roles ADMIN/RECEPCION y protección del último administrador.
           </p>
         </div>
 
         <Button
           variant="primary"
           onClick={() => setIsCreateOpen(true)}
-          style={{ minHeight: '42px', fontSize: '14px' }}
+          style={{ minHeight: '44px', fontSize: '14px' }}
         >
-          ➕ Nuevo Colaborador
+          <Icon name="plus" size={16} />
+          <span>Nuevo Colaborador</span>
         </Button>
       </div>
 
@@ -116,7 +120,7 @@ export default function StaffPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Colaborador (Correo)</th>
+                  <th>Colaborador</th>
                   <th>Rol Asignado</th>
                   <th>Estado de Acceso</th>
                   <th>Fecha de Alta</th>
@@ -128,16 +132,40 @@ export default function StaffPage() {
                   const isCurrent = user && user.email === acc.email;
                   const isActive = acc.status === 'ACTIVO';
                   const roleName = acc.roles && acc.roles.length > 0 ? acc.roles[0] : 'RECEPCION';
+                  const initial = acc.email ? acc.email.charAt(0).toUpperCase() : 'C';
 
                   return (
                     <tr key={acc.id}>
                       <td>
-                        <strong>{acc.email}</strong>
-                        {isCurrent && (
-                          <Badge variant="gold" style={{ marginLeft: '8px', fontSize: '10px' }}>
-                            Tu Cuenta
-                          </Badge>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div
+                            style={{
+                              width: '34px',
+                              height: '34px',
+                              borderRadius: 'var(--radius-full)',
+                              background: 'var(--color-surface-elevated)',
+                              border: '1px solid var(--color-border)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              color: roleName === 'ADMIN' ? 'var(--color-gold)' : 'var(--color-text-secondary)',
+                              flexShrink: 0,
+                            }}
+                            aria-hidden="true"
+                          >
+                            {initial}
+                          </div>
+                          <div>
+                            <strong style={{ color: 'var(--color-text-primary)' }}>{acc.email}</strong>
+                            {isCurrent && (
+                              <Badge variant="gold" style={{ marginLeft: '8px', fontSize: '10px', padding: '2px 6px' }}>
+                                Tu Sesión
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td>
                         <Badge variant={roleName === 'ADMIN' ? 'gold' : 'neutral'}>
@@ -162,16 +190,17 @@ export default function StaffPage() {
                               setEditingRoleAccount(acc);
                               setSelectedRole(roleName);
                             }}
-                            style={{ fontSize: '12px', padding: '6px 10px', minHeight: '32px' }}
+                            style={{ fontSize: '12px', padding: '5px 10px', minHeight: '32px' }}
                             disabled={!isActive}
                           >
-                            🔄 Rol
+                            <Icon name="refresh" size={13} />
+                            <span>Cambiar Rol</span>
                           </Button>
                           {isActive && (
                             <Button
                               variant="secondary"
                               onClick={() => setConfirmInactivateAccount(acc)}
-                              style={{ fontSize: '12px', padding: '6px 10px', minHeight: '32px', color: 'var(--color-danger)' }}
+                              style={{ fontSize: '12px', padding: '5px 10px', minHeight: '32px', color: 'var(--color-danger)' }}
                             >
                               Inactivar
                             </Button>
@@ -187,7 +216,7 @@ export default function StaffPage() {
         )}
       </div>
 
-      {/* Modal Crear */}
+      {/* Modal Crear Colaborador */}
       {isCreateOpen && (
         <StaffModal
           token={token}
@@ -213,17 +242,17 @@ export default function StaffPage() {
               </label>
               <select
                 id="edit-role-select"
-                className="form-input"
+                className="form-select"
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
               >
                 <option value="ADMIN">ADMIN (Control Total del Sistema)</option>
-                <option value="RECEPCION">RECEPCION (Socios y Planes)</option>
+                <option value="RECEPCION">RECEPCION (Atención y Cobros)</option>
               </select>
             </div>
 
-            <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '20px' }}>
-              Nota: El sistema no permitirá degradar al último Administrador activo para evitar bloqueos del sistema.
+            <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '20px', lineHeight: 1.4 }}>
+              Nota: El sistema no permitirá degradar al último Administrador activo para evitar bloqueos del sistema (salvaguarda transaccional HTTP 409).
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
