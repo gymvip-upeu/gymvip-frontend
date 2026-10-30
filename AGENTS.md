@@ -1,12 +1,13 @@
 # Instrucciones para Agentes y Desarrolladores — GYM VIP Frontend
 
 > **Repositorio:** `gymvip-frontend`  
-> **Documentación Canónica Centralizada:** Carpeta raíz `../documentos/`
+> **Documentación Canónica Centralizada:** Carpeta raíz `../documentos/`<br>
+> **Nota sobre Enlaces:** Los enlaces a `../documentos/` están configurados para el espacio de trabajo local integrado `GYMVIP/`. Si este repositorio se clona de manera aislada, dichos enlaces no resolverán localmente.
 
 ---
 
 ## 1. Reglas Clave para este Repositorio:
-1. **Rama de Trabajo:** Trabajar en la rama local `feature/ajustes-diseno-documentacion-seguridad`. NUNCA modificar directamente `main`, `develop` ni ramas individuales de compañeros.
+1. **Rama de Trabajo:** Trabajar en la rama `feature/post-revision-diseno-qa`. NUNCA modificar directamente `main`, `develop` ni ramas individuales de compañeros.
 2. **Stack Real:** React 18.3.1, Vite 6.4.4, JavaScript nativo estructurado por capas (`api`, `components`, `config`, `contexts`, `hooks`, `pages`, `routes`, `services`, `templates`, `themes`, `utils`, `validators`).
 3. **Diseño Visual:** Dark & Gold Luxury Fitness Design System en Vanilla CSS (`src/index.css`). Pantalla de acceso centrada con fondo fotográfico oficial del atleta (`hero-athlete.jpg`), tarjeta centrada sin demos y pantalla de bloqueo por inactividad (`LockScreenModal.jsx`).
 4. **Cero Dependencias Innecesarias:** **NO utilizar `lucide-react`, `framer-motion` ni librerías externas no instaladas**. Toda la iconografía se implementa mediante componentes SVG nativos en línea en [`src/components/common/Icons.jsx`](./src/components/common/Icons.jsx).
