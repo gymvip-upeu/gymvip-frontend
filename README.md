@@ -1,155 +1,181 @@
-> **Incremento Alexander S1 — 26/10/2026:** HU-07/08/10 implementadas en `feature/s1-alexander-hu07-hu08-hu10`. Contratación/cobro/renovación conectadas con API y PostgreSQL real; 42 pruebas backend y build frontend correctos. Validación local PostgreSQL 18.4; Render 17, acuerdos con Jorge/Wagner y aceptación formal pendientes. Ver [estado](docs/ESTADO_ALEXANDER_SPRINT1.md) y [matriz de criterios](docs/MATRIZ_ALEXANDER_S1.md). La descripción de la entrega original de André se conserva debajo como antecedente.
+# GYM VIP — Frontend Web
 
-# GYM VIP â€” Frontend Web (Base Funcional Sprint 1 â€” Acosta)
-
-> **Repositorio Oficial:** [gymvip-frontend](https://github.com/gymvip-upeu/gymvip-frontend.git)
-> **OrganizaciÃ³n:** `gymvip-upeu`
-> **Responsable del Incremento:** Andre Acosta (Base comÃºn + HU-01, HU-04, HU-06)
-> **Rama Publicada de Entrega:** `feature/s1-andre-hu01-hu04-hu06`
-> **Stack Base:** React 18.3.1, Vite 6.4.4, Vanilla CSS Luxury Dark/Gold Design System, Arquitectura por Capas Generales.
+> **Sistema:** GYM VIP (VIP Center Fit) — Gestión Integral de Gimnasio Luxury Fitness<br>
+> **Repositorio:** [gymvip-frontend](https://github.com/gymvip-upeu/gymvip-frontend.git)<br>
+> **Rama documentada:** `feature/s1-jorge-hu02-hu09-hu11-hu12`<br>
+> **Estado del incremento:** Base consolidada de Sprint 1 con los aportes integrados de André Acosta, Alexander y Jorge.
 
 ---
 
-## 1. PolÃ­tica de Ramas y Acceso al CÃ³digo
+## 1. Presentación y Estado Actual
+
+GYM VIP es una aplicación web SPA (*Single Page Application*) orientada a la administración operativa, atención en recepción y control de socios de un centro fitness de alta gama. Este repositorio contiene la interfaz de usuario desarrollada con React 18 y Vite, utilizando un sistema de diseño propio *Luxury Dark & Gold*.
+
+La rama actual **`feature/s1-jorge-hu02-hu09-hu11-hu12`** reúne todo el trabajo funcional frontend del Sprint 1, integrando de forma acumulativa los aportes del equipo:
+1. **Base técnica y diseño base (André Acosta):** Shell responsivo (`AdminLayout`), barra lateral colapsable y drawer móvil, autenticación reactiva (`AuthContext`), catálogo de planes (HU-06), nómina de personal (HU-04) y formulario de alta de socios (HU-01).
+2. **Membresías y cobros (Alexander):** Pantalla de afiliación (`MembershipsPage`), cotización con calendario visual de vigencia (HU-07), cobro presencial en efectivo y digital con constancia e idempotencia (HU-08) y flujo de renovación (HU-10).
+3. **Auditoría, vigencias y control de acceso (Jorge):** Edición de datos de socios con control optimista de concurrencia e historial de auditoría campo por campo (HU-02), visualización de cobertura y alertas de vencimiento (HU-09 y HU-11 en `CoveragePage`), y verificación manual de ingreso en recepción (HU-12 en `VerificationPage`).
+
+> [!NOTE]
+> De acuerdo con la estrategia de integración diferida del equipo, las ramas `main` y `develop` conservan un árbol vacío inicial. Todo el código frontend activo de este sprint se ubica en esta rama.
+
+---
+
+## 2. Funcionalidades por Historia de Usuario y Responsable
+
+A continuación se detalla la correspondencia de componentes, vistas y responsabilidades del Sprint 1:
+
+| HU | Responsable | Funcionalidad Disponible | Ubicación Principal en el Código |
+| :--- | :--- | :--- | :--- |
+| **Base Común** | André | Shell principal con Sidebar colapsable y Drawer móvil para pantallas < 768px. Autenticación con persistencia en `localStorage`, redirección segura por rol (`ADMIN` / `RECEPCION`) y cliente HTTP desacoplado con interceptores de token. | `templates/AdminLayout.jsx`, `templates/Sidebar.jsx`, `contexts/AuthContext.jsx`, `api/httpClient.js`, `index.css` |
+| **HU-01** | André | Alta y consulta de socios. Modal con validación en tiempo real (edad ≥ 18 años, DNI de 8 dígitos, teléfono y correo opcionales). Tabla paginada de clientes con buscador y modal de visualización de ficha con código de socio (ej. `JOA-W38DM6`). | `pages/ClientsPage.jsx`, `components/modals/ClientRegisterModal.jsx`, `components/modals/ClientDetailModal.jsx`, `hooks/useClients.js` |
+| **HU-04** | André | Nómina de colaboradores con roles operativos (`ADMIN` / `RECEPCION`). Alta con contraseñas enmascaradas, cambio interactivo de roles y cambio de estado activo/inactivo con confirmación. Exclusivo para administradores. | `pages/StaffPage.jsx`, `components/modals/StaffModal.jsx`, `hooks/useStaff.js`, `api/staffApi.js` |
+| **HU-06** | André | Catálogo tarifario responsivo en Soles (PEN). Indicador visual de versiones históricas (`Versión N`), regla estricta de 30 días para planes mensuales. Edición de tarifa e inactivación lógica solo para rol `ADMIN`. | `pages/PlansPage.jsx`, `components/modals/PlanModal.jsx`, `hooks/usePlans.js`, `api/planApi.js` |
+| **HU-07** | Alexander | Contratación de membresías para clientes existentes con planes activos. Cotización interactiva, resumen comercial con snapshot de condiciones y componente visual de calendario. | `pages/MembershipsPage.jsx`, `components/common/MembershipCalendar.jsx`, `api/membershipApi.js` |
+| **HU-08** | Alexander | Registro de cobro presencial en efectivo, tarjeta o billeteras digitales (Yape/Plin). Emisión de constancia interna (`VIP-...`), conservación de operaciones inciertas en `sessionStorage` para reintentos idempotentes. | `pages/MembershipsPage.jsx`, `api/membershipApi.js` |
+| **HU-10** | Alexander | Renovación anticipada o vencida con soporte de cambio de plan para el nuevo periodo. Historial de periodos y cobros anteriores por cliente. | `pages/MembershipsPage.jsx`, `api/membershipApi.js` |
+| **HU-02** | Jorge | Edición de datos del cliente (nombres, apellidos, documento, teléfono y correo) para `ADMIN` y `RECEPCION` en `ClientManageModal.jsx`. Control de concurrencia con detección de conflicto (409) conservando datos del formulario. Pestaña de historial de cambios auditados (`client_changes`) disponible exclusivamente para `ADMIN`. | `components/modals/ClientManageModal.jsx`, `pages/ClientsPage.jsx`, `hooks/useClients.js`, `api/jorgeApi.js`, `themes/jorge.css` |
+| **HU-09** | Jorge | Indicadores visuales de estado de cobertura basados en la evaluación autoritativa del servidor (`VIGENTE`, `POR_VENCER`, `VENCIDO`, `CANCELADA`, `SIN_MEMBRESIA`). Badges y tarjetas informativas con fechas exactas de inicio y fin. | `components/common/CoverageCard.jsx`, `pages/CoveragePage.jsx`, `themes/jorge.css` |
+| **HU-11** | Jorge | Pantalla de seguimiento de vigencias (`CoveragePage.jsx`) con filtros por texto/código, plan, estado (filtro `ALERTAS` por defecto) y rango de fechas. Ordenamiento por urgencia de vencimiento y conservación de filtros al navegar a renovar en `MembershipsPage`. | `pages/CoveragePage.jsx`, `api/jorgeApi.js` |
+| **HU-12** | Jorge | Pantalla de verificación manual de acceso en recepción (`VerificationPage.jsx`). Búsqueda de socio y validación inmediata contra el servidor; limpieza de permisos anteriores ante errores de red o nueva búsqueda para evitar autorizaciones falsas. | `pages/VerificationPage.jsx`, `api/jorgeApi.js` |
+
+### Delimitación de Alcance (Fuera de este Incremento)
+- No incluye componentes para aplicación móvil (KMP / Compose Multiplatform).
+- No incluye integración de cámara web ni escaneo de códigos QR.
+- No incluye conexión con molinetes físicos, torniquetes o marcación automática de asistencia.
+- No incluye pasarelas de pago electrónico en línea (Webpay, Stripe) ni controladores de hardware POS.
+- No incluye vistas de inventario, ventas de tienda ni reportería financiera de Sprint 2.
+
+---
+
+## 3. Arquitectura y Stack Tecnológico
+
+### 3.1 Versiones según Manifiesto y Lockfile
+- **React:** `18.3.1` (según `package.json` y `package-lock.json`).
+- **React DOM:** `18.3.1`.
+- **Vite:** `6.4.4` (versión resuelta en `package-lock.json`; especificación `^6.2.0` en `package.json`).
+- **Plugin React de Vite:** `@vitejs/plugin-react: 4.3.4`.
+- **Estilos:** Vanilla CSS con variables nativas y sistema de diseño Dark & Gold.
+- **Gestor de paquetes:** `npm` compatible con lockfile v3 (`npm ci`).
 
 > [!IMPORTANT]
-> **IMPORTANTE â€” CÃ³mo obtener la aplicaciÃ³n:**
-> Las ramas `main` y `develop` han sido inicializadas con un **Ã¡rbol de archivos vacÃ­o** de acuerdo con la estrategia de integraciÃ³n diferida del equipo. Clonar `main` o `develop` no entrega el cÃ³digo funcional en esta etapa.
-> Para descargar y trabajar sobre la base completa entregada por AndrÃ©:
-> ```bash
-> git clone https://github.com/gymvip-upeu/gymvip-frontend.git
-> cd gymvip-frontend
-> git checkout feature/s1-andre-hu01-hu04-hu06
-> ```
+> **Aclaración sobre Dependencias de UI:** Este proyecto **NO utiliza `lucide-react`, `framer-motion` ni librerías pesadas de componentes externos**. Toda la iconografía se renderiza mediante elementos SVG nativos en línea y emojis, optimizando el tamaño del paquete compilado y eliminando dependencias innecesarias.
 
-- **`main`**: Contiene el commit inicial con Ã¡rbol vacÃ­o. Reservada para despliegues de producciÃ³n unificados.
-- **`develop`**: Apunta inicialmente al commit vacÃ­o de `main`. Reservada para la integraciÃ³n posterior del equipo.
-- **`feature/s1-andre-hu01-hu04-hu06`**: Rama oficial con la base de interfaz, diseÃ±o, componentes, vistas y validaciones de HU-01, HU-04 y HU-06.
-- **Ramas de Alexander y Jorge**: DeberÃ¡n crearse a partir de `origin/feature/s1-andre-hu01-hu04-hu06` (nunca desde `develop` mientras estÃ© vacÃ­a).
-
----
-
-## 2. Alcance Activo y MÃ³dulos de Interfaz
-
-Este repositorio contiene la interfaz de usuario de la **Base Funcional Acosta**, delimitada a las tres Historias de Usuario autorizadas:
-
-1. **Dashboard de Inicio (`HomePage.jsx`):**
-   - Tarjetas de mÃ©tricas vivas conectadas al backend (Socios registrados, Planes en catÃ¡logo, Colaboradores en nÃ³mina).
-   - Banner de delimitaciÃ³n de alcance del Sprint 1 y estado del sistema.
-2. **HU-01 â€” Registro de Clientes (`ClientsPage.jsx`):**
-   - Formulario modal de alta de socio con validaciÃ³n UX en tiempo real.
-   - RestricciÃ³n estricta de mayorÃ­a de edad (â‰¥ 18 aÃ±os).
-   - Soporte a respuesta HTTP 409 Conflict ante duplicados documentales.
-   - Formato de DNI peruano de exactamente 8 dÃ­gitos numÃ©ricos.
-   - Campos de telÃ©fono y correo opcionales.
-   - Tabla paginada de socios con buscador y modal "Ver Ficha" con cÃ³digo de socio (ej. `JOA-W38DM6`).
-3. **HU-04 â€” Roles y Personal (`StaffPage.jsx`):**
-   - NÃ³mina de colaboradores con roles operativos (`ADMIN` / `RECEPCION`).
-   - Modal de alta con contraseÃ±as enmascaradas y confirmaciÃ³n.
-   - Cambio de rol y estado activo/inactivo con confirmaciÃ³n.
-   - ProtecciÃ³n activa contra la inactivaciÃ³n del Ãºltimo administrador y revocaciÃ³n de sesiones.
-   - Restringido en interfaz y rechazado con HTTP 403 en backend si accede `RECEPCION`.
-4. **HU-06 â€” CatÃ¡logo de Planes (`PlansPage.jsx`):**
-   - CatÃ¡logo tarifario responsivo con precios en Soles (PEN).
-   - Indicador visual de versiones histÃ³ricas (`VersiÃ³n N`).
-   - Regla inquebrantable de 30 dÃ­as para planes mensuales.
-   - Mutaciones exclusivas para rol `ADMIN`: alta, ediciÃ³n de tarifa (incrementando versiÃ³n) e inactivaciÃ³n lÃ³gica.
-   - Vista de solo lectura para rol `RECEPCION`.
-
-> [!IMPORTANT]
-> **DelimitaciÃ³n de Alcance â€” Tareas Pendientes:**
-> - **Alexander (Parte 2):** Modales y flujos para asignaciÃ³n/contrataciÃ³n de membresÃ­as (HU-07), cobro presencial (HU-08) y renovaciÃ³n (HU-10).
-> - **Jorge (Parte 3):** EdiciÃ³n de datos de contacto de socios en ficha (HU-02), badges de vigencia (HU-09), reporte de prÃ³ximos a vencer (HU-11) y pantalla de control manual de acceso en recepciÃ³n (HU-12).
-> - Para el detalle exhaustivo, consulte [docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md).
-
----
-
-## 3. Arquitectura y Stack TecnolÃ³gico
-
-### 3.1 Versiones segÃºn Manifests y Lockfile
-- **React:** `18.3.1` (segÃºn `package.json` y `package-lock.json`)
-- **React DOM:** `18.3.1`
-- **Vite:** `6.4.4`
-- **Plugin React:** `@vitejs/plugin-react: 4.3.4`
-- **Iconos:** `lucide-react: 1.16.0`
-- **Gestor de Paquetes:** npm compatible con lockfile v3 (`npm ci` recomendado).
-
-### 3.2 Estructura por Capas Generales
+### 3.2 Estructura por Capas
 ```
 src/
-â”œâ”€â”€ api/                # Transporte HTTP (apiClient.js, authApi.js, clientApi.js, planApi.js, staffApi.js)
-â”œâ”€â”€ assets/             # Recursos estÃ¡ticos locales
-â”œâ”€â”€ components/         # Componentes UI reutilizables (common, feedback, modals)
-â”œâ”€â”€ config/             # ConfiguraciÃ³n de entorno pÃºblico (environment.js)
-â”œâ”€â”€ contexts/           # Contexto reactivo global (AuthContext.jsx)
-â”œâ”€â”€ hooks/              # Custom hooks desacoplados (useClients, usePlans, useStaff)
-â”œâ”€â”€ pages/              # Vistas principales (HomePage, ClientsPage, PlansPage, StaffPage)
-â”œâ”€â”€ routes/             # Enrutamiento y guardas de navegaciÃ³n (AppRoutes.jsx)
-â”œâ”€â”€ services/           # OrquestaciÃ³n de casos de uso
-â”œâ”€â”€ templates/          # Layout principal (AdminLayout, Header, Sidebar colapsable)
-â”œâ”€â”€ themes/             # Tokens del sistema de diseÃ±o (tokens.js)
-â”œâ”€â”€ utils/              # Funciones auxiliares puras (formatters.js, dateUtils.js)
-â”œâ”€â”€ validators/         # Validadores de formularios previa peticiÃ³n HTTP
-â”œâ”€â”€ App.jsx             # Punto de entrada con AuthProvider
-â”œâ”€â”€ index.css           # Estilos globales y tokens CSS Vanilla Dark & Gold
-â””â”€â”€ main.jsx            # Montaje createRoot
+├── api/             # Clientes de transporte HTTP (apiClient, authApi, clientApi, jorgeApi, membershipApi, planApi, staffApi)
+├── assets/          # Recursos estáticos locales
+├── components/      # Componentes UI reutilizables
+│   ├── common/      # Alert, Badge, Button, CoverageCard, MembershipCalendar, Modal
+│   ├── feedback/    # LoadingState y spinners
+│   └── modals/      # ClientDetailModal, ClientManageModal, ClientRegisterModal, LoginModal, PlanModal, StaffModal
+├── config/          # Configuración de variables públicas (environment.js)
+├── contexts/        # Estado reactivo global de autenticación (AuthContext.jsx)
+├── hooks/           # Custom hooks desacoplados (useClients, usePlans, useStaff)
+├── pages/           # Vistas principales (HomePage, ClientsPage, CoveragePage, VerificationPage, MembershipsPage, PlansPage, StaffPage)
+├── routes/          # Definición de rutas y control de acceso (AppRoutes.jsx)
+├── templates/       # Plantilla de diseño general (AdminLayout, Header, Sidebar)
+├── themes/          # Hojas de estilo y tokens de diseño (tokens.js, jorge.css, memberships.css)
+├── utils/           # Funciones puras auxiliares (dateUtils, formatters)
+├── validators/      # Validaciones del lado del cliente antes del envío HTTP
+├── App.jsx          # Componente raíz envuelto en AuthProvider
+├── index.css        # Estilos globales y tokens CSS Dark & Gold
+└── main.jsx         # Punto de entrada y montaje con ReactDOM.createRoot
 ```
 
-### 3.3 Shell y Sistema de DiseÃ±o Luxury Dark & Gold
-- Paleta: Fondo (`#0B0D12`), Superficies (`#151922` / `#1D2330`), Bordes (`#303746`), Acento Dorado (`#D4AF37`, hover `#E5C158`).
-- Sidebar colapsable (256px / 76px) con persistencia en `localStorage` y accesibilidad ARIA (`aria-expanded`, `aria-controls`).
-- Drawer mÃ³vil (< 768px) con backdrop oscuro y tecla Escape.
+### 3.3 Sistema de Diseño Luxury Dark & Gold
+- **Paleta de Colores:** Fondo profundo (`#0B0D12`), Superficies elevadas (`#151922` / `#1D2330`), Bordes (`#303746`), Acento Dorado VIP (`#D4AF37`, hover `#E5C158`), Estados de alerta (`#EF4444`, `#F59E0B`, `#10B981`).
+- **Barra Lateral:** Colapsable (256px / 76px) con persistencia en `localStorage` y atributos ARIA de accesibilidad (`aria-expanded`, `aria-controls`).
+- **Drawer Móvil:** Activación para resoluciones menores a 768px con oscurecimiento de fondo y cierre mediante tecla `Escape`.
+
+### 3.4 Flujo de Datos Seguro
+```
+[Frontend (Vite :5173)] ──(HTTP/JSON)──> [Backend (Spring Boot :8081)] ──(JDBC/TLS)──> [PostgreSQL 17]
+```
+El frontend interactúa **exclusivamente con la API REST del backend** mediante tokens de sesión. Nunca se conecta directamente al motor de base de datos.
 
 ---
 
-## 4. ConfiguraciÃ³n de Entorno, Puertos y Flujo de Datos
+## 4. Requisitos y Configuración Segura
 
-### 4.1 Flujo Seguro de Datos
-```
-[Frontend (Vite :5173)] â”€â”€(HTTP/JSON)â”€â”€> [Backend (Spring Boot :8081)] â”€â”€(JDBC/TLS)â”€â”€> [PostgreSQL 17 (Render)]
-```
-- El frontend se comunica **exclusivamente con el backend**; nunca accede directamente a PostgreSQL.
+### 4.1 Requisitos Previos
+- **Node.js:** Versión 20.x o superior LTS (verificado en Node 22.x).
+- **npm:** Versión 10.x o superior.
 
-### 4.2 ConfiguraciÃ³n `.env.example`
+### 4.2 Variables de Entorno (`.env`)
+En desarrollo local, el archivo `vite.config.js` incluye un proxy que redirige automáticamente todas las peticiones con prefijo `/api` a `http://localhost:8081`.
+
+Plantilla de configuración (`.env.example`):
 ```properties
-# Dejar vacÃ­o en desarrollo local para consumir el proxy relativo de Vite (redirige a http://localhost:8081)
-# En despliegue en la nube: URL pÃºblica del backend (ej. https://gymvip-backend.onrender.com)
+# Dejar vacío en desarrollo local para utilizar el proxy automático de Vite (:5173 -> :8081)
+# En despliegue en la nube: URL base pública de la API backend (ej. https://gymvip-backend.onrender.com)
 VITE_API_BASE_URL=
 ```
 
 > [!CAUTION]
-> **Seguridad Estricta:** En Vite, cualquier variable con prefijo `VITE_` se expone directamente en el cÃ³digo JavaScript compilado al cliente. **NUNCA** coloque credenciales de base de datos (`DB_PASSWORD`), claves secretas ni tokens de servicio en variables `VITE_*`.
+> **Seguridad Estricta en Frontend:** Todas las variables con prefijo `VITE_` son embebidas en el bundle compilado de JavaScript accesible públicamente por cualquier usuario. **NUNCA** incluya credenciales de base de datos (`DB_PASSWORD`), cadenas de conexión JDBC, contraseñas de personal ni secretos de firma en archivos del frontend.
 
 ---
 
-## 5. Instrucciones de CompilaciÃ³n y EjecuciÃ³n
+## 5. Cómo Ejecutar y Probar
+
+Los scripts oficiales configurados en `package.json` son:
 
 ```bash
-# 1. Instalar dependencias exactas del lockfile
+# 1. Instalar dependencias exactas según el lockfile
 npm ci
 
-# 2. Iniciar servidor de desarrollo (puerto 5173)
+# 2. Iniciar el servidor local de desarrollo (puerto 5173)
 npm run dev
 
-# 3. Compilar bundle de producciÃ³n
+# 3. Ejecutar las pruebas automatizadas de cliente HTTP y lógica
+npm test
+
+# 4. Ejecutar específicamente las pruebas de transporte de membresías
+npm test:membership
+
+# 5. Compilar el paquete optimizado para producción
 npm run build
 
-# 4. Previsualizar bundle de producciÃ³n localmente
+# 6. Previsualizar localmente el paquete de producción compilado
 npm run preview
 ```
 
 ---
 
-## 6. Estado de VerificaciÃ³n y Pendientes
+## 6. Estado de Verificación y Pendientes
 
-- **CompilaciÃ³n de ProducciÃ³n (`npm run build`):** **APROBADO** (0 errores, 0 warnings).
-- **Prueba End-to-End en Vivo con Subagente de Navegador:** **APROBADO** (Probado contra backend en puerto 8081 y PostgreSQL 17.11 en Render; flujo completado: login demo ADMIN, navegaciÃ³n a Socios, registro de cliente `Joaquin Vega Silva` `JOA-W38DM6` con validaciÃ³n de 31 aÃ±os y datos opcionales, y confirmaciÃ³n de persistencia fÃ­sica en Render).
-  - *Nota:* Esta prueba certifica el flujo real de autenticaciÃ³n y alta de socio. No se atribuye cobertura E2E exhaustiva a vistas secundarias no probadas interactivamente.
-- **RevisiÃ³n Visual y de AceptaciÃ³n por Wagner:** **PENDIENTE** (Pendiente de sesiÃ³n formal de evaluaciÃ³n y firma de criterios).
+### 6.1 Implementado en Código en esta Rama
+- ✅ **Shell y autenticación:** Layout responsivo, navegación controlada por roles, login modal y tokens.
+- ✅ **HU-01, HU-04, HU-06 (André):** Registro de clientes, nómina de staff y catálogo tarifario con versionado.
+- ✅ **HU-07, HU-08, HU-10 (Alexander):** Afiliación con calendario, cobro presencial multimoneda e idempotencia, y renovación continua.
+- ✅ **HU-02, HU-09, HU-11, HU-12 (Jorge):** Edición con auditoría en `ClientManageModal.jsx`, badges de vigencia, vista de vencimientos con filtros en `CoveragePage.jsx` y verificación manual en `VerificationPage.jsx`.
 
-Consulte la bitÃ¡cora tÃ©cnica de frontend en:
-ðŸ‘‰ **[docs/ESTADO_FRONTEND_SPRINT1.md](docs/ESTADO_FRONTEND_SPRINT1.md)**
+### 6.2 Pruebas Ejecutadas en este Entorno
+- **Pruebas automatizadas (`npm test`):** **APROBADO** (11 pruebas ejecutadas con el runner nativo de Node; 11 pass, 0 fail, 0 canceled).
+  - 6 pruebas de Jorge (`tests/jorgeApi.test.js`): control de respuestas truncadas, manejo de fallos de red sin autorizaciones falsas, preservación de errores 409 para el formulario y codificación de filtros.
+  - 5 pruebas de Alexander (`tests/membershipApi.test.js`): respuestas parciales, retención de clave de idempotencia, manejo de conflictos y propagación de fallos de red.
+- **Compilación de producción (`npm run build`):** **APROBADO** (74 módulos transformados, 0 errores, 0 warnings; bundle generado en `dist/` en 7.67s).
 
-## Incremento Jorge — 26/10/2026
+### 6.3 Pruebas Reportadas en Documentos Técnicos Previos
+- **Validación E2E en Chrome por Jorge (26/10/2026):** Edición de cliente con concurrencia optimista (409), visualización de auditoría para `ADMIN`, verificación manual de acceso con rechazo seguro y navegación con persistencia de filtros al ir a renovar. Comprobado en viewport de escritorio y móvil (390px).
+- **Validación E2E de Alexander (26/10/2026):** Contratación en efectivo y renovación con Yape mediante Vite 5173 → Spring Boot 8081 → PostgreSQL local con emisión de constancias `VIP-...`.
+- **Validación E2E de André (19/10/2026):** Flujo completo de login, alta de socio y comprobación de persistencia contra PostgreSQL 17.11 en Render.
 
-La rama `feature/s1-jorge-hu02-hu09-hu11-hu12` integra la base de André y la dependencia de Alexander, y añade edición/auditoría de clientes, vigencias, listado de vencimientos y verificación manual. Se mantiene el stack y el lockfile heredados. Ver [estado y pruebas de Jorge](docs/ESTADO_JORGE_SPRINT1.md), [contrato API](docs/CONTRATO_JORGE_S1.md) y [matriz de los 72 criterios](docs/MATRIZ_JORGE_S1.md). Validación técnica local realizada; revisión del equipo/Wagner y Render pendientes. No implica merge a main/develop ni despliegue.
+### 6.4 Pendientes de Aceptación Formal
+- **Revisión Visual y de Aceptación por el Product Owner (Wagner):** Presentación formal de interfaces, experiencia de usuario y validación de criterios de aceptación con el cliente/patrocinador.
+- **Validación E2E en Entorno Cloud Oficial:** Verificación integral del frontend conectado al backend y PostgreSQL 17.11 desplegados en Render.
+- **Revisión de Código e Integración:** Aprobación entre pares (*code review*) y posterior integración de la rama del sprint a `develop` y `main` (sin realizar fusiones en esta fase).
+
+---
+
+## 7. Documentación Técnica Detallada
+
+Para consultar el detalle de contratos de interfaz, matrices de criterios de aceptación y bitácoras del frontend:
+- [Contrato de Interfaces y Flujos de Jorge (HU-02, 09, 11, 12)](docs/CONTRATO_JORGE_S1.md)
+- [Estado Técnico de Jorge y Resultados Frontend](docs/ESTADO_JORGE_SPRINT1.md)
+- [Matriz de Criterios de Aceptación de Jorge (72 criterios)](docs/MATRIZ_JORGE_S1.md)
+- [Estado Técnico de Alexander (HU-07, 08, 10)](docs/ESTADO_ALEXANDER_SPRINT1.md)
+- [Matriz de Criterios de Alexander (54 criterios)](docs/MATRIZ_ALEXANDER_S1.md)
+- [Bitácora de Frontend de André (Base Funcional)](docs/ESTADO_FRONTEND_SPRINT1.md)
