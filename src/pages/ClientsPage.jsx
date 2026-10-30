@@ -1,5 +1,6 @@
 // ==============================================================================
-// GYM VIP — Pantalla: ClientsPage (Socios y Clientes - HU-01 / HU-02)
+// GYM VIP — Directorio Oficial de Socios y Clientes
+// Alta de socios, consulta de ficha en solo lectura, edición y auditoría
 // ==============================================================================
 
 import React, { useState } from 'react';
@@ -12,6 +13,7 @@ import { Button } from '../components/common/Button';
 import { Icon } from '../components/common/Icons';
 import { LoadingState, EmptyState } from '../components/feedback/LoadingState';
 import ClientRegisterModal from '../components/modals/ClientRegisterModal';
+import ClientDetailModal from '../components/modals/ClientDetailModal';
 import ClientManageModal from '../components/modals/ClientManageModal';
 
 export default function ClientsPage() {
@@ -31,14 +33,21 @@ export default function ClientsPage() {
     handleClearSearch,
   } = useClients(token);
 
-  // Modales
+  // Modales diferenciados: Registro, Ver Ficha (lectura) y Editar (concurrencia y auditoría)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [viewingClient, setViewingClient] = useState(null);
+  const [editingClient, setEditingClient] = useState(null);
 
   const handleRegisterSuccess = (newClient) => {
     setIsRegisterOpen(false);
     setSuccessToast(`¡Socio ${newClient.firstName} ${newClient.lastName} registrado con éxito! Código: ${newClient.memberCode}`);
     loadClients(searchQuery);
+  };
+
+  const handleUpdateSuccess = () => {
+    setEditingClient(null);
+    setSuccessToast('¡Datos del socio actualizados exitosamente!');
+    loadClients(searchQuery, page);
   };
 
   return (
@@ -49,7 +58,7 @@ export default function ClientsPage() {
             Directorio de Socios
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-            Padrón oficial de clientes: alta, consulta de ficha, edición concurrente y auditoría.
+            Padrón oficial de clientes: alta, consulta de ficha, edición concurrente y libro de auditoría.
           </p>
         </div>
 
@@ -78,12 +87,12 @@ export default function ClientsPage() {
         />
       )}
 
-      {/* Barra de búsqueda */}
-      <div className="card" style={{ padding: '16px 20px', marginBottom: '20px' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '240px' }} className="input-with-icon">
+      {/* Buscador de Socios */}
+      <div className="card" style={{ padding: '20px', marginBottom: '24px' }}>
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div className="input-with-icon" style={{ flex: 1, minWidth: '260px' }}>
             <span className="input-icon" aria-hidden="true">
-              <Icon name="search" size={16} color="var(--color-text-muted)" />
+              <Icon name="search" size={16} color="var(--color-gold)" />
             </span>
             <input
               type="text"
@@ -190,15 +199,28 @@ export default function ClientsPage() {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <Button
-                          variant="secondary"
-                          onClick={() => setSelectedClient(c)}
-                          style={{ fontSize: '12px', padding: '6px 12px', minHeight: '34px' }}
-                          title="Ver ficha, editar o consultar historial"
-                        >
-                          <Icon name="eye" size={14} />
-                          <span>Ficha / Gestionar</span>
-                        </Button>
+                        <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <Button
+                            variant="secondary"
+                            onClick={() => setViewingClient(c)}
+                            style={{ fontSize: '12px', padding: '6px 10px', minHeight: '34px' }}
+                            title={`Ver ficha completa de ${c.firstName} ${c.lastName}`}
+                            aria-label={`Ver ficha de ${c.firstName} ${c.lastName}`}
+                          >
+                            <Icon name="eye" size={14} color="var(--color-gold)" />
+                            <span>Ver Ficha</span>
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={() => setEditingClient(c)}
+                            style={{ fontSize: '12px', padding: '6px 10px', minHeight: '34px' }}
+                            title={`Editar datos de ${c.firstName} ${c.lastName}`}
+                            aria-label={`Editar datos de ${c.firstName} ${c.lastName}`}
+                          >
+                            <Icon name="edit" size={14} color="var(--color-text-secondary)" />
+                            <span>Editar</span>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -230,7 +252,7 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      {/* Modal Alta */}
+      {/* Modal 1: Alta de Nuevo Socio */}
       {isRegisterOpen && (
         <ClientRegisterModal
           token={token}
@@ -239,12 +261,20 @@ export default function ClientsPage() {
         />
       )}
 
-      {/* Modal Ficha y Edición con Auditoría */}
-      {selectedClient && (
+      {/* Modal 2: Ver Ficha (Solo Lectura) */}
+      {viewingClient && (
+        <ClientDetailModal
+          client={viewingClient}
+          onClose={() => setViewingClient(null)}
+        />
+      )}
+
+      {/* Modal 3: Edición Concurrente y Libro de Auditoría */}
+      {editingClient && (
         <ClientManageModal
-          client={selectedClient}
-          onClose={() => setSelectedClient(null)}
-          onUpdated={() => loadClients(searchQuery, page)}
+          client={editingClient}
+          onClose={() => setEditingClient(null)}
+          onUpdated={handleUpdateSuccess}
         />
       )}
     </div>
