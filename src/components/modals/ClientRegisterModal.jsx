@@ -54,7 +54,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <span className="badge badge-gold" style={{ fontSize: '11px', marginBottom: '6px' }}>
-              HU-01 REGISTRO DE SOCIOS
+              REGISTRO DE SOCIO VIP
             </span>
             <h2 id="client-modal-title" style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, margin: '2px 0' }}>
               Alta de Nuevo Socio

@@ -75,7 +75,7 @@ export default function HomePage({ onNavigate }) {
       >
         <div style={{ position: 'relative', zIndex: 2 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <Badge variant="gold">VIP CENTER FIT · SPRINT 1</Badge>
+            <Badge variant="gold">VIP CENTER FIT · SEDE CENTRAL</Badge>
             <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>CENTRO FITNESS LUXURY</span>
           </div>
           <h1 style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 800, margin: '4px 0 10px 0', color: 'var(--color-text-primary)' }}>
@@ -112,7 +112,7 @@ export default function HomePage({ onNavigate }) {
         <div className="card kpi-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Socios Registrados (HU-01)
+              Socios Registrados
             </span>
             <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
               <Icon name="users" size={22} />
@@ -122,7 +122,7 @@ export default function HomePage({ onNavigate }) {
             {loading ? '...' : metrics.totalClients}
           </div>
           <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Emisión con código único MAR-XXXXXX
+            Emisión con código único de socio
           </p>
           <Button
             variant="secondary"
@@ -138,7 +138,7 @@ export default function HomePage({ onNavigate }) {
         <div className="card kpi-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Planes Activos (HU-06)
+              Planes Activos
             </span>
             <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
               <Icon name="tag" size={22} />
@@ -148,7 +148,7 @@ export default function HomePage({ onNavigate }) {
             {loading ? '...' : metrics.activePlans}
           </div>
           <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Duración estricta de 30 días en Soles PEN
+            Tarifario vigente en Soles PEN
           </p>
           <Button
             variant="secondary"
@@ -164,7 +164,7 @@ export default function HomePage({ onNavigate }) {
         <div className="card kpi-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Equipo Operativo (HU-04)
+              Equipo Operativo
             </span>
             <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
               <Icon name="shield-check" size={22} />
@@ -220,7 +220,7 @@ export default function HomePage({ onNavigate }) {
               <strong style={{ fontSize: '14px', color: 'var(--color-text-primary)' }}>Control de Acceso</strong>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: 0 }}>
-              Verificar ingreso manual de socio en recepción mediante DNI o código (HU-12).
+              Verificar ingreso manual de socio en recepción mediante DNI o código.
             </p>
           </div>
 
@@ -241,7 +241,7 @@ export default function HomePage({ onNavigate }) {
               <strong style={{ fontSize: '14px', color: 'var(--color-text-primary)' }}>Vigencias y Alertas</strong>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: 0 }}>
-              Supervisar membresías por vencer y vencidas con filtros ordenados por urgencia (HU-11).
+              Supervisar membresías por vencer y vencidas con filtros ordenados por urgencia.
             </p>
           </div>
 
@@ -262,7 +262,7 @@ export default function HomePage({ onNavigate }) {
               <strong style={{ fontSize: '14px', color: 'var(--color-text-primary)' }}>Cobro y Renovación</strong>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: 0 }}>
-              Contratar plan, registrar cobro presencial en PEN y emitir constancia VIP (HU-07, 08, 10).
+              Contratar plan, registrar cobro presencial en PEN y emitir constancia interna.
             </p>
           </div>
 

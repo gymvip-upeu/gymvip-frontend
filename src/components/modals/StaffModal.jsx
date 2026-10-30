@@ -43,7 +43,7 @@ export default function StaffModal({ token, onClose, onSuccess }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <span className="badge badge-gold" style={{ fontSize: '11px', marginBottom: '6px' }}>
-              HU-04 PERSONAL Y ROLES
+              ALTA DE COLABORADOR
             </span>
             <h2 id="staff-modal-title" style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, margin: '2px 0' }}>
               Alta de Personal

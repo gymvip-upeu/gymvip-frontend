@@ -57,7 +57,7 @@ export default function SettingsPage() {
               <Icon name="calendar" size={20} />
             </span>
             <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
-              Reglas de Cobertura y Alertas (HU-09 / HU-11)
+              Reglas de Cobertura y Alertas
             </h2>
           </div>
 
@@ -107,7 +107,7 @@ export default function SettingsPage() {
               <Icon name="crown" size={20} />
             </span>
             <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
-              Identidad y Datos Fiscales
+              Identidad y Datos de la Sede Central
             </h2>
           </div>
 
@@ -138,7 +138,7 @@ export default function SettingsPage() {
               <Icon name="credit-card" size={20} />
             </span>
             <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
-              Medios de Pago Presenciales en Mostrador (HU-08)
+              Medios de Pago Presenciales en Mostrador
             </h2>
           </div>
 

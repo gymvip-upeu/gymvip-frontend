@@ -308,7 +308,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
               <div style={{ marginTop: '28px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <h3 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
-                    Libro de Auditoría de Cambios (HU-02)
+                    Libro de Auditoría de Cambios
                   </h3>
                   <Badge variant="gold" style={{ fontSize: '11px' }}>Exclusivo ADMIN</Badge>
                 </div>

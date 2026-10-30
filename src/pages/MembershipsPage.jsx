@@ -223,7 +223,7 @@ export default function MembershipsPage() {
           Membresías y Cobros Presenciales
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-          Contrate o renueve membresías mensuales de 30 días con cobro atómico presencial, constancia e idempotencia (HU-07, 08, 10).
+          Contrate o renueve membresías mensuales de 30 días con cobro presencial en caja, comprobante interno e idempotencia.
         </p>
       </div>
 

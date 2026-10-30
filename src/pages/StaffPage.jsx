@@ -44,7 +44,7 @@ export default function StaffPage() {
           Acceso Restringido (HTTP 403)
         </h2>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', lineHeight: 1.6, margin: '0 auto' }}>
-          La administración de personal, asignación de roles y control de cuentas requiere credenciales de Administrador (HU-04).
+          La administración de personal, asignación de roles y control de cuentas requiere credenciales de Administrador.
         </p>
       </div>
     );
@@ -76,7 +76,7 @@ export default function StaffPage() {
             Nómina de Personal y Roles
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-            HU-04: Gestión de colaboradores, asignación de roles ADMIN/RECEPCION y protección del último administrador.
+            Gestión de colaboradores, asignación de roles ADMIN/RECEPCIÓN y protección de integridad del último administrador.
           </p>
         </div>
 
