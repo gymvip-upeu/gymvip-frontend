@@ -1,5 +1,6 @@
 // ==============================================================================
 // GYM VIP — Definición y Guardas de Rutas / Navegación
+// Control de autenticación, bloqueo por inactividad y autorización por rol
 // ==============================================================================
 
 import React, { useState } from 'react';
@@ -14,13 +15,20 @@ import StaffPage from '../pages/StaffPage';
 import MembershipsPage from '../pages/MembershipsPage';
 import SettingsPage from '../pages/SettingsPage';
 import LoginModal from '../components/modals/LoginModal';
+import LockScreenModal from '../components/modals/LockScreenModal';
 import '../themes/jorge.css';
 import '../themes/memberships.css';
 
 export function AppRoutes() {
-  const { user, isAdmin, isRecepcion } = useAuth();
+  const { user, isLocked, isAdmin, isRecepcion } = useAuth();
   const [currentView, setCurrentView] = useState('home');
 
+  // Si la sesión fue bloqueada por inactividad o expiración 401, ocultar toda la UI operativa
+  if (isLocked) {
+    return <LockScreenModal />;
+  }
+
+  // Si no hay sesión autenticada, presentar pantalla de acceso centrada
   if (!user) {
     return <LoginModal />;
   }
