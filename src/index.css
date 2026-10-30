@@ -720,3 +720,243 @@ button {
   }
 }
 
+
+
+/* ==============================================================================
+   REDISEÑO WEB ADMINISTRATIVO FIGMA — LUXURY DARK & GOLD ENHANCEMENTS
+   ============================================================================== */
+
+/* Pantalla de Acceso Split (Login Luxury) */
+.login-screen-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-4);
+}
+
+.login-split-card {
+  display: flex;
+  width: 100%;
+  max-width: 920px;
+  min-height: 540px;
+  background-color: var(--color-surface-panel);
+  border: 1px solid var(--color-gold-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.login-hero-panel {
+  flex: 1.1;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(11, 13, 18, 0.4) 0%, rgba(11, 13, 18, 0.92) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 36px;
+}
+
+.login-hero-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-hero-logo {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-gold);
+  letter-spacing: 1px;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.login-hero-tagline {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
+.login-hero-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-hero-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.login-form-panel {
+  flex: 1;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: var(--color-surface-panel);
+}
+
+.login-header {
+  margin-bottom: 24px;
+}
+
+.login-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin: 4px 0;
+}
+
+.login-subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.login-demo-section {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.login-demo-title {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.login-demo-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.login-demo-buttons button {
+  flex: 1;
+  gap: 6px;
+  min-height: 36px;
+  font-size: 12px;
+}
+
+/* Campos de Formulario con Icono Lateral */
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-input.with-left-icon {
+  padding-left: 42px;
+}
+
+/* Header Avatar y Detalles */
+.header-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-gold-subtle);
+  border: 1px solid var(--color-gold-border);
+  color: var(--color-gold);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-user-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-user-email {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.header-logout-btn {
+  padding: 6px 12px;
+  min-height: 36px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+/* Efectos Hover Elegantes */
+.kpi-card {
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.kpi-card:hover {
+  border-color: var(--color-gold-border);
+  transform: translateY(-2px);
+}
+
+.action-card:hover {
+  border-color: var(--color-gold) !important;
+  background-color: rgba(212, 175, 55, 0.05) !important;
+  transform: translateY(-2px);
+}
+
+.plan-card:hover {
+  border-color: var(--color-gold-border) !important;
+  transform: translateY(-3px);
+}
+
+/* Responsive para Pantalla Split en Móviles */
+@media (max-width: 768px) {
+  .login-split-card {
+    flex-direction: column;
+    max-width: 440px;
+  }
+
+  .login-hero-panel {
+    min-height: 160px;
+    flex: none;
+  }
+
+  .login-hero-overlay {
+    padding: 20px;
+  }
+
+  .login-hero-text {
+    display: none;
+  }
+
+  .login-form-panel {
+    padding: 28px 24px;
+  }
+
+  .header-logout-text {
+    display: none;
+  }
+}
