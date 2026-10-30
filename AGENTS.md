@@ -1,7 +1,7 @@
 # Instrucciones para Agentes y Desarrolladores — GYM VIP Frontend
 
 > **Repositorio:** `gymvip-frontend`  
-> **Documentación Canónica Centralizada:** Carpeta `documentos/` dentro de este repositorio.
+> **Documentación Canónica Centralizada:** Carpeta raíz `../documentos/`
 
 ---
 
@@ -19,15 +19,16 @@
    - Servidor local (puerto 5173): `npm run dev`
    - Pruebas unitarias de HTTP y sesión: `npm test`
    - Empaquetado de producción: `npm run build`
+
 ---
 
 ## 2. Regla de Documentación Viva por Cambio Significativo
 
-Cualquier cambio relevante debe actualizar su documento correspondiente en `documentos/` en el mismo commit:
-- Si cambia un endpoint, DTO, header o respuesta: actualizar [`documentos/APIDOCUMENTATION.md`](./documentos/APIDOCUMENTATION.md).
-- Si cambia una vista, componente, imagen o flujo visual: actualizar [`documentos/DESIGN.md`](./documentos/DESIGN.md).
-- Si cambia stack, dependencias o infraestructura: actualizar [`documentos/FICHA_TECNICA.md`](./documentos/FICHA_TECNICA.md).
-- Si cambia arquitectura, ERD o comportamiento dinámico: actualizar [`documentos/ARQUITECTURA_Y_MODELOS.md`](./documentos/ARQUITECTURA_Y_MODELOS.md) y [`documentos/c4.uml`](./documentos/c4.uml).
-- Si se ejecutan pruebas o se corrigen hallazgos de seguridad: actualizar [`documentos/EVIDENCIAS_QA_SEGURIDAD.md`](./documentos/EVIDENCIAS_QA_SEGURIDAD.md).
-- Si cambia el estado de una HU o la entrega del sprint: actualizar [`documentos/ESTADO_PROYECTO.md`](./documentos/ESTADO_PROYECTO.md).
-- Si cambian reglas de negocio, decisiones o DoD: actualizar [`documentos/REGLAS.md`](./documentos/REGLAS.md).
+Cualquier cambio relevante debe actualizar su documento correspondiente en `../documentos/` en la raíz de GYMVIP:
+- Si cambia un endpoint, DTO, header o respuesta: actualizar [`../documentos/APIDOCUMENTATION.md`](../documentos/APIDOCUMENTATION.md).
+- Si cambia una vista, componente, imagen o flujo visual: actualizar [`../documentos/DESIGN.md`](../documentos/DESIGN.md).
+- Si cambia stack, dependencias o infraestructura: actualizar [`../documentos/FICHA_TECNICA.md`](../documentos/FICHA_TECNICA.md).
+- Si cambia arquitectura, ERD o comportamiento dinámico: actualizar [`../documentos/ARQUITECTURA_Y_MODELOS.md`](../documentos/ARQUITECTURA_Y_MODELOS.md) y [`../documentos/c4.uml`](../documentos/c4.uml).
+- Si se ejecutan pruebas o se corrigen hallazgos de seguridad: actualizar [`../documentos/EVIDENCIAS_QA_SEGURIDAD.md`](../documentos/EVIDENCIAS_QA_SEGURIDAD.md).
+- Si cambia el estado de una HU o la entrega del sprint: actualizar [`../documentos/ESTADO_PROYECTO.md`](../documentos/ESTADO_PROYECTO.md).
+- Si cambian reglas de negocio, decisiones o DoD: actualizar [`../documentos/REGLAS.md`](../documentos/REGLAS.md).

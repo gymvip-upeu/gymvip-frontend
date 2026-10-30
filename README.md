@@ -163,13 +163,13 @@ npm run preview
 
 ## 7. Documentación Técnica Canónica (Los 7 Markdown Oficiales)
 
-Toda la documentación viva del proyecto se encuentra centralizada en la carpeta [`documentos/`](./documentos/):
-1. [Reglas de Negocio, Alcance y DoD](documentos/REGLAS.md)
-2. [Catálogo Oficial de Endpoints de API](documentos/APIDOCUMENTATION.md)
-3. [Sistema de Diseño Visual y Figma](documentos/DESIGN.md)
-4. [Ficha Técnica y Matriz de Infraestructura](documentos/FICHA_TECNICA.md)
-5. [Arquitectura por Capas, ERD y Modelos de Ingeniería](documentos/ARQUITECTURA_Y_MODELOS.md)
-6. [Matriz de Evidencias de QA y Seguridad](documentos/EVIDENCIAS_QA_SEGURIDAD.md)
-7. [Estado del Proyecto y Trazabilidad de HU](documentos/ESTADO_PROYECTO.md)
-- [Fuente de Diagramas C4 en PlantUML](documentos/c4.uml)
-- [Archivos Históricos del Equipo](documentos/historico/)
+Toda la documentación viva del proyecto se encuentra centralizada exclusivamente en la carpeta raíz [`../documentos/`](../documentos/):
+1. [Reglas de Negocio, Alcance y DoD](../documentos/REGLAS.md)
+2. [Catálogo Oficial de Endpoints de API](../documentos/APIDOCUMENTATION.md)
+3. [Sistema de Diseño Visual y Figma](../documentos/DESIGN.md)
+4. [Ficha Técnica y Matriz de Infraestructura](../documentos/FICHA_TECNICA.md)
+5. [Arquitectura por Capas, ERD y Modelos de Ingeniería](../documentos/ARQUITECTURA_Y_MODELOS.md)
+6. [Matriz de Evidencias de QA y Seguridad](../documentos/EVIDENCIAS_QA_SEGURIDAD.md)
+7. [Estado del Proyecto y Trazabilidad de HU](../documentos/ESTADO_PROYECTO.md)
+- [Fuente de Diagramas C4 en PlantUML](../documentos/c4.uml)
+- [Archivos Históricos del Equipo](../documentos/historico/)
