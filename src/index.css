@@ -727,135 +727,231 @@ button {
    ============================================================================== */
 
 /* Pantalla de Acceso Split (Login Luxury) */
-.login-screen-overlay {
+/* ==============================================================================
+   GYM VIP — Pantalla de Acceso Centrada y Lock Screen (Luxury Dark & Gold)
+   ============================================================================== */
+
+.login-fullscreen-wrapper {
   position: fixed;
   inset: 0;
-  background-color: var(--color-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: var(--space-4);
-}
-
-.login-split-card {
-  display: flex;
-  width: 100%;
-  max-width: 920px;
-  min-height: 540px;
-  background-color: var(--color-surface-panel);
-  border: 1px solid var(--color-gold-border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-}
-
-.login-hero-panel {
-  flex: 1.1;
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
 }
 
-.login-hero-overlay {
+.login-backdrop-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(11, 13, 18, 0.4) 0%, rgba(11, 13, 18, 0.92) 100%);
+  background: radial-gradient(circle at center, rgba(11, 13, 18, 0.78) 0%, rgba(11, 13, 18, 0.94) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1;
+}
+
+.login-centered-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  background: rgba(18, 20, 26, 0.92);
+  border: 1px solid var(--color-gold-border);
+  border-radius: var(--radius-xl);
+  padding: 36px 32px;
+  box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(212, 175, 55, 0.12);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 36px;
 }
 
-.login-hero-brand {
+.login-brand-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-brand-logo-mark {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px auto;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.05) 100%);
+  border: 1px solid var(--color-gold-border);
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
 }
 
-.login-hero-logo {
-  font-size: 24px;
-  font-weight: 800;
+.login-brand-monogram {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
   color: var(--color-gold);
-  letter-spacing: 1px;
+}
+
+.login-brand-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--color-gold);
   margin: 0;
   line-height: 1.1;
 }
 
-.login-hero-tagline {
+.login-brand-tagline {
   font-size: 10px;
-  color: var(--color-text-muted);
-  letter-spacing: 1.5px;
-  font-weight: 600;
-}
-
-.login-hero-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.login-hero-text {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.login-form-panel {
-  flex: 1;
-  padding: 40px 36px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background-color: var(--color-surface-panel);
-}
-
-.login-header {
-  margin-bottom: 24px;
-}
-
-.login-title {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--color-text-primary);
-  margin: 4px 0;
-}
-
-.login-subtitle {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-.login-demo-section {
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid var(--color-border);
-}
-
-.login-demo-title {
-  font-size: 11px;
+  letter-spacing: 2px;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: block;
-  margin-bottom: 10px;
+  margin-top: 4px;
   font-weight: 600;
 }
 
-.login-demo-buttons {
-  display: flex;
-  gap: 10px;
+.login-header-divider {
+  width: 40px;
+  height: 2px;
+  background: var(--color-gold);
+  margin: 14px auto 0 auto;
+  border-radius: var(--radius-full);
+  opacity: 0.8;
 }
 
-.login-demo-buttons button {
-  flex: 1;
-  gap: 6px;
-  min-height: 36px;
-  font-size: 12px;
+.login-card-intro {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.login-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.login-section-desc {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.login-clean-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-footer-notice {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.security-bullet {
+  color: var(--color-gold);
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Pantalla de Bloqueo / Lock Screen */
+.lock-screen-card {
+  max-width: 420px;
+}
+
+.lock-screen-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.lock-screen-badge-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px auto;
+  border-radius: var(--radius-full);
+  background: var(--color-gold-subtle);
+  border: 1px solid var(--color-gold-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock-screen-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin: 0 0 6px 0;
+}
+
+.lock-screen-reason {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.lock-account-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.lock-account-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-gold-subtle);
+  border: 1px solid var(--color-gold-border);
+  color: var(--color-gold);
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lock-account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.lock-account-email {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lock-switch-account-btn {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  transition: color var(--transition-fast);
+}
+
+.lock-switch-account-btn:hover {
+  color: var(--color-gold);
+  text-decoration: underline;
 }
 
 /* Campos de Formulario con Icono Lateral */
@@ -932,28 +1028,19 @@ button {
   transform: translateY(-3px);
 }
 
-/* Responsive para Pantalla Split en Móviles */
+/* Responsive para Pantalla de Acceso y Lock Screen en Móviles */
 @media (max-width: 768px) {
-  .login-split-card {
-    flex-direction: column;
-    max-width: 440px;
+  .login-centered-card {
+    padding: 28px 20px;
+    max-width: 100%;
   }
 
-  .login-hero-panel {
-    min-height: 160px;
-    flex: none;
+  .login-brand-title {
+    font-size: 22px;
   }
 
-  .login-hero-overlay {
-    padding: 20px;
-  }
-
-  .login-hero-text {
-    display: none;
-  }
-
-  .login-form-panel {
-    padding: 28px 24px;
+  .login-section-title {
+    font-size: 16px;
   }
 
   .header-logout-text {
