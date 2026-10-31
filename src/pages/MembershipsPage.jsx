@@ -48,7 +48,7 @@ export default function MembershipsPage() {
     })]).then(([available, catalog]) => {
       if (!active) return;
       setMethods(available); setMethod(available[0] || '');
-      setPlans(catalog.filter(p => p.durationDays === 30));
+      setPlans(catalog);
     }).catch(e => active && setError(e.message)).finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [token]);
@@ -108,7 +108,7 @@ export default function MembershipsPage() {
   const locked = busy || !!pending;
   return <div className="memberships-page">
     <h1>Membresías y cobros</h1>
-    <p className="membership-muted">Contrata o renueva 30 días y registra el pago presencial en una sola confirmación.</p>
+    <p className="membership-muted">Contrata o renueva una membresía y registra el pago presencial en una sola confirmación.</p>
     {error && <Alert variant="danger" message={error} />}
     {pending && <div className="card" role="status">
       <h2>Operación pendiente de confirmar</h2>
@@ -147,20 +147,20 @@ export default function MembershipsPage() {
             <label>Operación<select value={operation} onChange={e => { setOperation(e.target.value); invalidate(); }}>
               <option value="ENROLL">Primera contratación</option><option value="RENEW">Renovación</option>
             </select></label>
-            <label>Plan activo de 30 días<select required value={planId} onChange={e => { setPlanId(e.target.value); invalidate(); }}>
+            <label>Plan activo<select required value={planId} onChange={e => { setPlanId(e.target.value); invalidate(); }}>
               <option value="">Selecciona un plan</option>
               {plans.map(p => <option key={p.id} value={p.id}>{p.name} · {formatCurrencyPen(p.pricePen)}</option>)}
             </select></label>
             <Button type="submit" disabled={!planId || locked}>{busy ? 'Calculando…' : 'Consultar fechas e importe'}</Button>
           </fieldset>
         </form>
-        {!plans.length && <p>No hay planes activos de 30 días. Solicita su configuración al administrador.</p>}
+        {!plans.length && <p>No hay planes activos. Solicita su configuración al administrador.</p>}
         {quote && <div className="membership-summary">
           <h3>{quote.planName} · {formatCurrencyPen(quote.pricePen)}</h3>
           {quote.currentEndExclusive && <p>La cobertura anterior termina antes del {dateLabel(quote.currentEndExclusive)}.</p>}
           <p><strong>Inicio: {dateLabel(quote.startDate)} · Último día incluido: {dateLabel(quote.lastIncludedDate)}</strong></p>
           <p className="membership-muted">Fin exclusivo: {dateLabel(quote.endExclusive)} · Hora de Lima</p>
-          <MembershipCalendar start={quote.startDate} last={quote.lastIncludedDate} />
+          {quote.lastIncludedDate ? <MembershipCalendar start={quote.startDate} last={quote.lastIncludedDate} /> : <p>Sin vencimiento</p>}
           {quote.benefits && <p>{quote.benefits}</p>}
           <p>{quote.policy}</p>
           <fieldset disabled={locked} className="membership-payment">

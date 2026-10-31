@@ -35,11 +35,11 @@ export function Sidebar({
       >
         <div className="sidebar-top">
           <div className="sidebar-brand">
-            <span className="brand-logo" aria-hidden="true">👑</span>
+            <span className="brand-logo" aria-hidden="true"></span>
             {!isCollapsed && (
               <div className="brand-text">
-                <span className="brand-title">GYM VIP</span>
-                <span className="brand-sub">LUXURY FITNESS</span>
+                <span className="brand-title">GYM <b>VIP</b></span>
+                <span className="brand-sub">VIP CENTER FIT</span>
               </div>
             )}
           </div>
@@ -93,7 +93,7 @@ export function Sidebar({
 
         <div className="sidebar-bottom">
           {!isCollapsed && (
-            <div className="user-info-box">
+            <div className="user-info-box"><span className="session-label">SESIÓN ADMINISTRATIVA</span>
               <span className="user-email" title={user?.email}>{user?.email}</span>
               <div style={{ marginTop: '4px' }}>
                 <Badge variant="gold" style={{ fontSize: '10px' }}>

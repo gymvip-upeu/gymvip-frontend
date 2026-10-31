@@ -10,6 +10,7 @@ import ClientsPage from '../pages/ClientsPage';
 import CoveragePage from '../pages/CoveragePage';
 import VerificationPage from '../pages/VerificationPage';
 import '../themes/jorge.css';
+
 import PlansPage from '../pages/PlansPage';
 import StaffPage from '../pages/StaffPage';
 import MembershipsPage from '../pages/MembershipsPage';
@@ -18,7 +19,7 @@ import LoginModal from '../components/modals/LoginModal';
 
 export function AppRoutes() {
   const { user, isAdmin, isRecepcion } = useAuth();
-  const [currentView, setCurrentView] = useState('home');
+  const [currentView, setCurrentView] = useState('plans');
 
   if (!user) {
     return <LoginModal />;

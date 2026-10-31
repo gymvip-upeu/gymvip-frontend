@@ -19,25 +19,26 @@ export function validatePlanInputs(name, durationDays, pricePen) {
     errors.push('El nombre del plan es obligatorio.');
   }
 
-  const duration = parseInt(durationDays, 10);
-  if (isNaN(duration) || duration <= 0) {
+  const duration = Number(durationDays);
+  if ((!Number.isInteger(duration) || duration <= 0)) {
     errors.push('La duración debe ser un número entero positivo de días.');
   }
 
-  const price = parseFloat(pricePen);
-  if (isNaN(price) || price <= 0) {
+  const price = Number(pricePen);
+  if (!Number.isFinite(price) || price <= 0) {
     errors.push('El precio debe ser un monto positivo en Soles (PEN).');
   }
 
   // Regla de negocio de gimnasio: denominación mensual = exactamente 30 días
-  if (name && /mensual|mes|1 mes|monthly/i.test(name) && duration !== 30) {
+  if (durationDays !== '' && durationDays != null && name && /\b(mensual|mes|monthly)\b/i.test(name) && duration !== 30) {
     errors.push('Los planes con denominación mensual deben tener una duración estándar de exactamente 30 días.');
   }
 
   // Regla de negocio de gimnasio: denominación diaria = exactamente 1 día
-  if (name && /diario|dia|1 dia|daily/i.test(name) && duration !== 1) {
+  if (durationDays !== '' && durationDays != null && name && /\b(diario|dia|día|daily)\b/i.test(name) && duration !== 1) {
     errors.push('Los planes con denominación diaria deben tener una duración estándar de exactamente 1 día.');
   }
 
   return errors;
 }
+
