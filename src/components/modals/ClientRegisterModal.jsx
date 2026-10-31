@@ -1,232 +1,30 @@
-// ==============================================================================
-// GYM VIP — Modal de Alta de Clientes / Socios (HU-01)
-// ==============================================================================
-
 import React, { useState } from 'react';
-import { isAdult, calculateAge } from '../../utils/dateUtils';
-import { registerNewClient } from '../../services/clientService';
-import { Alert } from '../common/Alert';
+import { registerMember } from '../../api/memberApi';
+import { validateClientRegistration } from '../../validators/clientValidator';
 import { Button } from '../common/Button';
-
+import { Alert } from '../common/Alert';
+import MemberDialog from '../members/MemberDialog';
 export default function ClientRegisterModal({ token, onClose, onSuccess }) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [documentType, setDocumentType] = useState('DNI');
-  const [documentNumber, setDocumentNumber] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
-
-  const age = birthDate ? calculateAge(birthDate) : null;
-  const isEligible = birthDate ? isAdult(birthDate) : false;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg(null);
-
-    setSubmitting(true);
+  const [form, setForm] = useState({ firstName:'', lastName:'', email:'', phone:'', birthDate:'', documentType:'DNI', documentNumber:'', notes:'', createAccess:true });
+  const [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const field = name => ({ value:form[name], onChange:e => setForm(v => ({...v,[name]:e.target.value})) });
+  async function submit(e) {
+    e.preventDefault(); const errors = validateClientRegistration(form); if(errors.length) { setError(errors.join(' ')); return; }
+    setBusy(true); setError('');
     try {
-      const payload = {
-        firstName,
-        lastName,
-        documentType,
-        documentNumber,
-        birthDate,
-        phone,
-        email,
-      };
-
-      const created = await registerNewClient(payload, token);
-      onSuccess(created);
-    } catch (err) {
-      setErrorMsg(err.message || 'Error al registrar el socio.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="client-modal-title">
-      <div className="modal-content" style={{ maxWidth: '580px', padding: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-          <div>
-            <span className="badge badge-gold" style={{ fontSize: '11px', marginBottom: '6px' }}>
-              HU-01 REGISTRO DE SOCIOS
-            </span>
-            <h2 id="client-modal-title" style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, margin: '2px 0' }}>
-              Alta de Nuevo Socio
-            </h2>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>
-              El sistema generará automáticamente un código determinista oficial (ej. MAR-XXXXXX).
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={onClose}
-            aria-label="Cerrar formulario"
-            style={{ minHeight: '36px', minWidth: '36px', padding: '6px' }}
-          >
-            ✕
-          </button>
-        </div>
-
-        {errorMsg && <Alert variant="danger" message={errorMsg} onClose={() => setErrorMsg(null)} />}
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="client-first-name">
-                Nombres *
-              </label>
-              <input
-                id="client-first-name"
-                type="text"
-                className="form-input"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Ej. Mariana"
-                required
-                autoFocus
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="client-last-name">
-                Apellidos *
-              </label>
-              <input
-                id="client-last-name"
-                type="text"
-                className="form-input"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Ej. Torres Ramos"
-                required
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '16px', marginTop: '16px' }}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="client-doc-type">
-                Tipo Doc. *
-              </label>
-              <select
-                id="client-doc-type"
-                className="form-input"
-                value={documentType}
-                onChange={(e) => setDocumentType(e.target.value)}
-              >
-                <option value="DNI">DNI</option>
-                <option value="CE">C.E.</option>
-                <option value="PASAPORTE">Pasaporte</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="client-doc-number">
-                Número de Documento *
-              </label>
-              <input
-                id="client-doc-number"
-                type="text"
-                className="form-input"
-                value={documentNumber}
-                onChange={(e) => setDocumentNumber(e.target.value)}
-                placeholder="72819201"
-                required
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label" htmlFor="client-birth-date">
-                  Fecha de Nacimiento *
-                </label>
-                {age !== null && (
-                  <span
-                    className={`badge ${isEligible ? 'badge-success' : 'badge-danger'}`}
-                    style={{ fontSize: '10px' }}
-                  >
-                    {age} años {isEligible ? '(Mayor)' : '(Menor)'}
-                  </span>
-                )}
-              </div>
-              <input
-                id="client-birth-date"
-                type="date"
-                className="form-input"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                required
-              />
-              {birthDate && !isEligible && (
-                <span style={{ fontSize: '11px', color: 'var(--color-danger)', marginTop: '4px', display: 'block' }}>
-                  Solo socios mayores de 18 años permitidos en esta base.
-                </span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="client-phone">
-                Teléfono de Contacto (Opcional)
-              </label>
-              <input
-                id="client-phone"
-                type="tel"
-                className="form-input"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+51987654321"
-              />
-            </div>
-          </div>
-
-          <div className="form-group" style={{ marginTop: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="form-label" htmlFor="client-email">
-                Correo Electrónico (Opcional)
-              </label>
-              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                No obligatorio en recepción
-              </span>
-            </div>
-            <input
-              id="client-email"
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="cliente@ejemplo.pe"
-            />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '28px' }}>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={submitting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={submitting || !isEligible}
-            >
-              {submitting ? 'Registrando Socio...' : 'Completar Registro'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+      const { notes,createAccess,...client } = form;
+      const result = await registerMember({ client:{...client,countryCode:'PE'},notes,createAccess },token);
+      if (!result.client?.id || (createAccess && !result.credentials?.temporaryPassword)) throw new Error('No se pudo confirmar el registro completo. Consulta la lista antes de reintentar.');
+      onSuccess(result.client,result.credentials);
+    } catch(e) { setError(e.message); } finally { setBusy(false); }
+  }
+  return <MemberDialog title="Nuevo miembro" subtitle="Ingresa los datos del nuevo miembro." busy={busy} onClose={onClose}>{error && <Alert variant="danger" message={error}/>}<form onSubmit={submit}><fieldset disabled={busy}>
+    <div className="member-form-grid"><label>Nombre<input className="form-input" required maxLength={100} placeholder="Ej. Juan" {...field('firstName')}/></label><label>Apellido<input className="form-input" required maxLength={100} placeholder="Ej. Morales" {...field('lastName')}/></label></div>
+    <label>Correo electrónico <span>(opcional)</span><input className="form-input" type="email" maxLength={150} placeholder="correo@ejemplo.com" {...field('email')}/></label>
+    <div className="member-form-grid"><label>Teléfono <span>(opcional)</span><input className="form-input" type="tel" maxLength={20} placeholder="999888777" {...field('phone')}/></label><label>Fecha de nacimiento<input className="form-input" type="date" required {...field('birthDate')}/></label></div>
+    <div className="member-form-grid"><label>Tipo de documento<select className="form-input" {...field('documentType')}><option value="DNI">DNI</option><option value="CE">Carné de extranjería</option><option value="PASAPORTE">Pasaporte</option></select></label><label>N.º de documento<input className="form-input" required maxLength={50} {...field('documentNumber')}/></label></div>
+    <label>Notas <span>(opcional)</span><textarea className="form-input" rows={2} maxLength={2000} placeholder="Observaciones y preferencias…" {...field('notes')}/></label>
+    <label className="member-check"><input type="checkbox" checked={form.createAccess} onChange={e=>setForm(v=>({...v,createAccess:e.target.checked}))}/>Crear acceso de cliente con contraseña temporal</label><p className="member-help">El registro requiere mayoría de edad. La membresía se asigna después, al registrar el pago.</p>
+    <div className="member-actions"><Button type="button" variant="secondary" onClick={onClose} disabled={busy}>Cancelar</Button><Button type="submit" disabled={busy}>{busy?'Creando…':'Crear miembro'}</Button></div>
+  </fieldset></form></MemberDialog>;
 }

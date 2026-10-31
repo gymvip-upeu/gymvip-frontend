@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminLayout } from '../templates/AdminLayout';
 import HomePage from '../pages/HomePage';
+import MemberAppPage from '../pages/MemberAppPage';
 import ClientsPage from '../pages/ClientsPage';
 import CoveragePage from '../pages/CoveragePage';
 import VerificationPage from '../pages/VerificationPage';
@@ -19,11 +20,13 @@ import LoginModal from '../components/modals/LoginModal';
 
 export function AppRoutes() {
   const { user, isAdmin, isRecepcion } = useAuth();
-  const [currentView, setCurrentView] = useState('plans');
+  const [currentView, setCurrentView] = useState('clients');
 
   if (!user) {
     return <LoginModal />;
   }
+
+  if (user.roles?.includes('CLIENTE')) return <MemberAppPage />;
 
   return (
     <AdminLayout currentView={currentView} onNavigate={setCurrentView}>

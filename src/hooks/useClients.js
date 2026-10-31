@@ -12,6 +12,7 @@ export function useClients(token) {
   const [error, setError] = useState(null);
   const [successToast, setSuccessToast] = useState(null);
   const [page, setPage] = useState(0);
+  const [totalElements,setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const sequence = useRef(0);
 
@@ -21,7 +22,7 @@ export function useClients(token) {
     setError(null);
     try {
       const data = await fetchClients(query, nextPage, 20, token);
-      if (request === sequence.current) { setClients(data.content || []); setPage(nextPage); setTotalPages(data.totalPages); }
+      if (request === sequence.current) { setClients(data.content || []); setPage(nextPage); setTotalPages(data.totalPages); setTotalElements(data.totalElements); }
     } catch (err) {
       if (request === sequence.current) { setError(err.message); setClients([]); }
     } finally {
@@ -47,6 +48,7 @@ export function useClients(token) {
     clients,
     page,
     totalPages,
+    totalElements,
     searchQuery,
     setSearchQuery,
     loading,

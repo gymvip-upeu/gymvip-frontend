@@ -1,200 +1,36 @@
-// ==============================================================================
-// GYM VIP — Pantalla: ClientsPage (Socios y Clientes - HU-01)
-// ==============================================================================
-
-import React, { useState } from 'react';
+import React,{useEffect,useState} from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClients } from '../hooks/useClients';
-import { formatDate } from '../utils/formatters';
-import { Alert } from '../components/common/Alert';
-import { Badge } from '../components/common/Badge';
+import { memberOverview } from '../api/memberApi';
 import { Button } from '../components/common/Button';
-import { LoadingState, EmptyState } from '../components/feedback/LoadingState';
+import { Alert } from '../components/common/Alert';
 import ClientRegisterModal from '../components/modals/ClientRegisterModal';
-import ClientDetailModal from '../components/modals/ClientManageModal';
+import MemberEditor from '../components/members/MemberEditor';
+import MemberSale from '../components/members/MemberSale';
+import MemberCredentials from '../components/members/MemberCredentials';
+import MemberConfirmation from '../components/members/MemberConfirmation';
+import MemberProfilePage from './MemberProfilePage';
+import { dateLabel,stateLabel } from '../components/members/memberUtils';
 
-export default function ClientsPage() {
-  const { token } = useAuth();
-  const {
-    clients,
-    page,
-    totalPages,
-    searchQuery,
-    setSearchQuery,
-    loading,
-    error,
-    successToast,
-    setSuccessToast,
-    loadClients,
-    handleSearchSubmit,
-    handleClearSearch,
-  } = useClients(token);
-
-  // Modales
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
-
-  const handleRegisterSuccess = (newClient) => {
-    setIsRegisterOpen(false);
-    setSuccessToast(`¡Socio ${newClient.firstName} ${newClient.lastName} registrado con éxito! Código: ${newClient.memberCode}`);
-    loadClients(searchQuery);
-  };
-
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, margin: 0 }}>
-            Socios y Clientes
-          </h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
-            Registro, consulta y actualización de datos de socios.
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          onClick={() => setIsRegisterOpen(true)}
-          style={{ minHeight: '42px', fontSize: '14px' }}
-        >
-          ➕ Nuevo Socio
-        </Button>
-      </div>
-
-      {successToast && (
-        <Alert
-          variant="success"
-          message={successToast}
-          onClose={() => setSuccessToast(null)}
-        />
-      )}
-
-      {error && (
-        <Alert
-          variant="danger"
-          message={error}
-        />
-      )}
-
-      {/* Barra de búsqueda */}
-      <div className="card" style={{ padding: '16px 20px', marginBottom: '20px' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div style={{ flex: 1 }}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Buscar por código de socio, nombre o número de documento..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Buscar socios"
-            />
-          </div>
-          <Button type="submit" variant="secondary" style={{ minHeight: '40px' }}>
-            🔍 Buscar
-          </Button>
-          {searchQuery && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleClearSearch}
-              style={{ minHeight: '40px' }}
-            >
-              Limpiar
-            </Button>
-          )}
-        </form>
-      </div>
-
-      {/* Tabla de Socios */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {loading ? (
-          <LoadingState message="Cargando padrón de socios desde el servidor..." />
-        ) : clients.length === 0 ? (
-          <EmptyState
-            title="No se encontraron socios"
-            subtitle={searchQuery ? 'Prueba con otro criterio de búsqueda.' : 'Presiona "Nuevo Socio" para dar de alta el primer registro.'}
-          />
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Código Socio</th>
-                  <th>Cliente</th>
-                  <th>Documento</th>
-                  <th>Teléfono</th>
-                  <th>Fecha de Registro</th>
-                  <th style={{ textAlign: 'right' }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <Badge variant="gold" style={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                        {c.memberCode || 'SIN CÓDIGO'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <strong>{c.firstName} {c.lastName}</strong>
-                      {c.email && (
-                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                          {c.email}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '13px' }}>
-                        {c.documents?.map(d => `${d.documentType} ${d.documentNumber}`).join(' · ') || 'Sin documento'}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '13px' }}>{c.phone}</span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                        {formatDate(c.createdAt)}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <Button
-                        variant="secondary"
-                        onClick={() => setSelectedClient(c)}
-                        style={{ fontSize: '12px', padding: '6px 12px', minHeight: '32px' }}
-                      >
-                        👁️ Ver Ficha
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      <div className="jorge-toolbar">
-        <Button variant="secondary" disabled={loading || page === 0} onClick={() => loadClients(searchQuery, page - 1)}>Anterior</Button>
-        <span>Página {page + 1} de {Math.max(totalPages, 1)}</span>
-        <Button variant="secondary" disabled={loading || page + 1 >= totalPages} onClick={() => loadClients(searchQuery, page + 1)}>Siguiente</Button>
-      </div>
-      {/* Modal Alta */}
-      {isRegisterOpen && (
-        <ClientRegisterModal
-          token={token}
-          onClose={() => setIsRegisterOpen(false)}
-          onSuccess={handleRegisterSuccess}
-        />
-      )}
-
-      {/* Modal Ficha Detalle */}
-      {selectedClient && (
-        <ClientDetailModal
-          client={selectedClient}
-          onClose={() => setSelectedClient(null)}
-          onUpdated={() => loadClients(searchQuery)}
-        />
-      )}
-    </div>
-  );
+function ActionIcon({name}) {
+  const paths={view:<><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></>,plan:<><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4m8-4v4M4 11h16m-8 3v4m-2-2h4"/></>,edit:<><path d="m16 3 5 5-12 12-6 1 1-6L16 3Z"/><path d="m13 6 5 5"/></>,power:<><path d="M12 2v9M6.3 5a9 9 0 1 0 11.4 0"/></>};
+  return <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+}
+export default function ClientsPage(){
+  const {token,isAdmin}=useAuth();const {clients,page,totalPages,totalElements,searchQuery,setSearchQuery,loading,error,successToast,setSuccessToast,loadClients,handleSearchSubmit,handleClearSearch}=useClients(token);
+  const [overview,setOverview]=useState({}),[overviewError,setOverviewError]=useState(''),[selected,setSelected]=useState(null),[action,setAction]=useState(null),[credentials,setCredentials]=useState(null);
+  useEffect(()=>{let active=true;setOverview({});setOverviewError('');if(clients.length)memberOverview(clients.map(c=>c.id),token).then(v=>active&&setOverview(v)).catch(e=>active&&setOverviewError(e.message));return()=>{active=false;};},[clients,token]);
+  const changed=message=>{setAction(null);setSuccessToast(message);loadClients(searchQuery,page);};
+  if(selected)return <MemberProfilePage clientId={selected} onBack={()=>{setSelected(null);loadClients(searchQuery,page);}} onChanged={()=>loadClients(searchQuery,page)}/>;
+  return <section className="members-page" aria-labelledby="members-title"><div className="members-heading"><div><h1 id="members-title">Miembros</h1><p>{loading?'Cargando miembros…':`${totalElements} ${totalElements===1?'miembro registrado':'miembros registrados'}`}</p></div><Button onClick={()=>setAction({kind:'register'})}>＋ Nuevo miembro</Button></div>
+    {successToast&&<Alert variant="success" message={successToast} onClose={()=>setSuccessToast(null)}/>}{error&&<Alert variant="danger" message={error}/>}{overviewError&&<Alert variant="danger" message={`No se pudieron verificar las membresías: ${overviewError}`}/>}
+    <form className="member-search-form" onSubmit={handleSearchSubmit}><label htmlFor="members-search">Buscar miembros</label><div><input id="members-search" className="form-input" placeholder="Buscar por nombre, email, teléfono, DNI o código…" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/><Button type="submit" variant="secondary" disabled={loading}>Buscar</Button>{searchQuery&&<button type="button" className="member-text-action" onClick={handleClearSearch}>Limpiar</button>}</div></form>
+    <div className="member-panel member-list-panel"><div className="member-table-wrap"><table className="member-table"><thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Documento</th><th>Plan</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{loading?<tr><td colSpan={7} className="member-empty" role="status">Cargando miembros…</td></tr>:error?<tr><td colSpan={7} className="member-empty"><p>No se pudo cargar el listado.</p><Button variant="secondary" onClick={()=>loadClients(searchQuery,page)}>Reintentar</Button></td></tr>:clients.map(c=>{const v=overview[c.id];return <tr key={c.id}><td><button className="member-name-link" onClick={()=>setSelected(c.id)}>{c.firstName} {c.lastName}</button><small>{c.memberCode}</small></td><td>{c.email||'—'}</td><td>{c.phone||'—'}</td><td>{c.documents?.find(d=>d.isPrimary)?.documentNumber||c.documents?.[0]?.documentNumber||'—'}</td><td>{v?v.planName||'Sin plan':overviewError?'Sin verificar':'Consultando…'}</td><td><span className={`member-status ${c.status==='INACTIVO'?'status-inactivo':`state-${v?.state?.toLowerCase()||'unknown'}`}`}>{c.status==='INACTIVO'?'Inactivo':v?stateLabel(v.state):'Sin verificar'}</span>{v?.lastIncludedDate&&<small>Vence: {dateLabel(v.lastIncludedDate)}</small>}</td><td><div className="member-row-actions"><button title="Ver información" aria-label={`Ver información de ${c.fullName}`} onClick={()=>setSelected(c.id)}><ActionIcon name="view"/></button><button disabled={c.status!=='ACTIVO'} title="Asignar o renovar plan" aria-label={`Asignar o renovar plan de ${c.fullName}`} onClick={()=>setAction({kind:'sale',client:c})}><ActionIcon name="plan"/></button><button title="Editar miembro" aria-label={`Editar a ${c.fullName}`} onClick={()=>setAction({kind:'edit',client:c})}><ActionIcon name="edit"/></button>{isAdmin()&&<button className={c.status==='ACTIVO'?'member-danger':'member-positive'} title={c.status==='ACTIVO'?'Desactivar miembro':'Activar miembro'} aria-label={`${c.status==='ACTIVO'?'Desactivar':'Activar'} a ${c.fullName}`} onClick={()=>setAction({kind:'status',client:c})}><ActionIcon name="power"/></button>}</div></td></tr>;})}{!loading&&!error&&!clients.length&&<tr><td colSpan={7} className="member-empty"><strong>No encontramos miembros</strong><p>{searchQuery?'Prueba con otro nombre o documento.':'Registra un miembro para empezar.'}</p></td></tr>}</tbody></table></div></div>
+    <div className="member-pagination"><span>Página {page+1} de {Math.max(totalPages,1)}</span><div><Button variant="secondary" disabled={loading||page===0} onClick={()=>loadClients(searchQuery,page-1)}>Anterior</Button><Button variant="secondary" disabled={loading||page+1>=totalPages} onClick={()=>loadClients(searchQuery,page+1)}>Siguiente</Button></div></div>
+    {action?.kind==='register'&&<ClientRegisterModal token={token} onClose={()=>setAction(null)} onSuccess={(c,access)=>{changed(`Miembro ${c.fullName||c.firstName} registrado correctamente.`);if(access)setCredentials(access);}}/>}
+    {action?.kind==='edit'&&<MemberEditor client={action.client} token={token} onClose={()=>setAction(null)} onSaved={()=>changed('Datos actualizados correctamente.')}/>}
+    {action?.kind==='sale'&&<MemberSale client={action.client} onClose={()=>setAction(null)} onSaved={()=>changed('Pago registrado y membresía actualizada.')}/>}
+    {action?.kind==='status'&&<MemberConfirmation client={action.client} token={token} onClose={()=>setAction(null)} onSaved={()=>changed('Estado del miembro actualizado.')}/>}
+    {credentials&&<MemberCredentials credentials={credentials} onClose={()=>setCredentials(null)}/>}
+  </section>;
 }
