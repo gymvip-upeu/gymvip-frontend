@@ -45,7 +45,7 @@ export default function ClientsPage() {
   const [overviewError, setOverviewError] = useState('');
   const [selected, setSelected] = useState(null);
   const [action, setAction] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.pathname.toLowerCase().includes('/importar')) {
+    if (typeof window !== 'undefined' && window.location.pathname.toLowerCase().includes('/importar') && isAdmin()) {
       return { kind: 'import' };
     }
     return null;
@@ -56,7 +56,7 @@ export default function ClientsPage() {
   useEffect(() => {
     const handlePopState = () => {
       const isImport = window.location.pathname.toLowerCase().includes('/importar');
-      if (isImport) {
+      if (isImport && isAdmin()) {
         setAction({ kind: 'import' });
       } else {
         setAction((prev) => (prev?.kind === 'import' ? null : prev));
@@ -64,9 +64,10 @@ export default function ClientsPage() {
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [isAdmin]);
 
   const handleOpenImport = () => {
+    if (!isAdmin()) return;
     if (window.location.pathname !== '/miembros/importar') {
       window.history.pushState({ modal: 'import' }, '', '/miembros/importar');
     }
@@ -164,15 +165,17 @@ export default function ClientsPage() {
 
         {/* Acciones principales de alta e importación */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <Button
-            variant="secondary"
-            onClick={handleOpenImport}
-            style={{ minHeight: '44px', fontSize: '14px' }}
-            title="Importar miembros existentes desde archivo Excel .xlsx (HU-06)"
-          >
-            <Icon name="tag" size={16} color="var(--color-gold)" />
-            <span>Importar Miembros</span>
-          </Button>
+          {isAdmin() && (
+            <Button
+              variant="secondary"
+              onClick={handleOpenImport}
+              style={{ minHeight: '44px', fontSize: '14px' }}
+              title="Importar miembros existentes desde archivo Excel .xlsx (HU-06) - Solo Administrador"
+            >
+              <Icon name="tag" size={16} color="var(--color-gold)" />
+              <span>Importar Miembros</span>
+            </Button>
+          )}
 
           <Button
             variant="primary"
@@ -462,7 +465,7 @@ export default function ClientsPage() {
       </div>
 
       {/* Modales de Flujo de Miembros */}
-      {action?.kind === 'import' && (
+      {action?.kind === 'import' && isAdmin() && (
         <ClientImportModal
           token={token}
           onClose={handleCloseImport}
