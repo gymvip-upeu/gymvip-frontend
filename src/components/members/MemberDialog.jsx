@@ -5,11 +5,12 @@ export default function MemberDialog({ title, subtitle, onClose, busy = false, c
   useEffect(() => {
     const previous = document.activeElement, overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    (root.current.querySelector('input,select,textarea') || root.current.querySelector('button'))?.focus();
+    const visibleControls = [...root.current.querySelectorAll('input,select,textarea,button')].filter(node => !node.disabled && node.getClientRects().length);
+    (visibleControls.find(node => ['INPUT','SELECT','TEXTAREA'].includes(node.tagName)) || visibleControls[0])?.focus();
     const keys = e => {
       if (e.key === 'Escape' && !locked.current) { e.preventDefault(); callback.current(); }
       if (e.key !== 'Tab') return;
-      const controls = [...root.current.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')];
+      const controls = [...root.current.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')].filter(node => node.getClientRects().length);
       if (e.shiftKey && document.activeElement === controls[0]) { e.preventDefault(); controls.at(-1)?.focus(); }
       if (!e.shiftKey && document.activeElement === controls.at(-1)) { e.preventDefault(); controls[0]?.focus(); }
     };

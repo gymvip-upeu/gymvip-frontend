@@ -42,6 +42,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
   const navItems = [
     { id: 'clients', label: 'Miembros', icon: '♙', title: 'Miembros' },
     { id: 'plans', label: 'Planes', icon: '▤', title: 'Planes' },
+    { id: 'supplements', label: 'Suplementos', icon: '▥', title: 'Suplementos' },
+    { id: 'promotions', label: 'Promociones', icon: '%', title: 'Promociones' },
   ];
 
   const currentItem = navItems.find((item) => item.id === currentView) || navItems[0];

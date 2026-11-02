@@ -12,6 +12,8 @@ import CoveragePage from '../pages/CoveragePage';
 import VerificationPage from '../pages/VerificationPage';
 import '../themes/jorge.css';
 
+import SupplementsPage from '../pages/SupplementsPage';
+import PromotionsPage from '../pages/PromotionsPage';
 import PlansPage from '../pages/PlansPage';
 import StaffPage from '../pages/StaffPage';
 import MembershipsPage from '../pages/MembershipsPage';
@@ -35,6 +37,8 @@ export function AppRoutes() {
       {currentView === 'coverage' && (isAdmin() || isRecepcion()) && <CoveragePage />}
       {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage />}
       {currentView === 'plans' && <PlansPage />}
+      {currentView === 'supplements' && <SupplementsPage />}
+      {currentView === 'promotions' && <PromotionsPage />}
       {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage />}
       {currentView === 'staff' && <StaffPage />}
     </AdminLayout>
