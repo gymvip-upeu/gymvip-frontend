@@ -36,9 +36,6 @@ export function Sidebar({
       >
         <div className="sidebar-top">
           <div className="sidebar-brand">
-            <span className="brand-logo" aria-hidden="true">
-              <Icon name="crown" size={24} color="var(--color-gold)" />
-            </span>
             {!isCollapsed && (
               <div className="brand-text">
                 <span className="brand-title">GYM <b>VIP</b></span>

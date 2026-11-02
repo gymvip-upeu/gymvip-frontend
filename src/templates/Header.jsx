@@ -1,73 +1,92 @@
 // ==============================================================================
 // GYM VIP — Plantilla: Header Compacto con Estilo Luxury Dark & Gold
+// Incluye Accesos a Notificaciones y Ajustes de Apariencia
 // ==============================================================================
 
-import React from 'react';
-import { Badge } from '../components/common/Badge';
+import React, { useState } from 'react';
 import { Icon } from '../components/common/Icons';
+import { NotificationsModal } from '../components/common/NotificationsModal';
+import { AppearanceModal } from '../components/common/AppearanceModal';
+import logoImg from '../assets/gymvip-logo.jpg';
 
 export function Header({
   title = 'Panel de Control Principal',
   subtitle = 'VIP CENTER FIT · LUXURY FITNESS',
-  user,
   onOpenMobileMenu,
-  onLogout,
 }) {
-  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U';
-  const primaryRole = user?.roles?.[0] || 'COLABORADOR';
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
 
   return (
-    <header className="app-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        {/* Botón Hamburger para Móvil */}
-        <button
-          type="button"
-          className="mobile-menu-btn"
-          onClick={onOpenMobileMenu}
-          aria-label="Abrir menú de navegación"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <line x1="4" x2="20" y1="12" y2="12" />
-            <line x1="4" x2="20" y1="6" y2="6" />
-            <line x1="4" x2="20" y1="18" y2="18" />
-          </svg>
-        </button>
-
-        <div>
-          <span className="header-subtitle">{subtitle}</span>
-          <h2 className="header-title">{title}</h2>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <div className="header-user-pill">
-          <div className="header-user-avatar" aria-hidden="true">
-            {userInitial}
-          </div>
-          <div className="header-user-details">
-            <span className="header-user-email">
-              {user?.email}
-            </span>
-            <Badge variant={primaryRole === 'ADMIN' ? 'gold' : 'neutral'} style={{ fontSize: '10px', padding: '2px 8px' }}>
-              {primaryRole}
-            </Badge>
-          </div>
-        </div>
-
-        {onLogout && (
+    <>
+      <header className="app-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {/* Botón Hamburger para Móvil */}
           <button
             type="button"
-            className="btn btn-secondary btn-sm header-logout-btn"
-            onClick={onLogout}
-            title="Cerrar Sesión Activa"
-            aria-label="Cerrar sesión"
+            className="mobile-menu-btn"
+            onClick={onOpenMobileMenu}
+            aria-label="Abrir menú de navegación"
           >
-            <Icon name="log-out" size={15} color="var(--color-danger)" />
-            <span className="header-logout-text">Salir</span>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="4" x2="20" y1="12" y2="12" />
+              <line x1="4" x2="20" y1="6" y2="6" />
+              <line x1="4" x2="20" y1="18" y2="18" />
+            </svg>
           </button>
-        )}
-      </div>
-    </header>
+
+          {/* Logotipo Institucional GYM VIP */}
+          <div className="header-brand-mark" aria-hidden="true">
+            <img
+              src={logoImg}
+              alt="GYM VIP"
+              className="header-brand-img"
+            />
+          </div>
+
+          <div>
+            <span className="header-subtitle">{subtitle}</span>
+            <h2 className="header-title">{title}</h2>
+          </div>
+        </div>
+
+        {/* Acciones de Esquina Superior Derecha: Notificaciones y Apariencia */}
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            className="header-icon-btn"
+            onClick={() => setIsNotificationsOpen(true)}
+            aria-label="Notificaciones"
+            title="Notificaciones"
+            aria-expanded={isNotificationsOpen}
+          >
+            <Icon name="bell" size={19} />
+          </button>
+
+          <button
+            type="button"
+            className="header-icon-btn"
+            onClick={() => setIsAppearanceOpen(true)}
+            aria-label="Ajustes de apariencia"
+            title="Ajustes de apariencia"
+            aria-expanded={isAppearanceOpen}
+          >
+            <Icon name="settings" size={19} />
+          </button>
+        </div>
+      </header>
+
+      {/* Modales Accesibles */}
+      <NotificationsModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+      />
+
+      <AppearanceModal
+        isOpen={isAppearanceOpen}
+        onClose={() => setIsAppearanceOpen(false)}
+      />
+    </>
   );
 }
 
