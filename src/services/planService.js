@@ -21,8 +21,9 @@ export async function createNewPlan(planData, token = null) {
 
   const payload = {
     name: planData.name.trim(),
+    conditions: planData.conditions?.trim() || '',
     description: planData.description ? planData.description.trim() : '',
-    durationDays: parseInt(planData.durationDays, 10),
+    durationDays: Number(planData.durationDays),
     pricePen: parseFloat(planData.pricePen),
     benefits: planData.benefits ? planData.benefits.trim() : '',
   };
@@ -38,8 +39,10 @@ export async function updateExistingPlan(id, planData, token = null) {
 
   const payload = {
     name: planData.name.trim(),
+    conditions: planData.conditions?.trim() || '',
+
     description: planData.description ? planData.description.trim() : '',
-    durationDays: parseInt(planData.durationDays, 10),
+    durationDays: Number(planData.durationDays),
     pricePen: parseFloat(planData.pricePen),
     benefits: planData.benefits ? planData.benefits.trim() : '',
   };
@@ -51,3 +54,4 @@ export async function togglePlanStatus(id, currentStatus, token = null) {
   const nextStatus = currentStatus === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
   return await setPlanStatusApi(id, nextStatus, token);
 }
+

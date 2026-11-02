@@ -41,7 +41,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
 
   const navItems = [
     { id: 'home', label: 'Inicio', iconName: 'home', title: 'Panel de Control Principal' },
-    { id: 'clients', label: 'Clientes', iconName: 'users', title: 'Directorio y Registro de Socios' },
+    { id: 'clients', label: 'Clientes y Socios', iconName: 'users', title: 'Directorio y Gestión de Miembros' },
     ...(isAdmin() || isRecepcion() ? [
       { id: 'coverage', label: 'Vigencias y alertas', iconName: 'calendar', title: 'Seguimiento y Alertas de Membresías' },
       { id: 'verification', label: 'Verificar ingreso', iconName: 'check-circle', title: 'Control Manual de Acceso en Recepción' },
@@ -85,6 +85,24 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         />
 
         <main className="app-content-body" tabIndex="-1">
+          {['clients','coverage','verification','memberships'].includes(currentView) && (
+            <nav className="member-tabs" aria-label="Gestión de miembros">
+              {[
+                { id: 'clients', label: 'Socios / Miembros' },
+                { id: 'memberships', label: 'Membresías y pagos' },
+                { id: 'coverage', label: 'Vencimientos' },
+                { id: 'verification', label: 'Verificar ingreso' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  className={currentView === item.id ? 'active' : ''}
+                  onClick={() => handleNavigate(item.id)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          )}
           {children}
         </main>
       </div>

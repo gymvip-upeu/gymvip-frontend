@@ -1,10 +1,11 @@
 // ==============================================================================
-// GYM VIP — Modal de Alta de Clientes / Socios (HU-01)
+// GYM VIP — Modal de Alta de Clientes / Socios y Acceso Móvil
 // ==============================================================================
 
 import React, { useState } from 'react';
 import { isAdult, calculateAge } from '../../utils/dateUtils';
-import { registerNewClient } from '../../services/clientService';
+import { registerMember } from '../../api/memberApi';
+import { validateClientRegistration } from '../../validators/clientValidator';
 import { Alert } from '../common/Alert';
 import { Button } from '../common/Button';
 
@@ -16,6 +17,8 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
   const [birthDate, setBirthDate] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [notes, setNotes] = useState('');
+  const [createAccess, setCreateAccess] = useState(true);
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -27,20 +30,49 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
     e.preventDefault();
     setErrorMsg(null);
 
+    const formData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      birthDate,
+      documentType,
+      documentNumber,
+      notes,
+      createAccess,
+    };
+
+    if (typeof validateClientRegistration === 'function') {
+      const errors = validateClientRegistration(formData);
+      if (errors && errors.length > 0) {
+        setErrorMsg(errors.join(' '));
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload = {
-        firstName,
-        lastName,
-        documentType,
-        documentNumber,
-        birthDate,
-        phone,
-        email,
+        client: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          documentType,
+          documentNumber: documentNumber.trim(),
+          birthDate,
+          phone: phone ? phone.trim() : null,
+          email: email ? email.trim().toLowerCase() : null,
+          countryCode: 'PE',
+        },
+        notes: notes ? notes.trim() : null,
+        createAccess,
       };
 
-      const created = await registerNewClient(payload, token);
-      onSuccess(created);
+      const result = await registerMember(payload, token);
+      if (!result?.client?.id) {
+        throw new Error('No se pudo confirmar el registro completo. Consulte el listado antes de reintentar.');
+      }
+
+      onSuccess(result.client, result.credentials);
     } catch (err) {
       setErrorMsg(err.message || 'Error al registrar el socio.');
     } finally {
@@ -50,7 +82,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="client-modal-title">
-      <div className="modal-content" style={{ maxWidth: '580px', padding: '32px' }}>
+      <div className="modal-content" style={{ maxWidth: '600px', padding: '32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <span className="badge badge-gold" style={{ fontSize: '11px', marginBottom: '6px' }}>
@@ -90,8 +122,10 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Ej. Mariana"
+                maxLength={100}
                 required
                 autoFocus
+                disabled={submitting}
               />
             </div>
 
@@ -106,7 +140,9 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Ej. Torres Ramos"
+                maxLength={100}
                 required
+                disabled={submitting}
               />
             </div>
           </div>
@@ -121,6 +157,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 className="form-input"
                 value={documentType}
                 onChange={(e) => setDocumentType(e.target.value)}
+                disabled={submitting}
               >
                 <option value="DNI">DNI</option>
                 <option value="CE">C.E.</option>
@@ -139,7 +176,9 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 value={documentNumber}
                 onChange={(e) => setDocumentNumber(e.target.value)}
                 placeholder="72819201"
+                maxLength={50}
                 required
+                disabled={submitting}
               />
             </div>
           </div>
@@ -166,6 +205,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
                 required
+                disabled={submitting}
               />
               {birthDate && !isEligible && (
                 <span style={{ fontSize: '11px', color: 'var(--color-danger)', marginTop: '4px', display: 'block' }}>
@@ -185,6 +225,8 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+51987654321"
+                maxLength={20}
+                disabled={submitting}
               />
             </div>
           </div>
@@ -195,7 +237,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 Correo Electrónico (Opcional)
               </label>
               <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                No obligatorio en recepción
+                Requerido para acceso a la app móvil
               </span>
             </div>
             <input
@@ -205,7 +247,39 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="cliente@ejemplo.pe"
+              maxLength={150}
+              disabled={submitting}
             />
+          </div>
+
+          <div className="form-group" style={{ marginTop: '16px' }}>
+            <label className="form-label" htmlFor="client-notes">
+              Notas y Preferencias (Opcional)
+            </label>
+            <textarea
+              id="client-notes"
+              className="form-input"
+              rows={2}
+              maxLength={2000}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Observaciones de entrenamiento, condiciones médicas o preferencias..."
+              disabled={submitting}
+            />
+          </div>
+
+          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              id="client-create-access"
+              type="checkbox"
+              checked={createAccess}
+              onChange={(e) => setCreateAccess(e.target.checked)}
+              disabled={submitting}
+              style={{ width: '16px', height: '16px', accentColor: 'var(--color-gold)' }}
+            />
+            <label htmlFor="client-create-access" style={{ fontSize: '13px', color: 'var(--color-text-primary)', cursor: 'pointer' }}>
+              Generar credenciales de acceso a la app móvil con contraseña temporal
+            </label>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '28px' }}>
@@ -220,7 +294,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
             <Button
               type="submit"
               variant="primary"
-              disabled={submitting || !isEligible}
+              disabled={submitting || (birthDate && !isEligible)}
             >
               {submitting ? 'Registrando Socio...' : 'Completar Registro'}
             </Button>

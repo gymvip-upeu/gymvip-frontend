@@ -7,7 +7,7 @@ import { fetchPlans, togglePlanStatus } from '../services/planService';
 
 export function usePlans(token) {
   const [plans, setPlans] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ACTIVO');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successToast, setSuccessToast] = useState(null);

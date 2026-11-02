@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminLayout } from '../templates/AdminLayout';
 import HomePage from '../pages/HomePage';
+import MemberAppPage from '../pages/MemberAppPage';
 import ClientsPage from '../pages/ClientsPage';
 import CoveragePage from '../pages/CoveragePage';
 import VerificationPage from '../pages/VerificationPage';
@@ -18,6 +19,8 @@ import LoginModal from '../components/modals/LoginModal';
 import LockScreenModal from '../components/modals/LockScreenModal';
 import '../themes/jorge.css';
 import '../themes/memberships.css';
+import '../themes/members.css';
+import '../themes/plans.css';
 
 export function AppRoutes() {
   const { user, isLocked, isAdmin, isRecepcion } = useAuth();
@@ -31,6 +34,11 @@ export function AppRoutes() {
   // Si no hay sesión autenticada, presentar pantalla de acceso centrada
   if (!user) {
     return <LoginModal />;
+  }
+
+  // Rutas de auto-servicio móvil para clientes
+  if (user.roles?.includes('CLIENTE')) {
+    return <MemberAppPage />;
   }
 
   return (

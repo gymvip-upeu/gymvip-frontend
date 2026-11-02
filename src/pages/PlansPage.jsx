@@ -1,5 +1,5 @@
 // ==============================================================================
-// GYM VIP — Pantalla: PlansPage (Catálogo y Versiones de Planes - HU-06)
+// GYM VIP — Pantalla: PlansPage (Catálogo Tarifario y Gestión de Planes HU-06)
 // ==============================================================================
 
 import React, { useState } from 'react';
@@ -28,7 +28,7 @@ export default function PlansPage() {
     changePlanStatus,
   } = usePlans(token);
 
-  // Modales
+  const [query, setQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [confirmStatusPlan, setConfirmStatusPlan] = useState(null);
@@ -59,6 +59,20 @@ export default function PlansPage() {
     setConfirmStatusPlan(null);
   };
 
+  const visiblePlans = plans.filter((p) =>
+    p.name.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))
+  );
+
+  const getDurationLabel = (days) => {
+    switch (Number(days)) {
+      case 30: return 'Mensual (30d)';
+      case 90: return 'Trimestral (90d)';
+      case 180: return 'Semestral (180d)';
+      case 365: return 'Anual (365d)';
+      default: return `${days || '—'} días`;
+    }
+  };
+
   return (
     <div className="plans-page" style={{ maxWidth: '1120px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -67,7 +81,7 @@ export default function PlansPage() {
             Catálogo de Planes y Tarifas
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-            Tarifario oficial en Soles (PEN), versionado inmutable snapshot y control de duraciones de 30 días.
+            Tarifario oficial en Soles (PEN), versionado inmutable snapshot y condiciones de servicio.
           </p>
         </div>
 
@@ -102,22 +116,38 @@ export default function PlansPage() {
         />
       )}
 
-      {/* Filtros de Estado */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        {[
-          { id: 'ALL', label: 'Todos los Planes' },
-          { id: 'ACTIVO', label: 'Planes Activos' },
-          { id: 'INACTIVO', label: 'Planes Inactivos' },
-        ].map((st) => (
-          <Button
-            key={st.id}
-            variant={filterStatus === st.id ? 'primary' : 'secondary'}
-            onClick={() => setFilterStatus(st.id)}
-            style={{ fontSize: '13px', minHeight: '38px' }}
-          >
-            {st.label}
-          </Button>
-        ))}
+      {/* Barra de Filtros y Búsqueda */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'ALL', label: 'Todos los Planes' },
+            { id: 'ACTIVO', label: 'Planes Activos' },
+            { id: 'INACTIVO', label: 'Planes Inactivos' },
+          ].map((st) => (
+            <Button
+              key={st.id}
+              variant={filterStatus === st.id ? 'primary' : 'secondary'}
+              onClick={() => setFilterStatus(st.id)}
+              style={{ fontSize: '13px', minHeight: '38px' }}
+            >
+              {st.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="input-with-icon" style={{ minWidth: '240px', flex: '1', maxWidth: '360px' }}>
+          <span className="input-icon" aria-hidden="true">
+            <Icon name="search" size={15} color="var(--color-text-muted)" />
+          </span>
+          <input
+            type="text"
+            className="form-input with-left-icon"
+            placeholder="Filtrar plan por nombre..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Buscar plan por nombre"
+          />
+        </div>
       </div>
 
       {/* Grid de Tarjetas de Planes */}
@@ -125,16 +155,16 @@ export default function PlansPage() {
         <div className="card">
           <LoadingState message="Cargando catálogo de planes..." />
         </div>
-      ) : plans.length === 0 ? (
+      ) : visiblePlans.length === 0 ? (
         <div className="card">
           <EmptyState
-            title="No hay planes registrados"
-            subtitle={isAdmin() ? 'Comienza creando el primer plan de membresía.' : 'No se encontraron planes disponibles.'}
+            title={query ? 'No se encontraron planes' : 'No hay planes en esta vista'}
+            subtitle={query ? 'Pruebe con otro término de búsqueda o cambie el filtro de estado.' : (isAdmin() ? 'Comience creando el primer plan de membresía.' : 'No se encontraron planes disponibles.')}
           />
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '22px' }}>
-          {plans.map((p) => {
+          {visiblePlans.map((p) => {
             const isActive = p.status === 'ACTIVO';
             return (
               <div
@@ -153,10 +183,15 @@ export default function PlansPage() {
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <Badge variant="gold" style={{ fontSize: '11px', padding: '3px 8px' }}>
-                      Versión {p.version}
-                    </Badge>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <Badge variant="gold" style={{ fontSize: '11px', padding: '3px 8px' }}>
+                        v{p.version}
+                      </Badge>
+                      <Badge variant="neutral" style={{ fontSize: '11px', padding: '3px 8px' }}>
+                        {getDurationLabel(p.durationDays)}
+                      </Badge>
+                    </div>
                     <Badge variant={isActive ? 'success' : 'neutral'} style={{ fontSize: '11px' }}>
                       {p.status}
                     </Badge>
@@ -166,11 +201,11 @@ export default function PlansPage() {
                     {p.name}
                   </h3>
 
-                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px', minHeight: '40px', lineHeight: 1.5 }}>
+                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px', minHeight: '36px', lineHeight: 1.5 }}>
                     {p.description || 'Sin descripción adicional.'}
                   </p>
 
-                  <div style={{ margin: '18px 0', padding: '14px 18px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                  <div style={{ margin: '16px 0', padding: '14px 18px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                       <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--color-gold)', letterSpacing: '0.5px' }}>
                         {formatCurrencyPen(p.pricePen)}
@@ -182,11 +217,11 @@ export default function PlansPage() {
                   </div>
 
                   {p.benefits && (
-                    <div style={{ marginBottom: '16px' }}>
+                    <div style={{ marginBottom: '12px' }}>
                       <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
-                        Beneficios Incluidos:
+                        Beneficios:
                       </span>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '4px' }}>
                         <span style={{ color: 'var(--color-gold)', marginTop: '2px' }}><Icon name="check-circle" size={14} /></span>
                         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.4 }}>
                           {p.benefits}
@@ -194,10 +229,21 @@ export default function PlansPage() {
                       </div>
                     </div>
                   )}
+
+                  {p.conditions && (
+                    <div style={{ marginBottom: '12px', background: 'rgba(212, 175, 55, 0.05)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--color-gold)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
+                        Condiciones:
+                      </span>
+                      <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+                        {p.conditions}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {isAdmin() && (
-                  <div style={{ display: 'flex', gap: '10px', paddingTop: '18px', borderTop: '1px solid var(--color-border)' }}>
+                  <div style={{ display: 'flex', gap: '10px', paddingTop: '18px', borderTop: '1px solid var(--color-border)', marginTop: '16px' }}>
                     <Button
                       variant="secondary"
                       onClick={() => handleEdit(p)}

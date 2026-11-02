@@ -88,7 +88,7 @@ export default function MembershipsPage() {
         if (!active) return;
         setMethods(available);
         setMethod(available[0] || '');
-        setPlans(catalog.filter((p) => p.durationDays === 30));
+        setPlans(catalog);
       })
       .catch((e) => active && setError(e.message))
       .finally(() => active && setLoading(false));
@@ -223,7 +223,7 @@ export default function MembershipsPage() {
           Membresías y Cobros Presenciales
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-          Contrate o renueve membresías mensuales de 30 días con cobro presencial en caja, comprobante interno e idempotencia.
+          Contrate o renueve membresías con cobro presencial en caja, comprobante interno e idempotencia.
         </p>
       </div>
 
@@ -448,7 +448,7 @@ export default function MembershipsPage() {
                   </div>
 
                   <div>
-                    <label className="form-label">Plan Activo (Mensual 30 Días)</label>
+                    <label className="form-label">Plan Activo</label>
                     <select
                       className="form-select"
                       required
@@ -461,7 +461,7 @@ export default function MembershipsPage() {
                       <option value="">Seleccione un plan del tarifario</option>
                       {plans.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} · {formatCurrencyPen(p.pricePen)}
+                          {p.name} ({p.durationDays} días) · {formatCurrencyPen(p.pricePen)}
                         </option>
                       ))}
                     </select>
@@ -478,7 +478,7 @@ export default function MembershipsPage() {
 
               {!plans.length && (
                 <p style={{ color: 'var(--color-warning)', fontSize: '13px', marginTop: '12px' }}>
-                  No hay planes activos de 30 días configurados en el sistema.
+                  No hay planes activos configurados en el sistema.
                 </p>
               )}
 

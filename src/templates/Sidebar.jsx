@@ -41,8 +41,8 @@ export function Sidebar({
             </span>
             {!isCollapsed && (
               <div className="brand-text">
-                <span className="brand-title">GYM VIP</span>
-                <span className="brand-sub">LUXURY FITNESS</span>
+                <span className="brand-title">GYM <b>VIP</b></span>
+                <span className="brand-sub">VIP CENTER FIT · LUXURY FITNESS</span>
               </div>
             )}
           </div>
@@ -102,6 +102,7 @@ export function Sidebar({
         <div className="sidebar-bottom">
           {!isCollapsed && (
             <div className="user-info-box">
+              <span className="session-label">SESIÓN ADMINISTRATIVA</span>
               <span className="user-email" title={user?.email}>
                 {user?.email}
               </span>
