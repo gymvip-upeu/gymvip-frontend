@@ -720,3 +720,13 @@ button {
   }
 }
 
+/* Keep native date controls visible on the dark application surfaces. */
+input.form-input[type="date"] {
+  color-scheme: dark;
+}
+
+input.form-input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+}
+

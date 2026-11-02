@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-export default function MemberDialog({ title, subtitle, onClose, busy = false, children, wide = false }) {
+export default function MemberDialog({ title, subtitle, onClose, busy = false, children, wide = false, icon = null, showClose = true, closeIcon = null }) {
   const root = useRef(null), callback = useRef(onClose), locked = useRef(busy);
   callback.current = onClose; locked.current = busy;
   useEffect(() => {
@@ -16,5 +16,5 @@ export default function MemberDialog({ title, subtitle, onClose, busy = false, c
     document.addEventListener('keydown', keys);
     return () => { document.body.style.overflow = overflow; document.removeEventListener('keydown', keys); previous?.focus(); };
   }, []);
-  return <div className="modal-overlay member-overlay"><div ref={root} className={`modal-content member-dialog ${wide ? 'member-dialog-wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="member-dialog-title"><header><div><h2 id="member-dialog-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div><button className="member-close" onClick={onClose} disabled={busy} aria-label="Cerrar formulario">×</button></header>{children}</div></div>;
+  return <div className="modal-overlay member-overlay"><div ref={root} className={`modal-content member-dialog ${wide ? 'member-dialog-wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="member-dialog-title"><header><div>{icon}<h2 id="member-dialog-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div>{showClose&&<button className="member-close" onClick={onClose} disabled={busy} aria-label="Cerrar formulario">{closeIcon || '×'}</button>}</header>{children}</div></div>;
 }

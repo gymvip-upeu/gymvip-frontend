@@ -76,7 +76,6 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         />
 
         <main className="app-content-body" tabIndex="-1">
-          {['clients','coverage','verification','memberships'].includes(currentView) && <nav className="member-tabs" aria-label="Gestión de miembros">{[{id:'clients',label:'Miembros'},{id:'memberships',label:'Membresías y pagos'},{id:'coverage',label:'Vencimientos'},{id:'verification',label:'Verificar ingreso'}].map(item => <button key={item.id} className={currentView === item.id ? 'active' : ''} onClick={() => handleNavigate(item.id)}>{item.label}</button>)}</nav>}
           {children}
         </main>
       </div>
