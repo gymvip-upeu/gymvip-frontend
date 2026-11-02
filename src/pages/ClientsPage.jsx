@@ -1,6 +1,6 @@
 // ==============================================================================
 // GYM VIP — Directorio Oficial de Socios y Clientes
-// Alta de socios, padrón general, membresías, fichas individuales y auditoría
+// Alta de socios, importación masiva .xlsx, membresías, fichas y auditoría
 // ==============================================================================
 
 import React, { useEffect, useState } from 'react';
@@ -14,6 +14,7 @@ import { Icon } from '../components/common/Icons';
 import { LoadingState, EmptyState } from '../components/feedback/LoadingState';
 
 import ClientRegisterModal from '../components/modals/ClientRegisterModal';
+import ClientImportModal from '../components/modals/ClientImportModal';
 import MemberEditor from '../components/members/MemberEditor';
 import MemberSale from '../components/members/MemberSale';
 import MemberCredentials from '../components/members/MemberCredentials';
@@ -39,12 +40,45 @@ export default function ClientsPage() {
     handleClearSearch,
   } = useClients(token);
 
-  // Estados de integración de socios
+  // Estados de integración de miembros
   const [overview, setOverview] = useState({});
   const [overviewError, setOverviewError] = useState('');
   const [selected, setSelected] = useState(null);
-  const [action, setAction] = useState(null);
+  const [action, setAction] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.toLowerCase().includes('/importar')) {
+      return { kind: 'import' };
+    }
+    return null;
+  });
   const [credentials, setCredentials] = useState(null);
+
+  // Sincronización de ruta para el modal de importación (/miembros/importar)
+  useEffect(() => {
+    const handlePopState = () => {
+      const isImport = window.location.pathname.toLowerCase().includes('/importar');
+      if (isImport) {
+        setAction({ kind: 'import' });
+      } else {
+        setAction((prev) => (prev?.kind === 'import' ? null : prev));
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleOpenImport = () => {
+    if (window.location.pathname !== '/miembros/importar') {
+      window.history.pushState({ modal: 'import' }, '', '/miembros/importar');
+    }
+    setAction({ kind: 'import' });
+  };
+
+  const handleCloseImport = () => {
+    if (window.location.pathname.toLowerCase().includes('/importar')) {
+      window.history.pushState({}, '', '/miembros');
+    }
+    setAction(null);
+  };
 
   // Consulta en lote de estado de membresías de la página actual
   useEffect(() => {
@@ -119,23 +153,36 @@ export default function ClientsPage() {
               color: 'var(--color-text-primary)',
             }}
           >
-            Directorio de Socios
+            Directorio de Miembros
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
             {loading
-              ? 'Cargando padrón oficial de socios…'
-              : `${totalElements || clients.length} ${(totalElements || clients.length) === 1 ? 'socio registrado' : 'socios registrados'} en el sistema.`}
+              ? 'Cargando padrón oficial de miembros…'
+              : `${totalElements || clients.length} ${(totalElements || clients.length) === 1 ? 'miembro registrado' : 'miembros registrados'} en el sistema.`}
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => setAction({ kind: 'register' })}
-          style={{ minHeight: '44px', fontSize: '14px' }}
-        >
-          <Icon name="plus" size={16} />
-          <span>Nuevo Socio</span>
-        </Button>
+        {/* Acciones principales de alta e importación */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Button
+            variant="secondary"
+            onClick={handleOpenImport}
+            style={{ minHeight: '44px', fontSize: '14px' }}
+            title="Importar miembros existentes desde archivo Excel .xlsx (HU-06)"
+          >
+            <Icon name="tag" size={16} color="var(--color-gold)" />
+            <span>Importar Miembros</span>
+          </Button>
+
+          <Button
+            variant="primary"
+            onClick={() => setAction({ kind: 'register' })}
+            style={{ minHeight: '44px', fontSize: '14px' }}
+          >
+            <Icon name="plus" size={16} />
+            <span>Nuevo Miembro</span>
+          </Button>
+        </div>
       </div>
 
       {/* Alertas del Sistema */}
@@ -161,7 +208,7 @@ export default function ClientsPage() {
         />
       )}
 
-      {/* Buscador de Socios */}
+      {/* Buscador de Miembros */}
       <div className="card" style={{ padding: '20px', marginBottom: '24px' }}>
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <div className="input-with-icon" style={{ flex: 1, minWidth: '260px' }}>
@@ -171,10 +218,10 @@ export default function ClientsPage() {
             <input
               type="text"
               className="form-input with-left-icon"
-              placeholder="Buscar por código de socio, nombre, email, teléfono o documento..."
+              placeholder="Buscar por código de miembro, nombre, email, teléfono o documento..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Buscar socios"
+              aria-label="Buscar miembros"
             />
           </div>
           <Button type="submit" variant="primary" style={{ minHeight: '42px' }} disabled={loading}>
@@ -194,14 +241,14 @@ export default function ClientsPage() {
         </form>
       </div>
 
-      {/* Tabla de Socios */}
+      {/* Tabla de Miembros */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading ? (
-          <LoadingState message="Cargando padrón de socios desde el servidor central..." />
+          <LoadingState message="Cargando padrón de miembros desde el servidor central..." />
         ) : error ? (
           <div style={{ padding: '32px', textAlign: 'center' }}>
             <p style={{ color: 'var(--color-danger)', marginBottom: '16px' }}>
-              No se pudo cargar el listado de socios.
+              No se pudo cargar el listado de miembros.
             </p>
             <Button variant="secondary" onClick={() => loadClients(searchQuery, page)}>
               Reintentar
@@ -209,11 +256,11 @@ export default function ClientsPage() {
           </div>
         ) : clients.length === 0 ? (
           <EmptyState
-            title="No se encontraron socios"
+            title="No se encontraron miembros"
             subtitle={
               searchQuery
                 ? 'Prueba con otro criterio de búsqueda.'
-                : 'Presiona "Nuevo Socio" para dar de alta el primer registro.'
+                : 'Presiona "Nuevo Miembro" o "Importar Miembros" para incorporar registros al padrón.'
             }
           />
         ) : (
@@ -221,7 +268,7 @@ export default function ClientsPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Código Socio</th>
+                  <th>Código Miembro</th>
                   <th>Cliente</th>
                   <th>Documento</th>
                   <th>Contacto</th>
@@ -234,7 +281,6 @@ export default function ClientsPage() {
                 {clients.map((c) => {
                   const initial = c.firstName ? c.firstName.charAt(0).toUpperCase() : 'S';
                   const v = overview[c.id];
-                  const stateVal = c.status === 'INACTIVO' ? 'INACTIVO' : (v?.state || 'SIN_MEMBRESIA');
                   const badgeVariant = getMembershipBadgeVariant(v?.state, c.status);
                   const isInactive = c.status === 'INACTIVO';
 
@@ -329,54 +375,48 @@ export default function ClientsPage() {
                         </div>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end' }}>
-                          <Button
-                            variant="secondary"
+                        <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn-action-icon"
                             onClick={() => setSelected(c.id)}
-                            style={{ fontSize: '12px', padding: '6px 10px', minHeight: '32px' }}
-                            title={`Ver ficha completa de ${c.firstName} ${c.lastName}`}
+                            title="Ver ficha"
                             aria-label={`Ver ficha de ${c.firstName} ${c.lastName}`}
                           >
-                            <Icon name="eye" size={13} color="var(--color-gold)" />
-                            <span>Ficha</span>
-                          </Button>
-                          <Button
-                            variant="secondary"
+                            <Icon name="eye" size={16} color="var(--color-gold)" />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-action-icon"
                             disabled={isInactive}
                             onClick={() => setAction({ kind: 'sale', client: c })}
-                            style={{ fontSize: '12px', padding: '6px 10px', minHeight: '32px' }}
-                            title={`Cobrar o asignar plan a ${c.firstName} ${c.lastName}`}
+                            title="Cobrar plan"
                             aria-label={`Cobrar plan de ${c.firstName} ${c.lastName}`}
                           >
-                            <Icon name="credit-card" size={13} color="var(--color-text-secondary)" />
-                            <span>Plan</span>
-                          </Button>
-                          <Button
-                            variant="secondary"
+                            <Icon name="credit-card" size={16} color="var(--color-text-secondary)" />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-action-icon"
                             onClick={() => setAction({ kind: 'edit', client: c })}
-                            style={{ fontSize: '12px', padding: '6px 10px', minHeight: '32px' }}
-                            title={`Editar datos de ${c.firstName} ${c.lastName}`}
-                            aria-label={`Editar datos de ${c.firstName} ${c.lastName}`}
+                            title="Editar"
+                            aria-label={`Editar a ${c.firstName} ${c.lastName}`}
                           >
-                            <Icon name="edit" size={13} color="var(--color-text-secondary)" />
-                            <span>Editar</span>
-                          </Button>
+                            <Icon name="edit" size={16} color="var(--color-text-secondary)" />
+                          </button>
+
                           {isAdmin() && (
-                            <Button
-                              variant="secondary"
+                            <button
+                              type="button"
+                              className={`btn-action-icon ${isInactive ? 'activate' : 'deactivate'}`}
                               onClick={() => setAction({ kind: 'status', client: c })}
-                              style={{
-                                fontSize: '12px',
-                                padding: '6px 10px',
-                                minHeight: '32px',
-                                color: isInactive ? 'var(--color-success)' : 'var(--color-danger)',
-                              }}
-                              title={isInactive ? 'Activar socio' : 'Desactivar socio'}
+                              title={isInactive ? 'Activar' : 'Desactivar'}
                               aria-label={`${isInactive ? 'Activar' : 'Desactivar'} a ${c.firstName} ${c.lastName}`}
                             >
-                              <Icon name="shield-check" size={13} />
-                              <span>{isInactive ? 'Activar' : 'Desactivar'}</span>
-                            </Button>
+                              <Icon name="power" size={16} color={isInactive ? 'var(--color-success)' : 'var(--color-danger)'} />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -421,13 +461,24 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* Modales de Flujo de Socios */}
+      {/* Modales de Flujo de Miembros */}
+      {action?.kind === 'import' && (
+        <ClientImportModal
+          token={token}
+          onClose={handleCloseImport}
+          onSuccess={(importResult) => {
+            handleCloseImport();
+            changed(`¡Importación masiva completada! Se crearon ${importResult.createdCount} miembros nuevos.`);
+          }}
+        />
+      )}
+
       {action?.kind === 'register' && (
         <ClientRegisterModal
           token={token}
           onClose={() => setAction(null)}
           onSuccess={(newClient, accessCredentials) => {
-            changed(`¡Socio ${newClient.firstName || ''} ${newClient.lastName || ''} registrado con éxito!`);
+            changed(`¡Miembro ${newClient.firstName || ''} ${newClient.lastName || ''} registrado con éxito!`);
             if (accessCredentials) {
               setCredentials(accessCredentials);
             }
@@ -440,7 +491,7 @@ export default function ClientsPage() {
           client={action.client}
           token={token}
           onClose={() => setAction(null)}
-          onSaved={() => changed('¡Datos del socio actualizados exitosamente!')}
+          onSaved={() => changed('¡Datos del miembro actualizados exitosamente!')}
         />
       )}
 
@@ -457,7 +508,7 @@ export default function ClientsPage() {
           client={action.client}
           token={token}
           onClose={() => setAction(null)}
-          onSaved={() => changed('¡Estado del socio actualizado correctamente!')}
+          onSaved={() => changed('¡Estado del miembro actualizado correctamente!')}
         />
       )}
 

@@ -11,6 +11,7 @@ import { Alert } from '../components/common/Alert';
 import { Badge } from '../components/common/Badge';
 import { Icon } from '../components/common/Icons';
 import { stateLabel, dateLabel } from '../components/common/CoverageCard';
+import { LoadingDotsSpinner } from '../components/feedback/LoadingDotsSpinner';
 import ClientManageModal from '../components/modals/ClientManageModal';
 
 export default function CoveragePage({ onNavigate }) {
@@ -111,7 +112,7 @@ export default function CoveragePage({ onNavigate }) {
             Vigencias y Alertas de Vencimiento
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-            Supervise la cobertura pagada en tiempo real y priorice a los socios que requieren renovación.
+            Supervise la cobertura pagada en tiempo real y priorice a los miembros que requieren renovación.
           </p>
         </div>
 
@@ -165,7 +166,7 @@ export default function CoveragePage({ onNavigate }) {
               value={filters.state}
               onChange={change}
             >
-              <option value="ALERTAS">⚠️ Alertas (Próximas y Vencidas)</option>
+              <option value="ALERTAS">⚠️ Alertas (Próximas y Vencidas)</option>
               <option value="TODOS">Todos los Estados</option>
               <option value="VIGENTE">Vigente</option>
               <option value="POR_VENCER">Por Vencer</option>
@@ -249,8 +250,16 @@ export default function CoveragePage({ onNavigate }) {
       {error && <Alert variant="danger" message={error} onClose={() => setError('')} />}
 
       {loading && (
-        <div style={{ textAlign: 'center', padding: '36px' }} role="status">
-          <p style={{ color: 'var(--color-gold)', fontWeight: 600 }}>Consultando vigencias de socios…</p>
+        <div
+          className="gymvip-loading-card"
+          role="status"
+          aria-live="polite"
+          style={{ padding: '40px 24px', textAlign: 'center' }}
+        >
+          <LoadingDotsSpinner size={46} color="var(--color-gold)" label="Consultando vigencias de miembros" />
+          <p style={{ color: 'var(--color-gold)', fontWeight: 600, margin: '14px 0 0 0', fontSize: '15px' }}>
+            Consultando vigencias de miembros...
+          </p>
         </div>
       )}
 
@@ -258,7 +267,7 @@ export default function CoveragePage({ onNavigate }) {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-              Mostrando <strong>{result.totalElements}</strong> socio(s) · Ordenados por urgencia de fin de membresía.
+              Mostrando <strong>{result.totalElements}</strong> miembro(s) · Ordenados por urgencia de fin de membresía.
             </span>
           </div>
 
@@ -275,7 +284,7 @@ export default function CoveragePage({ onNavigate }) {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Socio</th>
+                      <th>Miembro</th>
                       <th>Plan Contratado</th>
                       <th>Inicio</th>
                       <th>Último Día Válido</th>

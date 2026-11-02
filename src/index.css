@@ -447,10 +447,19 @@ button {
 }
 
 .brand-logo {
-  font-size: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.sidebar-brand-img {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-gold-border);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+  display: block;
 }
 
 .brand-text {
@@ -748,9 +757,7 @@ button {
 .login-backdrop-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(11, 13, 18, 0.78) 0%, rgba(11, 13, 18, 0.94) 100%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: radial-gradient(circle at center, rgba(11, 13, 18, 0.40) 0%, rgba(11, 13, 18, 0.78) 100%);
   z-index: 1;
 }
 
@@ -774,15 +781,23 @@ button {
 }
 
 .login-brand-logo-mark {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 10px auto;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 12px auto;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.05) 100%);
   border: 1px solid var(--color-gold-border);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.25);
+}
+
+.login-brand-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .login-brand-monogram {
@@ -1046,4 +1061,217 @@ button {
   .header-logout-text {
     display: none;
   }
+}
+
+
+/* Botones de Solo Icono para la Columna Acciones (Accesibilidad y Foco) */
+.btn-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-elevated);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.btn-action-icon:hover:not(:disabled) {
+  border-color: var(--color-gold);
+  background-color: rgba(212, 175, 55, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-action-icon:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.btn-action-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-action-icon.deactivate:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  background-color: rgba(239, 68, 68, 0.12);
+}
+
+.btn-action-icon.activate:hover:not(:disabled) {
+  border-color: var(--color-success);
+  background-color: rgba(16, 185, 129, 0.12);
+}
+
+/* ==============================================================================
+   BOTONES DE CABECERA: NOTIFICACIONES Y AJUSTES DE APARIENCIA
+   ============================================================================== */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.header-icon-btn:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  background-color: rgba(212, 175, 55, 0.12);
+  transform: translateY(-1px);
+}
+
+.header-icon-btn:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.header-icon-btn[aria-expanded="true"] {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  background-color: var(--color-gold-subtle);
+}
+
+/* ==============================================================================
+   TEMA CLARO (LIGHT THEME) — LUXURY FITNESS PALETTE
+   ============================================================================== */
+[data-theme="light"] {
+  --color-bg: #F4F6F9;
+  --color-surface-panel: #FFFFFF;
+  --color-surface-elevated: #F9FAFB;
+  --color-surface-input: #FFFFFF;
+  --color-border: #E5E7EB;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-gold: #9A7B1C;
+  --color-gold-hover: #7F6515;
+  --color-gold-subtle: rgba(154, 123, 28, 0.12);
+  --color-gold-border: rgba(154, 123, 28, 0.35);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .app-header {
+  background-color: rgba(255, 255, 255, 0.92);
+}
+
+[data-theme="light"] .app-sidebar {
+  background-color: #FFFFFF;
+  border-right-color: #E5E7EB;
+}
+
+[data-theme="light"] .sidebar-bottom {
+  background-color: #F9FAFB;
+}
+
+[data-theme="light"] .data-table thead th {
+  background-color: #F3F4F6;
+  color: #374151;
+}
+
+[data-theme="light"] .data-table tbody tr:hover {
+  background-color: rgba(154, 123, 28, 0.05);
+}
+
+/* ==============================================================================
+   ACCESIBILIDAD: TAMAÑO DE TIPOGRAFÍA Y REDUCCIÓN DE ANIMACIONES
+   ============================================================================== */
+[data-font-size="large"] {
+  --font-size-xs: 13px;
+  --font-size-sm: 15px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 26px;
+  --font-size-3xl: 32px;
+}
+
+[data-reduced-motion="reduce"] *,
+[data-reduced-motion="reduce"] *::before,
+[data-reduced-motion="reduce"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+.theme-option-card:hover {
+  border-color: var(--color-gold) !important;
+}
+
+.theme-option-card:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* ==============================================================================
+   INDICADOR DE CARGA: CÍRCULO DE PUNTOS GIRATORIOS (LUXURY GOLD)
+   ============================================================================== */
+@keyframes gymvipSpinDots {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.gymvip-spinning-dots {
+  animation: gymvipSpinDots 1.1s linear infinite;
+  transform-origin: 24px 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gymvip-spinning-dots {
+    animation: none !important;
+    opacity: 0.85;
+  }
+}
+
+.gymvip-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+/* Logo en Encabezado Principal */
+.header-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.header-brand-img {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-gold-border);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.22);
+  display: block;
 }
