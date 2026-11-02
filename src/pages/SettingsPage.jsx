@@ -1,4 +1,4 @@
-// ==============================================================================
+﻿// ==============================================================================
 // GYM VIP — Pantalla: SettingsPage (Configuración Operativa del Sistema)
 // Parámetros realmente disponibles y configurables para el centro fitness
 // ==============================================================================
@@ -83,7 +83,7 @@ export default function SettingsPage() {
                 </Button>
               </div>
               <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '6px', display: 'block' }}>
-                Valor de negocio acordado: <strong>7 días</strong>. Los socios con menos de este plazo figuran en la lista de alertas.
+                Valor de negocio acordado: <strong>7 días</strong>. Los miembros con menos de este plazo figuran en la lista de alertas.
               </span>
             </div>
 

@@ -1,10 +1,10 @@
-// ==============================================================================
+﻿// ==============================================================================
 // GYM VIP — Validador UX de Cuentas y Personal (HU-04)
 // ==============================================================================
 
 export const STAFF_ROLES = [
   { value: 'ADMIN', label: 'Administrador (Control Total)' },
-  { value: 'RECEPCION', label: 'Recepción (Socios y Consulta)' },
+  { value: 'RECEPCION', label: 'Recepción (Miembros y Consulta)' },
 ];
 
 /**

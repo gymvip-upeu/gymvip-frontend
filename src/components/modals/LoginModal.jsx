@@ -9,11 +9,13 @@ import { Alert } from '../common/Alert';
 import { Button } from '../common/Button';
 import { Icon } from '../common/Icons';
 import athleteImg from '../../assets/hero-athlete.jpg';
+import logoImg from '../../assets/gymvip-logo.jpg';
 
 export default function LoginModal() {
   const { login, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
@@ -21,9 +23,13 @@ export default function LoginModal() {
     setError(null);
     try {
       await login(email, password);
-    } catch {
-      // Mensaje neutro y seguro: no expone si el correo existe o no
-      setError('Credenciales de acceso incorrectas o cuenta inhabilitada.');
+    } catch (err) {
+      if (err?.status === 429 || err?.message?.includes('429') || err?.message?.toLowerCase().includes('demasiados')) {
+        setError('Demasiados intentos fallidos. Su acceso ha sido bloqueado temporalmente por seguridad (15 minutos).');
+      } else {
+        // Mensaje neutro y seguro anti-enumeración: no revela si el correo existe o no
+        setError('Credenciales de acceso incorrectas o cuenta inhabilitada.');
+      }
     }
   };
 
@@ -41,7 +47,7 @@ export default function LoginModal() {
         {/* Encabezado Institucional con Logo Sobrio */}
         <div className="login-brand-header">
           <div className="login-brand-logo-mark" aria-hidden="true">
-            <span className="login-brand-monogram">VIP</span>
+            <img src={logoImg} alt="GYM VIP" className="login-brand-img" />
           </div>
           <h1 id="login-title" className="login-brand-title">GYM VIP</h1>
           <p className="login-brand-tagline">CENTRO DE ENTRENAMIENTO EXCLUSIVO</p>
@@ -91,20 +97,45 @@ export default function LoginModal() {
             <label className="form-label" htmlFor="login-password">
               Contraseña
             </label>
-            <div className="input-with-icon">
+            <div className="input-with-icon" style={{ position: 'relative' }}>
               <span className="input-icon" aria-hidden="true">
                 <Icon name="shield-check" size={16} color="var(--color-gold)" />
               </span>
               <input
                 id="login-password"
-                type="password"
-                className="form-input with-left-icon"
+                type={showPassword ? 'text' : 'password'}
+                className="form-input with-left-icon with-right-icon"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
                 required
                 autoComplete="current-password"
+                style={{ paddingRight: '42px' }}
               />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <Icon name={showPassword ? 'eye-off' : 'eye'} size={18} color="var(--color-text-muted)" />
+              </button>
             </div>
           </div>
 
@@ -117,6 +148,12 @@ export default function LoginModal() {
           >
             {loading ? 'Validando credenciales...' : 'Iniciar Sesión'}
           </Button>
+
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+              ¿Olvidó su contraseña o requiere acceso? Contacte a la administración del gimnasio.
+            </span>
+          </div>
         </form>
 
         {/* Nota Institucional de Seguridad */}

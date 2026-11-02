@@ -1,4 +1,4 @@
-// ==============================================================================
+﻿// ==============================================================================
 // GYM VIP — Pantalla: HomePage (Panel de Control Principal Luxury)
 // ==============================================================================
 
@@ -82,13 +82,13 @@ export default function HomePage({ onNavigate }) {
             Bienvenido, {user?.email}
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '15px', maxWidth: '720px', lineHeight: 1.6 }}>
-            Plataforma operativa para el control de socios, cotización y cobro de membresías, evaluación de vigencias en tiempo real y verificación de acceso en recepción.
+            Plataforma operativa para el control de miembros, cotización y cobro de membresías, evaluación de vigencias en tiempo real y verificación de acceso en recepción.
           </p>
 
           <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap' }}>
             <Button variant="primary" onClick={() => onNavigate('clients')}>
               <Icon name="users" size={16} />
-              <span>Directorio de Socios</span>
+              <span>Directorio de Miembros</span>
             </Button>
             {(isAdmin() || isRecepcion()) && (
               <Button variant="secondary" onClick={() => onNavigate('verification')}>
@@ -108,11 +108,11 @@ export default function HomePage({ onNavigate }) {
 
       {/* KPI Cards con iconografía SVG vectorial */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-        {/* KPI 1: Socios */}
+        {/* KPI 1: Miembros */}
         <div className="card kpi-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Socios Registrados
+              Miembros Registrados
             </span>
             <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
               <Icon name="users" size={22} />
@@ -122,7 +122,7 @@ export default function HomePage({ onNavigate }) {
             {loading ? '...' : metrics.totalClients}
           </div>
           <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            Emisión con código único de socio
+            Emisión con código único de miembro
           </p>
           <Button
             variant="secondary"
@@ -220,7 +220,7 @@ export default function HomePage({ onNavigate }) {
               <strong style={{ fontSize: '14px', color: 'var(--color-text-primary)' }}>Control de Acceso</strong>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: 0 }}>
-              Verificar ingreso manual de socio en recepción mediante DNI o código.
+              Verificar ingreso manual de miembro en recepción mediante DNI o código.
             </p>
           </div>
 

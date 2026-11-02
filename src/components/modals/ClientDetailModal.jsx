@@ -1,4 +1,4 @@
-// ==============================================================================
+﻿// ==============================================================================
 // GYM VIP — Modal de Ficha de Socio (HU-01)
 // ==============================================================================
 
@@ -19,7 +19,7 @@ export default function ClientDetailModal({ client, onClose }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <span className="badge badge-gold" style={{ fontSize: '11px', marginBottom: '6px' }}>
-              FICHA DE SOCIO VIP
+              FICHA DE MIEMBRO VIP
             </span>
             <h2 id="detail-title" style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, margin: '2px 0' }}>
               {client.firstName} {client.lastName}
@@ -36,7 +36,7 @@ export default function ClientDetailModal({ client, onClose }) {
             aria-label="Cerrar ficha"
             style={{ minHeight: '36px', minWidth: '36px', padding: '6px' }}
           >
-            ✕
+            âœ•
           </button>
         </div>
 

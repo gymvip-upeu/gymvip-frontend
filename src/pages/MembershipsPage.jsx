@@ -1,4 +1,4 @@
-// ==============================================================================
+﻿// ==============================================================================
 // GYM VIP — Pantalla: MembershipsPage (Membresías, Cobros y Renovación HU-07, 08, 10)
 // Diseño Luxury Fitness con Pasos Claros y Soporte de Idempotencia
 // ==============================================================================
@@ -246,14 +246,14 @@ export default function MembershipsPage() {
             <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Operación Pendiente de Confirmar</h2>
           </div>
           <p style={{ color: 'var(--color-text-primary)', margin: '6px 0' }}>
-            Socio: <strong>{pending.clientName}</strong> · Importe: <strong>{formatCurrencyPen(pending.body.amountPen)}</strong> · Medio: <strong>{methodLabel(pending.body.paymentMethod)}</strong>
+            Miembro: <strong>{pending.clientName}</strong> · Importe: <strong>{formatCurrencyPen(pending.body.amountPen)}</strong> · Medio: <strong>{methodLabel(pending.body.paymentMethod)}</strong>
           </p>
           <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '6px 0 16px 0' }}>
             Hubo una interrupción en la confirmación. Reintente para recuperar el resultado original de forma segura sin duplicar el cobro.
           </p>
           <Button variant="primary" disabled={busy} onClick={pay}>
             <Icon name="refresh" size={15} />
-            <span>{busy ? 'Consultando transacción…' : 'Reintentar Misma Operación'}</span>
+            <span>{busy ? 'Consultando transacciónâ€¦' : 'Reintentar Misma Operación'}</span>
           </Button>
         </div>
       )}
@@ -341,17 +341,17 @@ export default function MembershipsPage() {
 
       {loading ? (
         <div className="card" style={{ padding: '36px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-gold)', fontWeight: 600 }}>Cargando catálogo tarifario y medios de cobro…</p>
+          <p style={{ color: 'var(--color-gold)', fontWeight: 600 }}>Cargando catálogo tarifario y medios de cobroâ€¦</p>
         </div>
       ) : (
         <>
-          {/* Paso 1: Búsqueda y Selección de Socio */}
+          {/* Paso 1: Búsqueda y Selección de Miembro */}
           <section className="card" style={{ padding: '24px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
               <span style={{ width: '28px', height: '28px', borderRadius: 'var(--radius-full)', background: 'var(--color-gold)', color: '#0B0D12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px' }}>
                 1
               </span>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Identificar al Socio</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Identificar al Miembro</h2>
             </div>
 
             <form onSubmit={search} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -370,7 +370,7 @@ export default function MembershipsPage() {
               </div>
               <Button type="submit" variant="primary" disabled={locked || searching || !query.trim()}>
                 <Icon name="search" size={15} />
-                <span>{searching ? 'Buscando…' : 'Buscar Socio'}</span>
+                <span>{searching ? 'Buscandoâ€¦' : 'Buscar Miembro'}</span>
               </Button>
             </form>
 
@@ -378,7 +378,7 @@ export default function MembershipsPage() {
             {clients.length > 0 && (
               <div style={{ marginTop: '16px' }}>
                 <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '8px' }}>
-                  Seleccione el socio para la transacción:
+                  Seleccione el miembro para la transacción:
                 </span>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   {clients.map((c) => (
@@ -403,14 +403,14 @@ export default function MembershipsPage() {
 
             {searched && !clients.length && (
               <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', marginTop: '14px' }}>
-                No se encontraron socios con el término ingresado. Verifique el nombre o DNI.
+                No se encontraron miembros con el término ingresado. Verifique el nombre o DNI.
               </p>
             )}
 
             {client && (
               <div style={{ marginTop: '16px', padding: '12px 16px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Socio Seleccionado</span>
+                  <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Miembro Seleccionado</span>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
                     {client.fullName} · <span style={{ color: 'var(--color-gold)' }}>{client.memberCode}</span>
                   </div>
@@ -470,7 +470,7 @@ export default function MembershipsPage() {
                   <div>
                     <Button type="submit" variant="primary" disabled={!planId || locked} style={{ width: '100%', minHeight: '44px' }}>
                       <Icon name="calendar" size={15} />
-                      <span>{busy ? 'Calculando…' : 'Consultar Fechas e Importe'}</span>
+                      <span>{busy ? 'Calculandoâ€¦' : 'Consultar Fechas e Importe'}</span>
                     </Button>
                   </div>
                 </fieldset>
@@ -499,7 +499,7 @@ export default function MembershipsPage() {
 
                   {quote.currentEndExclusive && (
                     <p style={{ fontSize: '13px', color: 'var(--color-warning)', margin: '4px 0' }}>
-                      ℹ️ La membresía actual finaliza antes del <strong>{dateLabel(quote.currentEndExclusive)}</strong>. La renovación extenderá la vigencia a partir de esa fecha.
+                      ℹ️ La membresía actual finaliza antes del <strong>{dateLabel(quote.currentEndExclusive)}</strong>. La renovación extenderá la vigencia a partir de esa fecha.
                     </p>
                   )}
 
@@ -578,7 +578,7 @@ export default function MembershipsPage() {
                             style={{ marginTop: '3px' }}
                           />
                           <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
-                            Confirmo que he recibido el importe completo en caja (<strong>{formatCurrencyPen(quote.pricePen)}</strong>) y notifiqué las condiciones de servicio al socio.
+                            Confirmo que he recibido el importe completo en caja (<strong>{formatCurrencyPen(quote.pricePen)}</strong>) y notifiqué las condiciones de servicio al miembro.
                           </span>
                         </label>
                       </div>
@@ -595,7 +595,7 @@ export default function MembershipsPage() {
                         style={{ width: '100%', minHeight: '46px', fontSize: '15px' }}
                       >
                         <Icon name="check-circle" size={16} />
-                        <span>{busy ? 'Registrando transacción en caja…' : `Confirmar y Emitir Cobro de ${formatCurrencyPen(quote.pricePen)}`}</span>
+                        <span>{busy ? 'Registrando transacción en cajaâ€¦' : `Confirmar y Emitir Cobro de ${formatCurrencyPen(quote.pricePen)}`}</span>
                       </Button>
                     </fieldset>
                   </div>
@@ -606,7 +606,7 @@ export default function MembershipsPage() {
         </>
       )}
 
-      {/* Historial de Cobros y Periodos del Socio */}
+      {/* Historial de Cobros y Periodos del Miembro */}
       {(client || receipt) && (
         <section className="card" style={{ padding: '24px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 14px 0' }}>
@@ -614,7 +614,7 @@ export default function MembershipsPage() {
           </h2>
 
           {historyLoading ? (
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Cargando historial de pagos…</p>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Cargando historial de pagosâ€¦</p>
           ) : !history.length ? (
             <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
               No hay cobros de membresía registrados para este cliente.

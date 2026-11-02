@@ -1,4 +1,4 @@
-// ==============================================================================
+﻿// ==============================================================================
 // GYM VIP — Pantalla: VerificationPage (Control Manual de Ingreso en Mostrador)
 // ==============================================================================
 
@@ -60,7 +60,7 @@ export default function VerificationPage({ onNavigate }) {
       const result = await verifyCoverage(client.id, token);
       if (request === sequence.current) setValue(result);
     } catch (e) {
-      if (request === sequence.current) setError(`No se pudo verificar el ingreso del socio. ${e.message}`);
+      if (request === sequence.current) setError(`No se pudo verificar el ingreso del miembro. ${e.message}`);
     } finally {
       if (request === sequence.current) setBusy(false);
     }
@@ -83,11 +83,11 @@ export default function VerificationPage({ onNavigate }) {
           Verificación Manual de Ingreso
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-          Identifique al socio en el mostrador para validar autoritativamente si su membresía le concede acceso hoy.
+          Identifique al miembro en el mostrador para validar autoritativamente si su membresía le concede acceso hoy.
         </p>
       </div>
 
-      {/* Buscador de Socio */}
+      {/* Buscador de Miembro */}
       <form
         className="card"
         style={{ padding: '24px', marginBottom: '24px' }}
@@ -99,7 +99,7 @@ export default function VerificationPage({ onNavigate }) {
         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '240px' }}>
             <label className="form-label" htmlFor="verification-search">
-              Buscar Socio por Nombre, DNI o Código (MAR-XXXXXX)
+              Buscar Miembro por Nombre, DNI o Código (MAR-XXXXXX)
             </label>
             <div className="input-with-icon">
               <span className="input-icon" aria-hidden="true">
@@ -127,7 +127,7 @@ export default function VerificationPage({ onNavigate }) {
 
           <Button type="submit" variant="primary" disabled={busy || !query.trim()} style={{ minHeight: '44px' }}>
             <Icon name="search" size={16} />
-            <span>Consultar Socio</span>
+            <span>Consultar Miembro</span>
           </Button>
 
           {(clients || value) && (
@@ -141,7 +141,7 @@ export default function VerificationPage({ onNavigate }) {
       {error && <Alert variant="danger" message={error} onClose={() => setError('')} />}
       {busy && (
         <div style={{ textAlign: 'center', padding: '32px' }} role="status">
-          <p style={{ color: 'var(--color-gold)', fontWeight: 600 }}>Consultando al servidor central de validación…</p>
+          <p style={{ color: 'var(--color-gold)', fontWeight: 600 }}>Consultando al servidor central de validaciónâ€¦</p>
         </div>
       )}
 
@@ -149,13 +149,13 @@ export default function VerificationPage({ onNavigate }) {
       {clients && !value && (
         <div style={{ marginBottom: '24px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px' }}>
-            Socios Encontrados ({clients.totalElements})
+            Miembros Encontrados ({clients.totalElements})
           </h2>
 
           {!clients.content.length ? (
             <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
               <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>
-                No se encontraron socios registrados con el término "{searched}".
+                No se encontraron miembros registrados con el término "{searched}".
               </p>
               {onNavigate && (
                 <Button
@@ -164,7 +164,7 @@ export default function VerificationPage({ onNavigate }) {
                   style={{ marginTop: '16px', fontSize: '13px' }}
                 >
                   <Icon name="plus" size={14} />
-                  <span>Registrar Nuevo Socio</span>
+                  <span>Registrar Nuevo Miembro</span>
                 </Button>
               )}
             </div>
@@ -249,7 +249,7 @@ export default function VerificationPage({ onNavigate }) {
               </Button>
             )}
             <Button variant="primary" onClick={handleClear}>
-              <span>Finalizar y Atender Siguiente Socio</span>
+              <span>Finalizar y Atender Siguiente Miembro</span>
             </Button>
           </div>
         </div>

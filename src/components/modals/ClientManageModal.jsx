@@ -1,4 +1,4 @@
-// ==============================================================================
+﻿// ==============================================================================
 // GYM VIP — Modal: ClientManageModal (Ficha, Edición Concurrente y Auditoría HU-02)
 // ==============================================================================
 
@@ -139,7 +139,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
       setDetail(value);
       setForm(initialForm(value));
       setEditing(false);
-      setSuccess('Datos del socio actualizados correctamente en base de datos.');
+      setSuccess('Datos del miembro actualizados correctamente en base de datos.');
       setReload((n) => n + 1);
       onUpdated?.(value);
     } catch (e) {
@@ -155,11 +155,11 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: '20px', borderBottom: '1px solid var(--color-border)', paddingBottom: '16px' }}>
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <Badge variant="gold">FICHA OFICIAL DE SOCIO</Badge>
+              <Badge variant="gold">FICHA OFICIAL DE MIEMBRO</Badge>
               {detail && <span style={{ fontSize: '12px', color: 'var(--color-gold)', fontFamily: 'monospace', fontWeight: 700 }}>{detail.memberCode}</span>}
             </div>
             <h2 id="detail-title" style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0', color: 'var(--color-text-primary)' }}>
-              {detail ? detail.fullName : 'Cargando información del socio…'}
+              {detail ? detail.fullName : 'Cargando información del miembroâ€¦'}
             </h2>
             {detail && (
               <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
@@ -178,7 +178,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
 
         {!detail && !error && (
           <div style={{ textAlign: 'center', padding: '32px' }} role="status">
-            <p style={{ color: 'var(--color-gold)' }}>Cargando expediente de cliente…</p>
+            <p style={{ color: 'var(--color-gold)' }}>Cargando expediente de clienteâ€¦</p>
           </div>
         )}
 
@@ -242,7 +242,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
                   </div>
 
                   <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '18px' }}>
-                    ℹ️ Si otra persona modificó la ficha simultáneamente, tus cambios se conservarán en este formulario para revisión (Control Concurrente HTTP 409).
+                    ℹ️ Si otra persona modificó la ficha simultáneamente, tus cambios se conservarán en este formulario para revisión (Control Concurrente HTTP 409).
                   </p>
 
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
@@ -273,7 +273,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
                     </Button>
                     <Button type="submit" variant="primary" disabled={busy}>
                       <Icon name="check-circle" size={15} />
-                      <span>{busy ? 'Guardando…' : 'Guardar Cambios'}</span>
+                      <span>{busy ? 'Guardandoâ€¦' : 'Guardar Cambios'}</span>
                     </Button>
                   </div>
                 </form>
@@ -299,7 +299,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
               ) : coverage ? (
                 <CoverageCard value={coverage} />
               ) : (
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Consultando vigencia autoritativa…</p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Consultando vigencia autoritativaâ€¦</p>
               )}
             </div>
 
@@ -315,13 +315,13 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
 
                 {historyError && <Alert variant="danger" message={historyError} />}
                 {!history && !historyError && (
-                  <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Cargando registros de auditoría…</p>
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Cargando registros de auditoríaâ€¦</p>
                 )}
 
                 {history && (
                   <>
                     <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '10px' }}>
-                      {history.totalElements ? `${history.totalElements} modificaciones de campos registradas` : 'No hay cambios de datos registrados para este socio.'}
+                      {history.totalElements ? `${history.totalElements} modificaciones de campos registradas` : 'No hay cambios de datos registrados para este miembro.'}
                     </p>
 
                     {history.content.length > 0 && (

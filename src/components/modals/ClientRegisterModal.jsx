@@ -74,7 +74,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
 
       onSuccess(result.client, result.credentials);
     } catch (err) {
-      setErrorMsg(err.message || 'Error al registrar el socio.');
+      setErrorMsg(err.message || 'Error al registrar el miembro.');
     } finally {
       setSubmitting(false);
     }
@@ -86,10 +86,10 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <span className="badge badge-gold" style={{ fontSize: '11px', marginBottom: '6px' }}>
-              REGISTRO DE SOCIO VIP
+              REGISTRO DE MIEMBRO VIP
             </span>
             <h2 id="client-modal-title" style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, margin: '2px 0' }}>
-              Alta de Nuevo Socio
+              Alta de Nuevo Miembro
             </h2>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>
               El sistema generará automáticamente un código determinista oficial (ej. MAR-XXXXXX).
@@ -209,7 +209,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
               />
               {birthDate && !isEligible && (
                 <span style={{ fontSize: '11px', color: 'var(--color-danger)', marginTop: '4px', display: 'block' }}>
-                  Solo socios mayores de 18 años permitidos en esta base.
+                  Solo miembros mayores de 18 años permitidos en esta base.
                 </span>
               )}
             </div>
@@ -296,7 +296,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
               variant="primary"
               disabled={submitting || (birthDate && !isEligible)}
             >
-              {submitting ? 'Registrando Socio...' : 'Completar Registro'}
+              {submitting ? 'Registrando Miembro...' : 'Completar Registro'}
             </Button>
           </div>
         </form>

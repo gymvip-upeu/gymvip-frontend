@@ -2,7 +2,7 @@
 // GYM VIP — Validador UX de Clientes / Socios (HU-01)
 // ==============================================================================
 
-import { isAdult } from '../utils/dateUtils';
+import { isAdult } from '../utils/dateUtils.js';
 
 /**
  * Valida los datos requeridos para el alta de un socio.
@@ -16,11 +16,11 @@ export function validateClientRegistration(data) {
   const errors = [];
 
   if (!data.firstName || !data.firstName.trim()) {
-    errors.push('El nombre del socio es obligatorio.');
+    errors.push('El nombre del miembro es obligatorio.');
   }
 
   if (!data.lastName || !data.lastName.trim()) {
-    errors.push('Los apellidos del socio son obligatorios.');
+    errors.push('Los apellidos del miembro son obligatorios.');
   }
 
   if (!data.documentType) {
