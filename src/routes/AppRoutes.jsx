@@ -57,6 +57,16 @@ export function AppRoutes() {
   // Manejo de eventos popstate (botones Atrás / Adelante del navegador)
   useEffect(() => {
     const handlePopState = () => {
+      const path = (window.location.pathname || '').toLowerCase();
+
+      // Guarda de permisos para sub-ruta de importación masiva (HU-06)
+      if (path.includes('/importar') && !isAdmin()) {
+        setAccessError('Acceso Denegado (403): La importación masiva de miembros está reservada exclusivamente para Administradores.');
+        setCurrentView('clients');
+        window.history.replaceState({ view: 'clients' }, '', '/miembros');
+        return;
+      }
+
       const nextView = resolveViewFromPath(window.location.pathname);
 
       if ((nextView === 'staff' || nextView === 'settings') && !isAdmin()) {
@@ -69,6 +79,13 @@ export function AppRoutes() {
       setAccessError(null);
       setCurrentView(nextView);
     };
+
+    // Validación en carga directa inicial para /miembros/importar
+    const initialPath = (window.location.pathname || '').toLowerCase();
+    if (initialPath.includes('/importar') && !isAdmin()) {
+      setAccessError('Acceso Denegado (403): La importación masiva de miembros está reservada exclusivamente para Administradores.');
+      window.history.replaceState({ view: 'clients' }, '', '/miembros');
+    }
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);

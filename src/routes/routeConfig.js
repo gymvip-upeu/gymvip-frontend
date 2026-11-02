@@ -49,3 +49,4 @@ export function resolveViewFromPath(pathname) {
   const clean = pathname.toLowerCase().replace(/\/$/, '') || '/';
   return PATH_VIEW_MAP[clean] || 'home';
 }
+

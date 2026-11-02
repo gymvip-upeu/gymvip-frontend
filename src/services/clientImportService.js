@@ -1,9 +1,12 @@
 // ==============================================================================
 // GYM VIP — Servicio de Importación Masiva de Clientes (HU-06 / Sprint 1)
 // Conexión con endpoints /api/v1/clients/import (plantilla, vista previa y confirmación)
+// Compatible con desarrollo local (proxy Vite) y despliegue Vercel/Render
 // ==============================================================================
 
-const API_BASE_URL = '/api/v1/clients/import';
+import { config } from '../config/environment.js';
+
+const getEndpoint = (path) => `${config.apiBaseUrl}/api/v1/clients/import${path}`;
 
 export async function downloadClientTemplate(token) {
   const headers = {};
@@ -11,7 +14,7 @@ export async function downloadClientTemplate(token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/template`, {
+  const response = await fetch(getEndpoint('/template'), {
     method: 'GET',
     headers,
   });
@@ -24,7 +27,9 @@ export async function downloadClientTemplate(token) {
     } catch {
       // Ignorar error al parsear JSON
     }
-    throw new Error(errorMsg);
+    const err = new Error(errorMsg);
+    err.status = response.status;
+    throw err;
   }
 
   const blob = await response.blob();
@@ -51,7 +56,9 @@ export async function previewClientImport(file, token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/preview`, {
+  // IMPORTANTE: Para peticiones FormData, NUNCA fijar manualmente 'Content-Type'.
+  // El navegador añade automáticamente 'multipart/form-data; boundary=...'
+  const response = await fetch(getEndpoint('/preview'), {
     method: 'POST',
     headers,
     body: formData,
@@ -82,7 +89,8 @@ export async function confirmClientImport(file, token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/confirm`, {
+  // IMPORTANTE: Para peticiones FormData, NUNCA fijar manualmente 'Content-Type'.
+  const response = await fetch(getEndpoint('/confirm'), {
     method: 'POST',
     headers,
     body: formData,
@@ -100,3 +108,8 @@ export async function confirmClientImport(file, token) {
   return data;
 }
 
+export default {
+  downloadClientTemplate,
+  previewClientImport,
+  confirmClientImport,
+};
