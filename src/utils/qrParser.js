@@ -67,3 +67,4 @@ export function parseQrPayload(raw) {
 }
 
 export default parseQrPayload;
+

@@ -79,3 +79,4 @@ test('parseQrPayload: rechaza formatos desconocidos, URLs ajenas y payloads arbi
   const invalid4 = parseQrPayload('{"randomKey": "randomValue"}');
   assert.equal(invalid4.valid, false);
 });
+

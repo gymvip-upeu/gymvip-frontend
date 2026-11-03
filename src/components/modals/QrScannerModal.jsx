@@ -317,3 +317,4 @@ export default function QrScannerModal({ isOpen, onClose, onScanSuccess }) {
     </div>
   );
 }
+
