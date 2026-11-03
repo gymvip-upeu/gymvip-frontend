@@ -15,6 +15,8 @@ import PlansPage from '../pages/PlansPage';
 import StaffPage from '../pages/StaffPage';
 import MembershipsPage from '../pages/MembershipsPage';
 import SettingsPage from '../pages/SettingsPage';
+import ReminderConfigPage from '../pages/ReminderConfigPage';
+import CommunicationsPage from '../pages/CommunicationsPage';
 import LoginModal from '../components/modals/LoginModal';
 import LockScreenModal from '../components/modals/LockScreenModal';
 import { FeedbackModal } from '../components/feedback/FeedbackModal';
@@ -40,8 +42,12 @@ export function AppRoutes() {
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId) => {
     // Guarda de permisos para rutas administrativas
-    if ((viewId === 'staff' || viewId === 'settings') && !isAdmin()) {
+    if ((viewId === 'staff' || viewId === 'settings' || viewId === 'reminders') && !isAdmin()) {
       setAccessError('Acceso Denegado (403): La sección solicitada está reservada exclusivamente para Administradores.');
+      return;
+    }
+    if (viewId === 'communications' && !isAdmin() && !isRecepcion()) {
+      setAccessError('Acceso Denegado (403): La sección de comunicaciones requiere rol Administrador o Recepción.');
       return;
     }
 
@@ -69,8 +75,14 @@ export function AppRoutes() {
 
       const nextView = resolveViewFromPath(window.location.pathname);
 
-      if ((nextView === 'staff' || nextView === 'settings') && !isAdmin()) {
+      if ((nextView === 'staff' || nextView === 'settings' || nextView === 'reminders') && !isAdmin()) {
         setAccessError('Acceso Denegado (403): No dispone de privilegios de Administrador para ver esta página.');
+        setCurrentView('home');
+        window.history.replaceState({ view: 'home' }, '', '/inicio');
+        return;
+      }
+      if (nextView === 'communications' && !isAdmin() && !isRecepcion()) {
+        setAccessError('Acceso Denegado (403): La sección de comunicaciones requiere rol Administrador o Recepción.');
         setCurrentView('home');
         window.history.replaceState({ view: 'home' }, '', '/inicio');
         return;
@@ -125,6 +137,8 @@ export function AppRoutes() {
         {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
         {currentView === 'plans' && <PlansPage />}
         {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage />}
+        {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
+        {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
         {currentView === 'staff' && (isAdmin() ? <StaffPage /> : null)}
         {currentView === 'settings' && (isAdmin() ? <SettingsPage /> : null)}
       </AdminLayout>

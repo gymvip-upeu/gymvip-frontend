@@ -48,6 +48,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     ] : []),
     { id: 'plans', label: 'Planes y tarifas', iconName: 'tag', title: 'Catálogo Tarifario y Versiones de Planes' },
     ...(isAdmin() || isRecepcion() ? [{ id: 'memberships', label: 'Membresías y cobros', iconName: 'credit-card', title: 'Contratación, Cobros y Renovaciones' }] : []),
+    ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell', title: 'Configuración y Cortes de Recordatorios' }] : []),
+    ...(isAdmin() || isRecepcion() ? [{ id: 'communications', label: 'Comunicaciones', iconName: 'message-circle', title: 'Monitoreo y Estado de Comunicaciones' }] : []),
     ...(isAdmin() ? [{ id: 'staff', label: 'Personal y roles', iconName: 'shield-check', title: 'Colaboradores y Control de Privilegios' }] : []),
     { id: 'settings', label: 'Configuración', iconName: 'settings', title: 'Parámetros Operativos del Sistema' },
   ];
