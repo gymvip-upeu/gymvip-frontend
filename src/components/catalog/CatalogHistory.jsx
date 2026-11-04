@@ -1,0 +1,12 @@
+import React,{useState} from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { supplementHistory,promotionHistory } from '../../api/catalogApi';
+import { Button } from '../common/Button';
+import { Alert } from '../common/Alert';
+import { availabilityLabel,updatedLabel,dateLabel } from './catalogUtils';
+import { formatCurrencyPen } from '../../utils/formatters';
+export default function CatalogHistory({item,kind='supplement'}) {
+  const {token}=useAuth();const [rows,setRows]=useState(null),[page,setPage]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState('');
+  async function load(next=0){setBusy(true);setError('');try{const values=await(kind==='supplement'?supplementHistory:promotionHistory)(item.id,next,token);setRows(values);setPage(next);}catch(e){setError(e.message);}finally{setBusy(false);}}
+  return <section className="catalog-panel catalog-history"><header><h2>Historial de cambios</h2><Button variant="secondary" disabled={busy} onClick={()=>load()}>{busy?'Consultando…':'Consultar historial'}</Button></header>{error&&<Alert variant="danger" message={error}/>}{rows&&<><div className="catalog-history-table"><table className="member-table"><thead><tr><th>Versión</th><th>Fecha (Lima)</th><th>Responsable</th><th>Precio</th><th>{kind==='supplement'?'Disponibilidad':'Vigencia'}</th><th>Información</th></tr></thead><tbody>{rows.map(row=>{const saved=JSON.parse(row.snapshot);return <tr key={row.version}><td>v{row.version}</td><td>{updatedLabel(row.changedAtUtc)}</td><td>{row.actor}</td><td>{formatCurrencyPen(kind==='supplement'?saved.pricePen:saved.offerPricePen)}</td><td>{kind==='supplement'?<>{availabilityLabel(saved.availability)}<small>{saved.published?'Visible':'Oculto'}</small></>:<>{dateLabel(saved.startDate)} — {dateLabel(saved.endDate)}<small>{saved.enabled?'Habilitada':'Desactivada'}</small></>}</td><td><details><summary>Ver datos</summary><p><strong>{saved.name}</strong></p><p>{saved.description}</p>{saved.conditions&&<p>Condiciones: {saved.conditions}</p>}{saved.ingredients&&<p>Ingredientes: {saved.ingredients}</p>}</details></td></tr>;})}{!rows.length&&<tr><td colSpan={6} className="member-empty">No hay más cambios registrados.</td></tr>}</tbody></table></div><div className="catalog-pagination"><Button variant="secondary" disabled={busy||page===0} onClick={()=>load(page-1)}>Anterior</Button><span>Página {page+1}</span><Button variant="secondary" disabled={busy||rows.length<20} onClick={()=>load(page+1)}>Siguiente</Button></div></>}</section>;
+}

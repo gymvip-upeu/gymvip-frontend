@@ -47,6 +47,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       { id: 'verification', label: 'Verificar ingreso', iconName: 'check-circle', title: 'Control Manual de Acceso en Recepción' },
     ] : []),
     { id: 'plans', label: 'Planes y tarifas', iconName: 'tag', title: 'Catálogo Tarifario y Versiones de Planes' },
+    { id: 'supplements', label: 'Suplementos', iconName: 'package', title: 'Catálogo de Suplementos y Stock' },
+    { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Gestión de Promociones y Descuentos' },
     ...(isAdmin() || isRecepcion() ? [{ id: 'memberships', label: 'Membresías y cobros', iconName: 'credit-card', title: 'Contratación, Cobros y Renovaciones' }] : []),
     ...(isAdmin() ? [{ id: 'staff', label: 'Personal y roles', iconName: 'shield-check', title: 'Colaboradores y Control de Privilegios' }] : []),
     { id: 'settings', label: 'Configuración', iconName: 'settings', title: 'Parámetros Operativos del Sistema' },

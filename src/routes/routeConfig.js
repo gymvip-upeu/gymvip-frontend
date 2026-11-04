@@ -14,6 +14,8 @@ export const PATH_VIEW_MAP = {
   '/miembros': 'clients',
   '/miembros/importar': 'clients',
   '/planes': 'plans',
+  '/suplementos': 'supplements',
+  '/promociones': 'promotions',
   '/vigencias': 'coverage',
   '/verificacion': 'verification',
   '/membresias': 'memberships',
@@ -29,6 +31,8 @@ export const VIEW_PATH_MAP = {
   home: '/inicio',
   clients: '/miembros',
   plans: '/planes',
+  supplements: '/suplementos',
+  promotions: '/promociones',
   coverage: '/vigencias',
   verification: '/verificacion',
   memberships: '/cobros',
@@ -49,4 +53,3 @@ export function resolveViewFromPath(pathname) {
   const clean = pathname.toLowerCase().replace(/\/$/, '') || '/';
   return PATH_VIEW_MAP[clean] || 'home';
 }
-

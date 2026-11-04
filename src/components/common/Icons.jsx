@@ -81,6 +81,23 @@ export function Icon({ name, size = 18, color = 'currentColor', className = '', 
           <line x1="7" y1="7" x2="7.01" y2="7" />
         </svg>
       );
+    case 'package':
+      return (
+        <svg {...iconProps}>
+          <line x1="16.5" y1="9.4" x2="7.5" y2="4.21" />
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+          <line x1="12" y1="22.08" x2="12" y2="12" />
+        </svg>
+      );
+    case 'percent':
+      return (
+        <svg {...iconProps}>
+          <line x1="19" y1="5" x2="5" y2="19" />
+          <circle cx="6.5" cy="6.5" r="2.5" />
+          <circle cx="17.5" cy="17.5" r="2.5" />
+        </svg>
+      );
     case 'search':
       return (
         <svg {...iconProps}>

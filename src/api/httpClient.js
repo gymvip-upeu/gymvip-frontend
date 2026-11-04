@@ -25,7 +25,7 @@ export function registerUnauthorizedHandler(callback) {
 export async function httpClient(endpoint, options = {}, token = null) {
   const url = `${config.apiBaseUrl}${endpoint}`;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(typeof FormData !== 'undefined' && options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers || {}),
   };
 

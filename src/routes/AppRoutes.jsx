@@ -12,6 +12,8 @@ import ClientsPage from '../pages/ClientsPage';
 import CoveragePage from '../pages/CoveragePage';
 import VerificationPage from '../pages/VerificationPage';
 import PlansPage from '../pages/PlansPage';
+import SupplementsPage from '../pages/SupplementsPage';
+import PromotionsPage from '../pages/PromotionsPage';
 import StaffPage from '../pages/StaffPage';
 import MembershipsPage from '../pages/MembershipsPage';
 import SettingsPage from '../pages/SettingsPage';
@@ -22,6 +24,7 @@ import '../themes/jorge.css';
 import '../themes/memberships.css';
 import '../themes/members.css';
 import '../themes/plans.css';
+import '../themes/catalog.css';
 
 import { PATH_VIEW_MAP, VIEW_PATH_MAP, resolveViewFromPath } from './routeConfig';
 
@@ -124,6 +127,8 @@ export function AppRoutes() {
         {currentView === 'coverage' && (isAdmin() || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
         {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
         {currentView === 'plans' && <PlansPage />}
+        {currentView === 'supplements' && <SupplementsPage />}
+        {currentView === 'promotions' && <PromotionsPage />}
         {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage />}
         {currentView === 'staff' && (isAdmin() ? <StaffPage /> : null)}
         {currentView === 'settings' && (isAdmin() ? <SettingsPage /> : null)}
