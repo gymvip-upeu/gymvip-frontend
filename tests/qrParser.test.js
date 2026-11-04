@@ -1,5 +1,5 @@
 // ==============================================================================
-// GYM VIP — Pruebas Automatizadas del Validador QR (HU-13 T05 / T13)
+// GYM VIP — Pruebas Automatizadas del Validador QR (HU-13 T05 / T13 / Sprint 3)
 // ==============================================================================
 
 import test from 'node:test';
@@ -26,6 +26,15 @@ test('parseQrPayload: reconoce identificador UUID directo', () => {
   assert.equal(result.valid, true);
   assert.equal(result.identifier, uuid);
   assert.equal(result.type, 'CLIENT_ID');
+});
+
+test('parseQrPayload: reconoce token QR dinámico de acceso móvil (HU-13 Sprint 3 KMP)', () => {
+  const dynamicQr = 'gymvip://access/v1?cid=e1f0b09e-7164-42f8-b3bf-4d10ba35f7e1&code=MAR-2B7A89&nonce=a1b2c3d4&exp=1793750000';
+  const result = parseQrPayload(dynamicQr);
+  assert.equal(result.valid, true);
+  assert.equal(result.identifier, 'e1f0b09e-7164-42f8-b3bf-4d10ba35f7e1');
+  assert.equal(result.type, 'CLIENT_ID');
+  assert.equal(result.token, dynamicQr);
 });
 
 test('parseQrPayload: reconoce esquema URI gymvip://member/', () => {
@@ -79,4 +88,3 @@ test('parseQrPayload: rechaza formatos desconocidos, URLs ajenas y payloads arbi
   const invalid4 = parseQrPayload('{"randomKey": "randomValue"}');
   assert.equal(invalid4.valid, false);
 });
-
