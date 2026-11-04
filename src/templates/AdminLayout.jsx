@@ -50,6 +50,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     { id: 'supplements', label: 'Suplementos', iconName: 'package', title: 'Catálogo de Suplementos y Stock' },
     { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Gestión de Promociones y Descuentos' },
     ...(isAdmin() || isRecepcion() ? [{ id: 'memberships', label: 'Membresías y cobros', iconName: 'credit-card', title: 'Contratación, Cobros y Renovaciones' }] : []),
+    ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell', title: 'Configuración y Cortes de Recordatorios' }] : []),
+    ...(isAdmin() || isRecepcion() ? [{ id: 'communications', label: 'Comunicaciones', iconName: 'message-circle', title: 'Monitoreo y Estado de Comunicaciones' }] : []),
     ...(isAdmin() ? [{ id: 'staff', label: 'Personal y roles', iconName: 'shield-check', title: 'Colaboradores y Control de Privilegios' }] : []),
     { id: 'settings', label: 'Configuración', iconName: 'settings', title: 'Parámetros Operativos del Sistema' },
   ];

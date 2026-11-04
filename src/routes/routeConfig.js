@@ -20,6 +20,8 @@ export const PATH_VIEW_MAP = {
   '/verificacion': 'verification',
   '/membresias': 'memberships',
   '/cobros': 'memberships',
+  '/recordatorios': 'reminders',
+  '/comunicaciones': 'communications',
   '/personal': 'staff',
   '/configuracion': 'settings',
 };
@@ -36,6 +38,8 @@ export const VIEW_PATH_MAP = {
   coverage: '/vigencias',
   verification: '/verificacion',
   memberships: '/cobros',
+  reminders: '/recordatorios',
+  communications: '/comunicaciones',
   staff: '/personal',
   settings: '/configuracion',
 };

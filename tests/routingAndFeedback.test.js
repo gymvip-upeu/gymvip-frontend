@@ -17,6 +17,8 @@ test('Routing: resuelve correctamente las rutas visibles del frontend a sus vist
   assert.equal(resolveViewFromPath('/verificacion'), 'verification');
   assert.equal(resolveViewFromPath('/cobros'), 'memberships');
   assert.equal(resolveViewFromPath('/membresias'), 'memberships');
+  assert.equal(resolveViewFromPath('/recordatorios'), 'reminders');
+  assert.equal(resolveViewFromPath('/comunicaciones'), 'communications');
   assert.equal(resolveViewFromPath('/personal'), 'staff');
   assert.equal(resolveViewFromPath('/configuracion'), 'settings');
 });
@@ -37,7 +39,7 @@ test('Routing: rutas desconocidas o nulas resuelven de forma segura a home', () 
 });
 
 test('Routing: VIEW_PATH_MAP contiene correspondencia estricta para cada vista operativa', () => {
-  const views = ['home', 'clients', 'plans', 'coverage', 'verification', 'memberships', 'staff', 'settings'];
+  const views = ['home', 'clients', 'plans', 'coverage', 'verification', 'memberships', 'reminders', 'communications', 'staff', 'settings'];
   for (const v of views) {
     assert.ok(VIEW_PATH_MAP[v], `Debe existir ruta asignada para vista: ${v}`);
     assert.ok(VIEW_PATH_MAP[v].startsWith('/'), `La ruta de ${v} debe comenzar con /`);

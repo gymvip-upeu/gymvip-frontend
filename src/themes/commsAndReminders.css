@@ -1,0 +1,331 @@
+/* ==============================================================================
+   GYM VIP — Estilos para HU-14 (Recordatorios) y HU-18 (Comunicaciones)
+   Luxury Dark & Gold Fitness Design System
+   ============================================================================== */
+
+.comms-page, .reminders-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.comms-heading, .reminders-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.comms-heading h1, .reminders-heading h1 {
+  font-size: 24px;
+  letter-spacing: -0.4px;
+  margin: 0 0 6px;
+  color: var(--color-text-primary, #f5f5f5);
+}
+
+.comms-heading p, .reminders-heading p {
+  color: var(--color-text-secondary, #a0a0a0);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Config Grid */
+.reminders-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 960px) {
+  .reminders-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.reminders-card, .comms-card {
+  background: #1c1c1b;
+  border: 1px solid #30302d;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.reminders-card header, .comms-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2d2d2a;
+}
+
+.reminders-card h2, .comms-card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-gold, #c4a15a);
+}
+
+/* Switches & Checkboxes */
+.master-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #252522;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #3d3d37;
+  margin-bottom: 20px;
+}
+
+.toggle-label strong {
+  display: block;
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.toggle-label span {
+  font-size: 12px;
+  color: #999;
+}
+
+.form-group-reminders {
+  margin-bottom: 20px;
+}
+
+.form-group-reminders label.section-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #dcdad4;
+  margin-bottom: 10px;
+}
+
+.days-chips-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.day-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #242421;
+  border: 1px solid #383833;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #cfceca;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.day-chip:hover {
+  border-color: var(--color-gold, #c4a15a);
+}
+
+.day-chip input[type="checkbox"], .day-chip input[type="radio"] {
+  accent-color: var(--color-gold, #c4a15a);
+}
+
+.day-chip.active {
+  background: #2e2b20;
+  border-color: var(--color-gold, #c4a15a);
+  color: var(--color-gold, #c4a15a);
+}
+
+/* Template Preview */
+.template-preview-box {
+  background: #141413;
+  border: 1px dashed #413d30;
+  border-radius: 8px;
+  padding: 18px;
+  margin-top: 10px;
+}
+
+.template-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c4a15a;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.template-bubble {
+  background: #202b23;
+  border: 1px solid #2a4030;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #e5ede7;
+  white-space: pre-wrap;
+}
+
+/* Action Bar */
+.reminders-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #2d2d2a;
+}
+
+/* Table Filters */
+.comms-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #1c1c1b;
+  border: 1px solid #30302d;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.comms-filters input, .comms-filters select {
+  background: #242421;
+  border: 1px solid #383834;
+  border-radius: 6px;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 12px;
+  min-height: 38px;
+}
+
+.comms-filters input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Status Badges */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.badge-solicitado {
+  background: #2a2a28;
+  color: #a8a8a2;
+  border: 1px solid #44443e;
+}
+
+.badge-proveedor {
+  background: #1b2838;
+  color: #79b0f7;
+  border: 1px solid #284469;
+}
+
+.badge-enviado {
+  background: #352c15;
+  color: #e6c579;
+  border: 1px solid #5a4921;
+}
+
+.badge-entregado {
+  background: #182e20;
+  color: #7ce89f;
+  border: 1px solid #275436;
+}
+
+.badge-leido {
+  background: #15332c;
+  color: #55f3d3;
+  border: 1px solid #1f5f52;
+}
+
+.badge-fallido {
+  background: #381a1a;
+  color: #f77c7c;
+  border: 1px solid #632626;
+}
+
+/* Comms Modal */
+.modal-overlay-comms {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content-comms {
+  background: #1c1c1b;
+  border: 1px solid #383834;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header-comms {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #2d2d2a;
+}
+
+.modal-header-comms h3 {
+  margin: 0;
+  color: var(--color-gold, #c4a15a);
+  font-size: 16px;
+}
+
+.modal-body-comms {
+  padding: 20px 24px;
+  font-size: 13px;
+  color: #dedede;
+}
+
+.modal-row {
+  display: flex;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #262624;
+  padding-bottom: 8px;
+}
+
+.modal-row strong {
+  width: 160px;
+  color: #9c9a93;
+  flex-shrink: 0;
+}
+
+.modal-row span {
+  flex: 1;
+  word-break: break-all;
+}
+
+.modal-footer-comms {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #2d2d2a;
+  background: #171716;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
