@@ -18,6 +18,7 @@ export async function createStaffAccount(accountData, token = null) {
   const payload = {
     email: accountData.email.trim(),
     password: accountData.password,
+    role: accountData.role,
     roles: [accountData.role],
   };
 
