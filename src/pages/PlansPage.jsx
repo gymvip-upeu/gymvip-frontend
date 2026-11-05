@@ -78,7 +78,7 @@ export default function PlansPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
-            Catálogo de Planes y Tarifas
+            Catálogo de Planes
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
             Tarifario oficial en Soles (PEN), versionado inmutable snapshot y condiciones de servicio.

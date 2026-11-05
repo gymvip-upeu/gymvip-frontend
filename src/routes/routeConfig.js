@@ -11,6 +11,7 @@ export const PATH_VIEW_MAP = {
   '/': 'home',
   '/inicio': 'home',
   '/home': 'home',
+  '/operaciones': 'memberships',
   '/miembros': 'clients',
   '/miembros/importar': 'clients',
   '/planes': 'plans',
@@ -32,6 +33,7 @@ export const PATH_VIEW_MAP = {
 export const VIEW_PATH_MAP = {
   home: '/inicio',
   clients: '/miembros',
+  operations: '/operaciones',
   plans: '/planes',
   supplements: '/suplementos',
   promotions: '/promociones',

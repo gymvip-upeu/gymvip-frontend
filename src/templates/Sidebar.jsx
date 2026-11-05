@@ -72,13 +72,21 @@ export function Sidebar({
         {/* Lista de Navegación */}
         <nav className="sidebar-nav">
           {navItems.map((item) => {
-            const isActive = currentView === item.id;
+            const isOpGroup = item.id === 'operations' && ['operations', 'memberships', 'coverage', 'verification'].includes(currentView);
+            const isActive = currentView === item.id || isOpGroup;
+            const handleClick = () => {
+              if (item.id === 'operations') {
+                onNavigate('memberships');
+              } else {
+                onNavigate(item.id);
+              }
+            };
             return (
               <button
                 key={item.id}
                 type="button"
                 className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => onNavigate(item.id)}
+                onClick={handleClick}
                 aria-current={isActive ? 'page' : undefined}
                 title={isCollapsed ? item.label : undefined}
               >

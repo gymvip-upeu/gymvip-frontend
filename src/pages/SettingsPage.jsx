@@ -9,8 +9,10 @@ import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { Alert } from '../components/common/Alert';
 import { Icon } from '../components/common/Icons';
+import StaffPage from './StaffPage';
 
-export default function SettingsPage() {
+export default function SettingsPage({ initialTab = 'general' }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { user, isAdmin } = useAuth();
 
   // Umbral de alerta de vencimiento (por defecto 7 días según regla de negocio)
@@ -40,16 +42,44 @@ export default function SettingsPage() {
         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
           Configuración Operativa
         </h1>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-          Parámetros del sistema, políticas de recepción y datos institucionales de VIP Center Fit.
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: '0 0 16px 0' }}>
+          Parámetros del sistema, nómina de colaboradores y datos institucionales de VIP Center Fit.
         </p>
+
+        {isAdmin() && (
+          <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === 'general' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setActiveTab('general')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
+            >
+              <Icon name="settings" size={15} />
+              <span>Parámetros Generales</span>
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === 'staff' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setActiveTab('staff')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
+            >
+              <Icon name="shield-check" size={15} />
+              <span>Personal y Roles</span>
+              <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>ADMIN</Badge>
+            </button>
+          </div>
+        )}
       </div>
 
-      {savedSuccess && (
-        <Alert variant="success" message="Configuración de umbral guardada exitosamente en el navegador." onClose={() => setSavedSuccess(false)} />
-      )}
+      {activeTab === 'staff' && isAdmin() ? (
+        <StaffPage />
+      ) : (
+        <>
+          {savedSuccess && (
+            <Alert variant="success" message="Configuración de umbral guardada exitosamente en el navegador." onClose={() => setSavedSuccess(false)} />
+          )}
 
-      <div style={{ display: 'grid', gap: '24px' }}>
+          <div style={{ display: 'grid', gap: '24px' }}>
         {/* Tarjeta 1: Parámetros de Recepción y Vigencias */}
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
@@ -196,7 +226,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </>
+  )}
+</div>
+);
 }
 

@@ -22,6 +22,7 @@ import { Alert } from '../components/common/Alert';
 import { Badge } from '../components/common/Badge';
 import { Icon } from '../components/common/Icons';
 import MembershipCalendar from '../components/common/MembershipCalendar';
+import OperationsNav from '../components/common/OperationsNav';
 import { formatCurrencyPen } from '../utils/formatters';
 
 const dateLabel = (value) => {
@@ -42,7 +43,7 @@ const methodLabel = (value) =>
     POS: 'Tarjeta (POS Presencial)',
   }[value] || value);
 
-export default function MembershipsPage() {
+export default function MembershipsPage({ onNavigate }) {
   const { token, user } = useAuth();
   const storageKey = pendingStorageKey(user?.email || 'default');
   const [query, setQuery] = useState('');
@@ -218,6 +219,7 @@ export default function MembershipsPage() {
 
   return (
     <div className="memberships-page" style={{ maxWidth: '1120px', margin: '0 auto' }}>
+      <OperationsNav activeTab="memberships" onNavigate={onNavigate} />
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
           Membresías y Cobros Presenciales

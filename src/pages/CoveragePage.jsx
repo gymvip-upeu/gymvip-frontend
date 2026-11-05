@@ -13,6 +13,7 @@ import { Icon } from '../components/common/Icons';
 import { stateLabel, dateLabel } from '../components/common/CoverageCard';
 import { LoadingDotsSpinner } from '../components/feedback/LoadingDotsSpinner';
 import ClientManageModal from '../components/modals/ClientManageModal';
+import OperationsNav from '../components/common/OperationsNav';
 
 export default function CoveragePage({ onNavigate }) {
   const { token, user } = useAuth();
@@ -106,6 +107,7 @@ export default function CoveragePage({ onNavigate }) {
 
   return (
     <section className="coverage-page" style={{ maxWidth: '1120px', margin: '0 auto' }}>
+      <OperationsNav activeTab="coverage" onNavigate={onNavigate} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>

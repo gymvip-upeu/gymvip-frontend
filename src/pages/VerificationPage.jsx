@@ -13,6 +13,7 @@ import QrScannerModal from '../components/modals/QrScannerModal';
 import { Button } from '../components/common/Button';
 import { Alert } from '../components/common/Alert';
 import { Icon } from '../components/common/Icons';
+import OperationsNav from '../components/common/OperationsNav';
 
 function formatLimaTime(utcString) {
   if (!utcString) return '-';
@@ -204,6 +205,7 @@ export default function VerificationPage({ onNavigate }) {
 
   return (
     <section className="verification-page" style={{ maxWidth: '960px', margin: '0 auto' }}>
+      <OperationsNav activeTab="verification" onNavigate={onNavigate} />
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
           Verificación de Ingreso y Control de Asistencia

@@ -43,20 +43,36 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     { id: 'home', label: 'Inicio', iconName: 'home', title: 'Panel de Control Principal' },
     { id: 'clients', label: 'Miembros', iconName: 'users', title: 'Directorio y Gestión de Miembros' },
     ...(isAdmin() || isRecepcion() ? [
-      { id: 'coverage', label: 'Vigencias y alertas', iconName: 'calendar', title: 'Seguimiento y Alertas de Membresías' },
-      { id: 'verification', label: 'Verificar ingreso', iconName: 'check-circle', title: 'Control Manual de Acceso en Recepción' },
+      { id: 'operations', label: 'Operaciones', iconName: 'credit-card', title: 'Operaciones: Cobros, Vigencias y Acceso' },
     ] : []),
-    { id: 'plans', label: 'Planes y tarifas', iconName: 'tag', title: 'Catálogo Tarifario y Versiones de Planes' },
+    { id: 'plans', label: 'Planes', iconName: 'tag', title: 'Catálogo Tarifario y Versiones de Planes' },
     { id: 'supplements', label: 'Suplementos', iconName: 'package', title: 'Catálogo de Suplementos y Stock' },
     { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Gestión de Promociones y Descuentos' },
-    ...(isAdmin() || isRecepcion() ? [{ id: 'memberships', label: 'Membresías y cobros', iconName: 'credit-card', title: 'Contratación, Cobros y Renovaciones' }] : []),
     ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell', title: 'Configuración y Cortes de Recordatorios' }] : []),
     ...(isAdmin() || isRecepcion() ? [{ id: 'communications', label: 'Comunicaciones', iconName: 'message-circle', title: 'Monitoreo y Estado de Comunicaciones' }] : []),
-    ...(isAdmin() ? [{ id: 'staff', label: 'Personal y roles', iconName: 'shield-check', title: 'Colaboradores y Control de Privilegios' }] : []),
     { id: 'settings', label: 'Configuración', iconName: 'settings', title: 'Parámetros Operativos del Sistema' },
   ];
 
-  const currentItem = navItems.find((item) => item.id === currentView) || navItems[0];
+  const viewTitles = {
+    home: 'Panel de Control Principal',
+    clients: 'Directorio y Gestión de Miembros',
+    operations: 'Operaciones: Cobros, Vigencias y Acceso',
+    memberships: 'Membresías y Cobros en Mostrador',
+    coverage: 'Seguimiento y Alertas de Vigencias',
+    verification: 'Control Manual de Acceso en Recepción',
+    plans: 'Catálogo de Planes y Tarifas',
+    supplements: 'Catálogo de Suplementos y Stock',
+    promotions: 'Gestión de Promociones y Descuentos',
+    reminders: 'Configuración y Cortes de Recordatorios',
+    communications: 'Monitoreo y Estado de Comunicaciones',
+    staff: 'Gestión de Personal y Roles',
+    settings: 'Configuración Operativa del Sistema',
+  };
+
+  const currentItem = {
+    id: currentView,
+    title: viewTitles[currentView] || 'VIP Center Fit',
+  };
 
   const handleNavigate = (viewId) => {
     onNavigate(viewId);
