@@ -393,6 +393,30 @@ button {
   border: 1px solid var(--color-warning-border);
 }
 
+/* Notificaciones flotantes superiores derechas (INC-S1-07) */
+.alert-floating-top-right {
+  position: fixed !important;
+  top: 24px !important;
+  right: 24px !important;
+  z-index: 99999 !important;
+  max-width: 440px !important;
+  width: calc(100% - 48px) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px var(--color-gold-border) !important;
+  border-radius: var(--radius-lg) !important;
+  animation: alertSlideInTopRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes alertSlideInTopRight {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 /* ==============================================================================
    SHELL Y NAVEGACIÓN MODERNA (COLLAPSIBLE SIDEBAR & RESPONSIVE DRAWER)
    ============================================================================== */

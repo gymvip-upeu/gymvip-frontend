@@ -22,6 +22,7 @@ import CommunicationsPage from '../pages/CommunicationsPage';
 import LoginModal from '../components/modals/LoginModal';
 import LockScreenModal from '../components/modals/LockScreenModal';
 import { FeedbackModal } from '../components/feedback/FeedbackModal';
+import { Alert } from '../components/common/Alert';
 import '../themes/jorge.css';
 import '../themes/memberships.css';
 import '../themes/members.css';
@@ -141,22 +142,22 @@ export function AppRoutes() {
         {currentView === 'plans' && <PlansPage />}
         {currentView === 'supplements' && <SupplementsPage />}
         {currentView === 'promotions' && <PromotionsPage />}
-        {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage />}
+        {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
         {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
         {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
-        {currentView === 'staff' && (isAdmin() ? <StaffPage /> : null)}
-        {currentView === 'settings' && (isAdmin() ? <SettingsPage /> : null)}
+        {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" /> : null)}
+        {currentView === 'settings' && (isAdmin() ? <SettingsPage initialTab="general" /> : null)}
       </AdminLayout>
 
-      {/* Modal accesible de Error 403 / Restricción de permisos */}
+      {/* Aviso accesible superior derecho de Error 403 / Denegación de permisos (INC-S1-07) */}
       {accessError && (
-        <FeedbackModal
-          isOpen={true}
+        <Alert
           variant="forbidden"
-          title="Acceso No Autorizado"
+          floating
+          autoClose
+          title="Acceso No Autorizado (403)"
           message={accessError}
           onClose={() => setAccessError(null)}
-          actionText="Entendido"
         />
       )}
     </>
