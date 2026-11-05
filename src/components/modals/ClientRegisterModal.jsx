@@ -80,9 +80,50 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
     }
   };
 
+  // Soporte de tecla Escape para cerrar modal
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !submitting) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, submitting]);
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="client-modal-title">
-      <div className="modal-content" style={{ maxWidth: '600px', padding: '32px' }}>
+    <div
+      className="modal-overlay client-register-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="client-modal-title"
+      onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
+      style={{
+        backgroundColor: 'rgba(11, 13, 18, 0.88)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 1100,
+        position: 'fixed',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px 16px',
+      }}
+    >
+      <div
+        className="modal-content client-register-modal-content"
+        style={{
+          maxWidth: '640px',
+          width: '100%',
+          maxHeight: 'min(90vh, 780px)',
+          overflowY: 'auto',
+          padding: '32px',
+          background: 'var(--color-surface-panel, #12141A)',
+          border: '1px solid var(--color-gold-border, rgba(212, 175, 55, 0.35))',
+          borderRadius: 'var(--radius-xl, 16px)',
+          boxShadow: '0 25px 70px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(212, 175, 55, 0.15)',
+          position: 'relative',
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <span className="badge badge-gold" style={{ fontSize: '11px', marginBottom: '6px' }}>
