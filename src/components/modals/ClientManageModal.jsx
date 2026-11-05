@@ -11,6 +11,7 @@ import { Alert } from '../common/Alert';
 import { Badge } from '../common/Badge';
 import { Icon } from '../common/Icons';
 import CoverageCard from '../common/CoverageCard';
+import MemberSale from '../members/MemberSale';
 
 const labels = {
   firstName: 'Nombres',
@@ -41,6 +42,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
   const [detail, setDetail] = useState(null);
   const [form, setForm] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [saleOpen, setSaleOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -199,10 +201,25 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
                   Datos de Contacto e Identidad
                 </h3>
                 {!editing && (
-                  <Button variant="primary" style={{ fontSize: '12px', minHeight: '34px' }} onClick={() => { setEditing(true); setSuccess(''); }}>
-                    <Icon name="edit" size={14} />
-                    <span>Modificar Datos</span>
-                  </Button>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <Button
+                      variant="primary"
+                      style={{ fontSize: '12px', minHeight: '34px' }}
+                      disabled={detail?.status !== 'ACTIVO'}
+                      onClick={() => setSaleOpen(true)}
+                    >
+                      <Icon name="credit-card" size={14} />
+                      <span>{coverage && coverage.state !== 'SIN_MEMBRESIA' && coverage.state !== 'CANCELADA' ? 'Renovar plan' : 'Asignar plan'}</span>
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      style={{ fontSize: '12px', minHeight: '34px' }}
+                      onClick={() => { setEditing(true); setSuccess(''); }}
+                    >
+                      <Icon name="edit" size={14} />
+                      <span>Modificar Datos</span>
+                    </Button>
+                  </div>
                 )}
               </div>
 
@@ -371,6 +388,18 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
               </div>
             )}
           </>
+        )}
+        {saleOpen && detail && (
+          <MemberSale
+            client={detail}
+            onClose={() => setSaleOpen(false)}
+            onSaved={() => {
+              setSaleOpen(false);
+              setSuccess('¡Pago registrado y membresía actualizada exitosamente!');
+              setReload((n) => n + 1);
+              onUpdated?.();
+            }}
+          />
         )}
       </div>
     </div>
