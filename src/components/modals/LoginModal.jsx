@@ -9,7 +9,7 @@ import { Alert } from '../common/Alert';
 import { Button } from '../common/Button';
 import { Icon } from '../common/Icons';
 import athleteImg from '../../assets/hero-athlete.jpg';
-import logoImg from '../../assets/gymvip-logo.jpg';
+import { GymVipLogo } from '../common/GymVipLogo';
 
 export default function LoginModal() {
   const { login, loading } = useAuth();
@@ -47,7 +47,7 @@ export default function LoginModal() {
         {/* Encabezado Institucional con Logo Sobrio */}
         <div className="login-brand-header">
           <div className="login-brand-logo-mark" aria-hidden="true">
-            <img src={logoImg} alt="GYM VIP" className="login-brand-img" />
+            <GymVipLogo size={52} animated={loading} idSuffix="login" />
           </div>
           <h1 id="login-title" className="login-brand-title">GYM VIP</h1>
           <p className="login-brand-tagline">CENTRO DE ENTRENAMIENTO EXCLUSIVO</p>

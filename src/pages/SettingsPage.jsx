@@ -1,62 +1,200 @@
-﻿// ==============================================================================
+// ==============================================================================
 // GYM VIP — Pantalla: SettingsPage (Configuración Operativa del Sistema)
-// Parámetros realmente disponibles y configurables para el centro fitness
+// Parámetros reales persistidos: Reglas de Recordatorios, Conexión y Personal
 // ==============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { Alert } from '../components/common/Alert';
 import { Icon } from '../components/common/Icons';
+import { LoadingState } from '../components/feedback/LoadingState';
 import StaffPage from './StaffPage';
+import {
+  getReminderConfigApi,
+  updateReminderConfigApi,
+  evaluateRemindersNowApi,
+} from '../api/reminderApi';
+import { httpClient } from '../api/httpClient';
 
-export default function SettingsPage({ initialTab = 'general' }) {
+export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
+  const { user, token, isAdmin, isRecepcion } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
-  const { user, isAdmin } = useAuth();
 
-  // Umbral de alerta de vencimiento (por defecto 7 días según regla de negocio)
-  const [upcomingDays, setUpcomingDays] = useState(() => {
-    try {
-      const saved = localStorage.getItem('gymvip_upcoming_days');
-      return saved ? parseInt(saved, 10) : 7;
-    } catch {
-      return 7;
-    }
+  // Estados de datos reales de recordatorios
+  const [loadingConfig, setLoadingConfig] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [evaluating, setEvaluating] = useState(false);
+  const [configError, setConfigError] = useState('');
+  const [configSuccess, setConfigSuccess] = useState('');
+  const [auditMeta, setAuditMeta] = useState(null);
+
+  // Formulario de parámetros operativos (persistidos en PostgreSQL)
+  const [form, setForm] = useState({
+    enabled: true,
+    daysBeforeExpiry: 7,
+    evaluationHourLima: 9,
+    channel: 'WHATSAPP',
   });
 
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  // Estado del microservicio de comunicaciones
+  const [serviceHealth, setServiceHealth] = useState({
+    loading: true,
+    status: 'UNKNOWN',
+    mode: 'simulation',
+    provider: 'meta',
+    error: null,
+  });
 
-  const handleSaveThreshold = (e) => {
-    e.preventDefault();
+  // Cargar configuración de recordatorios desde el backend
+  const loadReminderConfig = useCallback(async () => {
+    if (!token) return;
+    setLoadingConfig(true);
+    setConfigError('');
     try {
-      localStorage.setItem('gymvip_upcoming_days', String(upcomingDays));
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    } catch {}
+      const data = await getReminderConfigApi(token);
+      setForm({
+        enabled: Boolean(data.enabled),
+        daysBeforeExpiry: Number(data.daysBeforeExpiry) || 7,
+        evaluationHourLima: Number(data.evaluationHourLima) || 9,
+        channel: data.channel || 'WHATSAPP',
+      });
+      setAuditMeta({
+        updatedAtUtc: data.updatedAtUtc,
+        updatedBy: data.updatedBy,
+        lastEvaluatedAtUtc: data.lastEvaluatedAtUtc,
+      });
+    } catch (e) {
+      setConfigError(e.message || 'No se pudo cargar la configuración de recordatorios del servidor.');
+    } finally {
+      setLoadingConfig(false);
+    }
+  }, [token]);
+
+  // Consultar estado de salud del servicio de comunicaciones
+  const checkServiceHealth = useCallback(async () => {
+    setServiceHealth((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const res = await httpClient('/api/v1/health', {}, token);
+      if (res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setServiceHealth({
+          loading: false,
+          status: body.status || 'UP',
+          mode: body.mode || 'simulation',
+          provider: body.whatsappProvider || 'meta',
+          error: null,
+        });
+      } else {
+        setServiceHealth({
+          loading: false,
+          status: 'DOWN',
+          mode: 'simulation',
+          provider: 'simulation',
+          error: `Respuesta HTTP ${res.status}`,
+        });
+      }
+    } catch (err) {
+      setServiceHealth({
+        loading: false,
+        status: 'DISCONNECTED',
+        mode: 'simulation',
+        provider: 'simulation',
+        error: err.message || 'No se pudo conectar con el microservicio.',
+      });
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadReminderConfig();
+    checkServiceHealth();
+  }, [loadReminderConfig, checkServiceHealth]);
+
+  // Guardar configuración de recordatorios (exclusivo ADMIN)
+  const handleSaveConfig = async (e) => {
+    e.preventDefault();
+    if (!isAdmin()) return;
+
+    // Validación de rangos
+    if (form.daysBeforeExpiry < 1 || form.daysBeforeExpiry > 30) {
+      setConfigError('El número de días de anticipación debe encontrarse entre 1 y 30.');
+      return;
+    }
+    if (form.evaluationHourLima < 0 || form.evaluationHourLima > 23) {
+      setConfigError('La hora de evaluación debe ubicarse entre 0 y 23 horas (formato 24h).');
+      return;
+    }
+
+    setSavingConfig(true);
+    setConfigError('');
+    setConfigSuccess('');
+
+    try {
+      const res = await updateReminderConfigApi(form, token);
+      setConfigSuccess('Configuración de recordatorios persistida exitosamente en el servidor.');
+      setAuditMeta({
+        updatedAtUtc: res.updatedAtUtc || new Date().toISOString(),
+        updatedBy: res.updatedBy || user?.email,
+        lastEvaluatedAtUtc: res.lastEvaluatedAtUtc || auditMeta?.lastEvaluatedAtUtc,
+      });
+    } catch (err) {
+      setConfigError(err.message || 'Error al persistir la configuración de recordatorios.');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  // Ejecución manual de corte
+  const handleEvaluateNow = async () => {
+    if (!isAdmin()) return;
+    setEvaluating(true);
+    setConfigError('');
+    setConfigSuccess('');
+    try {
+      const res = await evaluateRemindersNowApi(token);
+      setConfigSuccess(res.message || `Corte manual ejecutado: ${res.evaluatedCount || 0} candidatos evaluados.`);
+      loadReminderConfig();
+    } catch (err) {
+      setConfigError(err.message || 'Error al ejecutar el corte manual de recordatorios.');
+    } finally {
+      setEvaluating(false);
+    }
   };
 
   return (
-    <div className="settings-page" style={{ maxWidth: '960px', margin: '0 auto' }}>
+    <div className="settings-page" style={{ maxWidth: '980px', margin: '0 auto', paddingBottom: '32px' }}>
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
           Configuración Operativa
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: '0 0 16px 0' }}>
-          Parámetros del sistema, nómina de colaboradores y datos institucionales de VIP Center Fit.
+          Parámetros persistidos de recordatorios, enlaces de comunicaciones y gestión de colaboradores.
         </p>
 
-        {isAdmin() && (
-          <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
-            <button
-              type="button"
-              className={`btn btn-sm ${activeTab === 'general' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setActiveTab('general')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
-            >
-              <Icon name="settings" size={15} />
-              <span>Parámetros Generales</span>
-            </button>
+        {/* Pestañas de Navegación */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'rules' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveTab('rules')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
+          >
+            <Icon name="bell" size={15} />
+            <span>Reglas y Recordatorios</span>
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'comms' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveTab('comms')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
+          >
+            <Icon name="message-circle" size={15} />
+            <span>Microservicio de Comunicaciones</span>
+          </button>
+
+          {isAdmin() && (
             <button
               type="button"
               className={`btn btn-sm ${activeTab === 'staff' ? 'btn-primary' : 'btn-secondary'}`}
@@ -67,168 +205,248 @@ export default function SettingsPage({ initialTab = 'general' }) {
               <span>Personal y Roles</span>
               <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>ADMIN</Badge>
             </button>
-          </div>
-        )}
-      </div>
-
-      {activeTab === 'staff' && isAdmin() ? (
-        <StaffPage />
-      ) : (
-        <>
-          {savedSuccess && (
-            <Alert variant="success" message="Configuración de umbral guardada exitosamente en el navegador." onClose={() => setSavedSuccess(false)} />
           )}
-
-          <div style={{ display: 'grid', gap: '24px' }}>
-        {/* Tarjeta 1: Parámetros de Recepción y Vigencias */}
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
-              <Icon name="calendar" size={20} />
-            </span>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
-              Reglas de Cobertura y Alertas
-            </h2>
-          </div>
-
-          <form onSubmit={handleSaveThreshold}>
-            <div className="form-group" style={{ maxWidth: '420px' }}>
-              <label className="form-label" htmlFor="upcoming-days-input">
-                Días de Anticipación para Alerta "Por Vencer" (1 a 30 días)
-              </label>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <input
-                  id="upcoming-days-input"
-                  type="number"
-                  min="1"
-                  max="30"
-                  className="form-input"
-                  value={upcomingDays}
-                  onChange={(e) => setUpcomingDays(Math.max(1, Math.min(30, parseInt(e.target.value, 10) || 1)))}
-                  style={{ width: '100px', textAlign: 'center' }}
-                  required
-                />
-                <Button type="submit" variant="primary" style={{ minHeight: '44px' }}>
-                  Guardar Umbral
-                </Button>
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '6px', display: 'block' }}>
-                Valor de negocio acordado: <strong>7 días</strong>. Los miembros con menos de este plazo figuran en la lista de alertas.
-              </span>
-            </div>
-
-            <div style={{ marginTop: '16px', padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>Zona Horaria Autoritativa:</span>
-                <Badge variant="gold">America/Lima (UTC-5)</Badge>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', marginTop: '8px' }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>Convención de Intervalo de Acceso:</span>
-                <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>Inicio Incluido / Fin Excluido</span>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        {/* Tarjeta 2: Datos Institucionales de la Empresa */}
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
-              <Icon name="crown" size={20} />
-            </span>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
-              Identidad y Datos de la Sede Central
-            </h2>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', fontSize: '13px' }}>
-            <div style={{ padding: '12px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-              <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Razón Social</span>
-              <strong style={{ color: 'var(--color-text-primary)' }}>VIP CENTER FIT S.A.C.</strong>
-            </div>
-            <div style={{ padding: '12px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-              <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>RUC</span>
-              <strong style={{ color: 'var(--color-text-primary)' }}>20601234567</strong>
-            </div>
-            <div style={{ padding: '12px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-              <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Moneda Oficial de Caja</span>
-              <strong style={{ color: 'var(--color-gold)' }}>Soles Peruanos (PEN)</strong>
-            </div>
-            <div style={{ padding: '12px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-              <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>Sede Principal</span>
-              <strong style={{ color: 'var(--color-text-primary)' }}>Av. Primavera 1234, Santiago de Surco, Lima</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Tarjeta 3: Medios de Cobro Presenciales Habilitados en Caja */}
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
-              <Icon name="credit-card" size={20} />
-            </span>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
-              Medios de Pago Presenciales en Mostrador
-            </h2>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ color: 'var(--color-success)' }} aria-hidden="true"><Icon name="check-circle" size={18} /></span>
-              <div>
-                <strong style={{ fontSize: '13px', display: 'block' }}>Efectivo (PEN)</strong>
-                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>Cobro directo en caja</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ color: 'var(--color-success)' }} aria-hidden="true"><Icon name="check-circle" size={18} /></span>
-              <div>
-                <strong style={{ fontSize: '13px', display: 'block' }}>Yape / Plin</strong>
-                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>Exige número de operación</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ color: 'var(--color-success)' }} aria-hidden="true"><Icon name="check-circle" size={18} /></span>
-              <div>
-                <strong style={{ fontSize: '13px', display: 'block' }}>Tarjeta (POS Presencial)</strong>
-                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>Exige código de autorización</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tarjeta 4: Seguridad y Perfil Activo */}
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
-              <Icon name="shield-check" size={20} />
-            </span>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
-              Sesión y Nivel de Privilegios
-            </h2>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
-            <div>
-              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', display: 'block' }}>Colaborador Activo:</span>
-              <strong style={{ fontSize: '15px', color: 'var(--color-text-primary)' }}>{user?.email}</strong>
-              <div style={{ marginTop: '4px' }}>
-                <Badge variant={isAdmin() ? 'gold' : 'neutral'}>
-                  {isAdmin() ? 'ROL ADMINISTRADOR (CONTROL TOTAL)' : 'ROL RECEPCIÓN (ATENCIÓN Y COBROS)'}
-                </Badge>
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', display: 'block' }}>Seguridad:</span>
-              <span style={{ fontSize: '12px', color: 'var(--color-success)', fontWeight: 600 }}>Sesión Stateless con Token Bearer</span>
-            </div>
-          </div>
         </div>
       </div>
-    </>
-  )}
-</div>
-);
-}
 
+      {/* PESTAÑA 1: REGLAS Y RECORDATORIOS */}
+      {activeTab === 'rules' && (
+        <div style={{ display: 'grid', gap: '24px' }}>
+          {configError && <Alert variant="danger" message={configError} onClose={() => setConfigError('')} />}
+          {configSuccess && <Alert variant="success" message={configSuccess} onClose={() => setConfigSuccess('')} />}
+
+          {loadingConfig ? (
+            <LoadingState message="Cargando parámetros de recordatorios desde PostgreSQL..." />
+          ) : (
+            <>
+              {/* Tarjeta: Formulario de Parámetros Persistidos */}
+              <div className="card" style={{ padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
+                      <Icon name="bell" size={20} />
+                    </span>
+                    <h2 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
+                      Evaluación Automática de Expiración
+                    </h2>
+                  </div>
+                  <Badge variant={isAdmin() ? 'gold' : 'neutral'}>
+                    {isAdmin() ? 'Control Total ADMIN' : 'Modo Solo Lectura (Recepción)'}
+                  </Badge>
+                </div>
+
+                <form onSubmit={handleSaveConfig}>
+                  <fieldset disabled={!isAdmin() || savingConfig} style={{ border: 'none', padding: 0, margin: 0 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+                      {/* Control: Habilitado/Deshabilitado */}
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="reminder-enabled-toggle">
+                          Estado del Servicio de Notificaciones
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+                          <input
+                            id="reminder-enabled-toggle"
+                            type="checkbox"
+                            checked={form.enabled}
+                            onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
+                            style={{ width: '18px', height: '18px', accentColor: 'var(--color-gold)', cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: '14px', fontWeight: 600, color: form.enabled ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+                            {form.enabled ? 'Habilitado (Envío activo)' : 'Desactivado (Cortes pausados)'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Control: Días de Anticipación */}
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="days-before-input">
+                          Anticipación de Alerta (1 a 30 días)
+                        </label>
+                        <input
+                          id="days-before-input"
+                          type="number"
+                          min="1"
+                          max="30"
+                          className="form-input"
+                          value={form.daysBeforeExpiry}
+                          onChange={(e) => setForm({ ...form, daysBeforeExpiry: parseInt(e.target.value, 10) || 1 })}
+                          required
+                        />
+                        <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block' }}>
+                          Por defecto: <strong>7 días antes</strong> de expirar.
+                        </span>
+                      </div>
+
+                      {/* Control: Hora de Evaluación */}
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="hour-lima-input">
+                          Hora de Ejecución Diaria (0 a 23 hrs)
+                        </label>
+                        <input
+                          id="hour-lima-input"
+                          type="number"
+                          min="0"
+                          max="23"
+                          className="form-input"
+                          value={form.evaluationHourLima}
+                          onChange={(e) => setForm({ ...form, evaluationHourLima: parseInt(e.target.value, 10) || 0 })}
+                          required
+                        />
+                        <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block' }}>
+                          Horario de Lima: <strong>{String(form.evaluationHourLima).padStart(2, '0')}:00 hrs (UTC-5)</strong>.
+                        </span>
+                      </div>
+
+                      {/* Canal Oficial */}
+                      <div className="form-group">
+                        <label className="form-label">
+                          Canal Autorizado
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                          <Icon name="message-circle" size={16} color="var(--color-gold)" />
+                          <strong style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>WhatsApp Business (Meta API)</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Botones de Acción */}
+                    {isAdmin() && (
+                      <div style={{ display: 'flex', gap: '12px', marginTop: '20px', borderTop: '1px solid var(--color-border)', paddingTop: '16px', flexWrap: 'wrap' }}>
+                        <Button type="submit" variant="primary" disabled={savingConfig || evaluating}>
+                          <Icon name="check-circle" size={15} />
+                          <span>{savingConfig ? 'Guardando en BD...' : 'Guardar Parámetros'}</span>
+                        </Button>
+
+                        <Button type="button" variant="secondary" onClick={handleEvaluateNow} disabled={savingConfig || evaluating}>
+                          <Icon name="refresh" size={15} />
+                          <span>{evaluating ? 'Procesando corte...' : 'Ejecutar Corte Manual Ahora'}</span>
+                        </Button>
+                      </div>
+                    )}
+                  </fieldset>
+                </form>
+
+                {/* Metadatos de Auditoría */}
+                {auditMeta?.updatedAtUtc && (
+                  <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)', paddingTop: '10px' }}>
+                    Última actualización: {new Date(auditMeta.updatedAtUtc).toLocaleString('es-PE')} · Por: {auditMeta.updatedBy || 'admin@vipcenterfit.pe'}
+                  </div>
+                )}
+              </div>
+
+              {/* Tarjeta: Reglas Canónicas Inmutables de Negocio */}
+              <div className="card" style={{ padding: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                  <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
+                    <Icon name="shield-check" size={20} />
+                  </span>
+                  <h2 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
+                    Reglas de Negocio Aprobadas (Inmutables)
+                  </h2>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '14px', fontSize: '13px' }}>
+                  <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Duración Estándar</span>
+                    <strong style={{ color: 'var(--color-gold)', fontSize: '14px' }}>30 Días Calendario Exactos</strong>
+                    <p style={{ margin: '6px 0 0', color: 'var(--color-text-secondary)', fontSize: '12px', lineHeight: 1.4 }}>
+                      Las coberturas mensuales inician el día de contratación y culminan a los 30 días exactos (inicio incluido, fin excluido).
+                    </p>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Período de Gracia</span>
+                    <strong style={{ color: 'var(--color-danger)', fontSize: '14px' }}>0 Días (Tolerancia Cero)</strong>
+                    <p style={{ margin: '6px 0 0', color: 'var(--color-text-secondary)', fontSize: '12px', lineHeight: 1.4 }}>
+                      Al vencer la vigencia, el acceso por torniquete y la validez de credenciales quedan denegados de forma inmediata.
+                    </p>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Modalidad de Cobro</span>
+                    <strong style={{ color: 'var(--color-success)', fontSize: '14px' }}>Pago Presencial en Caja</strong>
+                    <p style={{ margin: '6px 0 0', color: 'var(--color-text-secondary)', fontSize: '12px', lineHeight: 1.4 }}>
+                      Efectivo en Soles (PEN), tarjeta mediante POS físico o billeteras digitales (Yape/Plin con registro de número de operación).
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* PESTAÑA 2: MICROSERVICIO DE COMUNICACIONES */}
+      {activeTab === 'comms' && (
+        <div style={{ display: 'grid', gap: '24px' }}>
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
+                  <Icon name="message-circle" size={20} />
+                </span>
+                <h2 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
+                  Estado de Enlace con gymvip-comunicaciones
+                </h2>
+              </div>
+              <Button variant="secondary" onClick={checkServiceHealth} disabled={serviceHealth.loading}>
+                <Icon name="refresh" size={14} />
+                <span>Verificar Conexión</span>
+              </Button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', fontSize: '13px', marginBottom: '20px' }}>
+              <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Estado de Conexión</span>
+                <div style={{ marginTop: '6px' }}>
+                  <Badge variant={serviceHealth.status === 'UP' ? 'success' : 'danger'}>
+                    {serviceHealth.status === 'UP' ? 'EN LÍNEA (UP)' : 'DESCONECTADO O EN ESPERA'}
+                  </Badge>
+                </div>
+              </div>
+
+              <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Modo de Operación</span>
+                <strong style={{ fontSize: '14px', color: 'var(--color-gold)', display: 'block', marginTop: '4px' }}>
+                  {serviceHealth.mode === 'simulation' ? 'SIMULATION (Modo Seguro Sin Costos)' : 'PRODUCTION (Meta API)'}
+                </strong>
+              </div>
+
+              <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Proveedor WhatsApp</span>
+                <strong style={{ fontSize: '14px', color: 'var(--color-text-primary)', display: 'block', marginTop: '4px' }}>
+                  {serviceHealth.provider === 'meta' ? 'Meta Cloud API v20.0' : 'Simulation WhatsApp Adapter'}
+                </strong>
+              </div>
+            </div>
+
+            <div style={{ padding: '14px', background: 'var(--color-surface-panel)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-gold-border)', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 6px', color: 'var(--color-gold)' }}>
+                Plantillas Oficiales Registradas en Meta Business
+              </h3>
+              <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--color-text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
+                <li><code>recordatorio_vencimiento</code>: Envío anticipado a miembros próximos a expirar.</li>
+                <li><code>aviso_vencido</code>: Notificación cortés de cobertura finalizada y opción de renovación.</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="secondary"
+                onClick={() => onNavigate?.('communications')}
+                style={{ fontSize: '13px' }}
+              >
+                <span>Abrir Centro de Monitoreo de Comunicaciones →</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PESTAÑA 3: PERSONAL Y ROLES (ADMIN) */}
+      {activeTab === 'staff' && isAdmin() && (
+        <StaffPage />
+      )}
+    </div>
+  );
+}
