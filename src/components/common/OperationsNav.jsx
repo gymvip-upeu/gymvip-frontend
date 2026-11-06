@@ -56,3 +56,4 @@ export function OperationsNav({ activeTab, onNavigate }) {
 }
 
 export default OperationsNav;
+
