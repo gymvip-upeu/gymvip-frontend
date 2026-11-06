@@ -46,12 +46,16 @@ export function AppRoutes() {
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId) => {
     // Guarda de permisos para rutas administrativas
-    if ((viewId === 'staff' || viewId === 'settings' || viewId === 'reminders') && !isAdmin()) {
-      setAccessError('Acceso Denegado (403): La sección solicitada está reservada exclusivamente para Administradores.');
+    if (viewId === 'staff' && !isAdmin()) {
+      setAccessError('Acceso Denegado (403): La gestión de personal está reservada exclusivamente para Administradores.');
       return;
     }
-    if (viewId === 'communications' && !isAdmin() && !isRecepcion()) {
-      setAccessError('Acceso Denegado (403): La sección de comunicaciones requiere rol Administrador o Recepción.');
+    if (viewId === 'reminders' && !isAdmin()) {
+      setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.');
+      return;
+    }
+    if ((viewId === 'settings' || viewId === 'communications') && !isAdmin() && !isRecepcion()) {
+      setAccessError('Acceso Denegado (403): La sección solicitada requiere rol Administrador o Recepción.');
       return;
     }
 
@@ -145,8 +149,8 @@ export function AppRoutes() {
         {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
         {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
         {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
-        {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" /> : null)}
-        {currentView === 'settings' && (isAdmin() ? <SettingsPage initialTab="general" /> : null)}
+        {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
+        {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
       </AdminLayout>
 
       {/* Aviso accesible superior derecho de Error 403 / Denegación de permisos (INC-S1-07) */}

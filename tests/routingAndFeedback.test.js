@@ -47,3 +47,11 @@ test('Routing: VIEW_PATH_MAP contiene correspondencia estricta para cada vista o
     assert.ok(!VIEW_PATH_MAP[v].startsWith('/api/'), `La ruta ${VIEW_PATH_MAP[v]} no debe colisionar con /api/`);
   }
 });
+
+test('Notifications: clave de persistencia en localStorage aísla vistas leídas por usuario', () => {
+  const getKey = (email) => (email ? `gymvip_seen_alerts_${email}` : 'gymvip_seen_alerts_default');
+  assert.equal(getKey('admin@vipcenterfit.pe'), 'gymvip_seen_alerts_admin@vipcenterfit.pe');
+  assert.equal(getKey('recepcion@vipcenterfit.pe'), 'gymvip_seen_alerts_recepcion@vipcenterfit.pe');
+  assert.equal(getKey(null), 'gymvip_seen_alerts_default');
+  assert.equal(getKey(undefined), 'gymvip_seen_alerts_default');
+});

@@ -7,12 +7,13 @@ import React, { useState } from 'react';
 import { Icon } from '../components/common/Icons';
 import { NotificationsModal } from '../components/common/NotificationsModal';
 import { AppearanceModal } from '../components/common/AppearanceModal';
-import logoImg from '../assets/gymvip-logo.jpg';
+import { GymVipLogo } from '../components/common/GymVipLogo';
 
 export function Header({
   title = 'Panel de Control Principal',
   subtitle = 'VIP CENTER FIT · LUXURY FITNESS',
   onOpenMobileMenu,
+  onNavigate,
 }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
@@ -35,13 +36,9 @@ export function Header({
             </svg>
           </button>
 
-          {/* Logotipo Institucional GYM VIP */}
+          {/* Logotipo Vectorial Institucional GYM VIP */}
           <div className="header-brand-mark" aria-hidden="true">
-            <img
-              src={logoImg}
-              alt="GYM VIP"
-              className="header-brand-img"
-            />
+            <GymVipLogo size={36} idSuffix="header" />
           </div>
 
           <div>
@@ -51,14 +48,15 @@ export function Header({
         </div>
 
         {/* Acciones de Esquina Superior Derecha: Notificaciones y Apariencia */}
-        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
           <button
             type="button"
             className="header-icon-btn"
-            onClick={() => setIsNotificationsOpen(true)}
+            onClick={() => setIsNotificationsOpen((prev) => !prev)}
             aria-label="Notificaciones"
             title="Notificaciones"
             aria-expanded={isNotificationsOpen}
+            aria-haspopup="true"
           >
             <Icon name="bell" size={19} />
           </button>
@@ -73,15 +71,17 @@ export function Header({
           >
             <Icon name="settings" size={19} />
           </button>
+
+          {/* Panel Desplegable Anclado de Notificaciones */}
+          <NotificationsModal
+            isOpen={isNotificationsOpen}
+            onClose={() => setIsNotificationsOpen(false)}
+            onNavigate={onNavigate}
+          />
         </div>
       </header>
 
-      {/* Modales Accesibles */}
-      <NotificationsModal
-        isOpen={isNotificationsOpen}
-        onClose={() => setIsNotificationsOpen(false)}
-      />
-
+      {/* Modal Accesible de Apariencia */}
       <AppearanceModal
         isOpen={isAppearanceOpen}
         onClose={() => setIsAppearanceOpen(false)}
