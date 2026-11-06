@@ -1,4 +1,4 @@
-﻿// ==============================================================================
+// ==============================================================================
 // GYM VIP — Modal de Ficha de Socio (HU-01)
 // ==============================================================================
 
@@ -36,7 +36,7 @@ export default function ClientDetailModal({ client, onClose }) {
             aria-label="Cerrar ficha"
             style={{ minHeight: '36px', minWidth: '36px', padding: '6px' }}
           >
-            âœ•
+            ✕
           </button>
         </div>
 

@@ -1,4 +1,4 @@
-﻿// ==============================================================================
+// ==============================================================================
 // GYM VIP — Modal: ClientManageModal (Ficha, Edición Concurrente y Auditoría HU-02)
 // ==============================================================================
 
@@ -161,7 +161,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
               {detail && <span style={{ fontSize: '12px', color: 'var(--color-gold)', fontFamily: 'monospace', fontWeight: 700 }}>{detail.memberCode}</span>}
             </div>
             <h2 id="detail-title" style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0', color: 'var(--color-text-primary)' }}>
-              {detail ? detail.fullName : 'Cargando información del miembroâ€¦'}
+              {detail ? detail.fullName : 'Cargando información del miembro…'}
             </h2>
             {detail && (
               <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
@@ -180,7 +180,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
 
         {!detail && !error && (
           <div style={{ textAlign: 'center', padding: '32px' }} role="status">
-            <p style={{ color: 'var(--color-gold)' }}>Cargando expediente de clienteâ€¦</p>
+            <p style={{ color: 'var(--color-gold)' }}>Cargando expediente de cliente…</p>
           </div>
         )}
 
@@ -290,7 +290,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
                     </Button>
                     <Button type="submit" variant="primary" disabled={busy}>
                       <Icon name="check-circle" size={15} />
-                      <span>{busy ? 'Guardandoâ€¦' : 'Guardar Cambios'}</span>
+                      <span>{busy ? 'Guardando…' : 'Guardar Cambios'}</span>
                     </Button>
                   </div>
                 </form>
@@ -316,7 +316,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
               ) : coverage ? (
                 <CoverageCard value={coverage} />
               ) : (
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Consultando vigencia autoritativaâ€¦</p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Consultando vigencia autoritativa…</p>
               )}
             </div>
 
@@ -332,7 +332,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
 
                 {historyError && <Alert variant="danger" message={historyError} />}
                 {!history && !historyError && (
-                  <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Cargando registros de auditoríaâ€¦</p>
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Cargando registros de auditoría…</p>
                 )}
 
                 {history && (

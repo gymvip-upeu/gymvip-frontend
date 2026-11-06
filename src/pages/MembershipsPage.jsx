@@ -1,4 +1,4 @@
-﻿// ==============================================================================
+// ==============================================================================
 // GYM VIP — Pantalla: MembershipsPage (Membresías, Cobros y Renovación HU-07, 08, 10)
 // Diseño Luxury Fitness con Pasos Claros y Soporte de Idempotencia
 // ==============================================================================
@@ -255,7 +255,7 @@ export default function MembershipsPage({ onNavigate }) {
           </p>
           <Button variant="primary" disabled={busy} onClick={pay}>
             <Icon name="refresh" size={15} />
-            <span>{busy ? 'Consultando transacciónâ€¦' : 'Reintentar Misma Operación'}</span>
+            <span>{busy ? 'Consultando transacción…' : 'Reintentar Misma Operación'}</span>
           </Button>
         </div>
       )}
@@ -343,7 +343,7 @@ export default function MembershipsPage({ onNavigate }) {
 
       {loading ? (
         <div className="card" style={{ padding: '36px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-gold)', fontWeight: 600 }}>Cargando catálogo tarifario y medios de cobroâ€¦</p>
+          <p style={{ color: 'var(--color-gold)', fontWeight: 600 }}>Cargando catálogo tarifario y medios de cobro…</p>
         </div>
       ) : (
         <>
@@ -372,7 +372,7 @@ export default function MembershipsPage({ onNavigate }) {
               </div>
               <Button type="submit" variant="primary" disabled={locked || searching || !query.trim()}>
                 <Icon name="search" size={15} />
-                <span>{searching ? 'Buscandoâ€¦' : 'Buscar Miembro'}</span>
+                <span>{searching ? 'Buscando…' : 'Buscar Miembro'}</span>
               </Button>
             </form>
 
@@ -472,7 +472,7 @@ export default function MembershipsPage({ onNavigate }) {
                   <div>
                     <Button type="submit" variant="primary" disabled={!planId || locked} style={{ width: '100%', minHeight: '44px' }}>
                       <Icon name="calendar" size={15} />
-                      <span>{busy ? 'Calculandoâ€¦' : 'Consultar Fechas e Importe'}</span>
+                      <span>{busy ? 'Calculando…' : 'Consultar Fechas e Importe'}</span>
                     </Button>
                   </div>
                 </fieldset>
@@ -597,7 +597,7 @@ export default function MembershipsPage({ onNavigate }) {
                         style={{ width: '100%', minHeight: '46px', fontSize: '15px' }}
                       >
                         <Icon name="check-circle" size={16} />
-                        <span>{busy ? 'Registrando transacción en cajaâ€¦' : `Confirmar y Emitir Cobro de ${formatCurrencyPen(quote.pricePen)}`}</span>
+                        <span>{busy ? 'Registrando transacción en caja…' : `Confirmar y Emitir Cobro de ${formatCurrencyPen(quote.pricePen)}`}</span>
                       </Button>
                     </fieldset>
                   </div>
@@ -616,7 +616,7 @@ export default function MembershipsPage({ onNavigate }) {
           </h2>
 
           {historyLoading ? (
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Cargando historial de pagosâ€¦</p>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Cargando historial de pagos…</p>
           ) : !history.length ? (
             <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
               No hay cobros de membresía registrados para este cliente.
