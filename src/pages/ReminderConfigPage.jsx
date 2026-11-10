@@ -47,7 +47,8 @@ export default function ReminderConfigPage() {
       setEnabled(config.enabled ?? true);
       setAnticipationDays(Array.isArray(config.anticipationDays) ? config.anticipationDays : [3, 5, 7]);
       setPostExpiryDays(config.postExpiryDays ?? 2);
-      setDefaultChannel(config.defaultChannel || 'WHATSAPP');
+      const initialChannel = (Array.isArray(config.channels) && config.channels[0]) || config.defaultChannel || 'WHATSAPP';
+      setDefaultChannel(initialChannel);
 
       const cutsData = await getReminderCutsApi(token).catch(() => []);
       setCuts(cutsData || []);
@@ -79,6 +80,7 @@ export default function ReminderConfigPage() {
           enabled,
           anticipationDays,
           postExpiryDays: Number(postExpiryDays),
+          channels: [defaultChannel],
           defaultChannel,
         },
         token
@@ -326,22 +328,22 @@ export default function ReminderConfigPage() {
                     cuts.map((cut, idx) => (
                       <tr key={cut.id || idx}>
                         <td>
-                          <strong>{cut.corte_fecha || cut.corteFecha || 'Hoy'}</strong>
-                          <small>{cut.creado_el_utc ? new Date(cut.creado_el_utc).toLocaleString('es-PE') : 'N/D'}</small>
+                          <strong>{cut.cut_date || cut.corte_fecha || cut.corteFecha || 'Hoy'}</strong>
+                          <small>{(cut.eval_timestamp_utc || cut.creado_el_utc) ? new Date(cut.eval_timestamp_utc || cut.creado_el_utc).toLocaleString('es-PE') : 'N/D'}</small>
                         </td>
                         <td>
                           <span className="member-status status-activo">
-                            {cut.corte_tipo || cut.corteTipo || 'MANUAL'}
+                            {cut.triggered_by || cut.corte_tipo || cut.corteTipo || 'MANUAL'}
                           </span>
                         </td>
-                        <td>{cut.candidatos_evaluados ?? cut.candidatosEvaluados ?? 0}</td>
+                        <td>{cut.candidates_evaluated ?? cut.candidatos_evaluados ?? cut.candidatosEvaluados ?? 0}</td>
                         <td style={{ color: '#82c59e', fontWeight: 600 }}>
-                          {cut.avisos_solicitados ?? cut.avisosSolicitados ?? 0}
+                          {cut.notices_requested ?? cut.avisos_solicitados ?? cut.avisosSolicitados ?? 0}
                         </td>
                         <td style={{ color: '#c3bcaa' }}>
-                          {cut.avisos_omitidos ?? cut.avisosOmitidos ?? 0}
+                          {cut.notices_skipped ?? cut.avisos_omitidos ?? cut.avisosOmitidos ?? 0}
                         </td>
-                        <td>{cut.ejecutado_por || cut.ejecutadoPor || 'ADMIN'}</td>
+                        <td>{cut.triggered_by || cut.ejecutado_por || cut.ejecutadoPor || 'ADMIN'}</td>
                       </tr>
                     ))
                   )}
