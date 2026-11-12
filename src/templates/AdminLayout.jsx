@@ -51,6 +51,12 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     { id: 'settings', label: 'Configuración', iconName: 'settings', title: 'Parámetros Operativos del Sistema' },
   ];
 
+  const communicationItems = isAdmin() || isRecepcion() ? [
+    ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell' }] : []),
+    { id: 'faq', label: 'Respuestas frecuentes', iconName: 'message-circle', unavailable: true },
+    { id: 'communications', label: 'WhatsApp y envíos', iconName: 'send' },
+  ] : [];
+
   const viewTitles = {
     home: 'Panel de Control Principal',
     clients: 'Directorio y Gestión de Miembros',
@@ -61,7 +67,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     plans: 'Catálogo de Planes y Tarifas',
     supplements: 'Catálogo de Suplementos y Stock',
     promotions: 'Gestión de Promociones y Descuentos',
-    reminders: 'Configuración y Cortes de Recordatorios',
+    reminders: 'Comunicaciones',
     communications: 'Monitoreo y Estado de Comunicaciones',
     staff: 'Gestión de Personal y Roles',
     settings: 'Configuración Operativa del Sistema',
@@ -89,6 +95,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         currentView={currentView}
         onNavigate={handleNavigate}
         navItems={navItems}
+        communicationItems={communicationItems}
         user={user}
         onLogout={logout}
       />

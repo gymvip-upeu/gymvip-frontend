@@ -43,6 +43,15 @@ export function AppRoutes() {
 
   const [accessError, setAccessError] = useState(null);
 
+  useEffect(() => {
+    const deniedReminder = currentView === 'reminders' && !isAdmin();
+    if (user && deniedReminder) {
+      setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.');
+      setCurrentView('home');
+      window.history.replaceState({ view: 'home' }, '', '/inicio');
+    }
+  }, [user, isAdmin, currentView]);
+
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId) => {
     // Guarda de permisos para rutas administrativas
@@ -54,7 +63,7 @@ export function AppRoutes() {
       setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.');
       return;
     }
-    if ((viewId === 'settings' || viewId === 'communications') && !isAdmin() && !isRecepcion()) {
+    if (['settings', 'communications'].includes(viewId) && !isAdmin() && !isRecepcion()) {
       setAccessError('Acceso Denegado (403): La sección solicitada requiere rol Administrador o Recepción.');
       return;
     }
@@ -66,7 +75,7 @@ export function AppRoutes() {
       window.history.pushState({ view: viewId }, '', targetPath);
     }
     setCurrentView(viewId);
-  }, [isAdmin]);
+  }, [isAdmin, isRecepcion]);
 
   // Manejo de eventos popstate (botones Atrás / Adelante del navegador)
   useEffect(() => {
@@ -109,7 +118,7 @@ export function AppRoutes() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isAdmin]);
+  }, [isAdmin, isRecepcion]);
 
   // Normalización de URL raíz a /inicio en primera carga
   useEffect(() => {

@@ -13,30 +13,23 @@ import { LoadingState } from '../components/feedback/LoadingState';
 import StaffPage from './StaffPage';
 import {
   getReminderConfigApi,
-  updateReminderConfigApi,
+  getReminderCutsApi,
   evaluateRemindersNowApi,
 } from '../api/reminderApi';
 import { httpClient } from '../api/httpClient';
 
 export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
-  const { user, token, isAdmin, isRecepcion } = useAuth();
+  const { token, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // Estados de datos reales de recordatorios
   const [loadingConfig, setLoadingConfig] = useState(true);
-  const [savingConfig, setSavingConfig] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
   const [configError, setConfigError] = useState('');
   const [configSuccess, setConfigSuccess] = useState('');
-  const [auditMeta, setAuditMeta] = useState(null);
-
-  // Formulario de parámetros operativos (persistidos en PostgreSQL)
-  const [form, setForm] = useState({
-    enabled: true,
-    daysBeforeExpiry: 7,
-    evaluationHourLima: 9,
-    channel: 'WHATSAPP',
-  });
+  const [reminderConfig, setReminderConfig] = useState(null);
+  const [cuts, setCuts] = useState([]);
+  const [cutsError, setCutsError] = useState('');
 
   // Estado del microservicio de comunicaciones
   const [serviceHealth, setServiceHealth] = useState({
@@ -53,18 +46,13 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
     setLoadingConfig(true);
     setConfigError('');
     try {
-      const data = await getReminderConfigApi(token);
-      setForm({
-        enabled: Boolean(data.enabled),
-        daysBeforeExpiry: Number(data.daysBeforeExpiry) || 7,
-        evaluationHourLima: Number(data.evaluationHourLima) || 9,
-        channel: data.channel || 'WHATSAPP',
-      });
-      setAuditMeta({
-        updatedAtUtc: data.updatedAtUtc,
-        updatedBy: data.updatedBy,
-        lastEvaluatedAtUtc: data.lastEvaluatedAtUtc,
-      });
+      setReminderConfig(await getReminderConfigApi(token));
+      try {
+        setCuts(await getReminderCutsApi(token));
+        setCutsError('');
+      } catch (error) {
+        setCutsError(error.message);
+      }
     } catch (e) {
       setConfigError(e.message || 'No se pudo cargar la configuración de recordatorios del servidor.');
     } finally {
@@ -111,40 +99,6 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
     checkServiceHealth();
   }, [loadReminderConfig, checkServiceHealth]);
 
-  // Guardar configuración de recordatorios (exclusivo ADMIN)
-  const handleSaveConfig = async (e) => {
-    e.preventDefault();
-    if (!isAdmin()) return;
-
-    // Validación de rangos
-    if (form.daysBeforeExpiry < 1 || form.daysBeforeExpiry > 30) {
-      setConfigError('El número de días de anticipación debe encontrarse entre 1 y 30.');
-      return;
-    }
-    if (form.evaluationHourLima < 0 || form.evaluationHourLima > 23) {
-      setConfigError('La hora de evaluación debe ubicarse entre 0 y 23 horas (formato 24h).');
-      return;
-    }
-
-    setSavingConfig(true);
-    setConfigError('');
-    setConfigSuccess('');
-
-    try {
-      const res = await updateReminderConfigApi(form, token);
-      setConfigSuccess('Configuración de recordatorios persistida exitosamente en el servidor.');
-      setAuditMeta({
-        updatedAtUtc: res.updatedAtUtc || new Date().toISOString(),
-        updatedBy: res.updatedBy || user?.email,
-        lastEvaluatedAtUtc: res.lastEvaluatedAtUtc || auditMeta?.lastEvaluatedAtUtc,
-      });
-    } catch (err) {
-      setConfigError(err.message || 'Error al persistir la configuración de recordatorios.');
-    } finally {
-      setSavingConfig(false);
-    }
-  };
-
   // Ejecución manual de corte
   const handleEvaluateNow = async () => {
     if (!isAdmin()) return;
@@ -169,7 +123,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
           Configuración Operativa
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: '0 0 16px 0' }}>
-          Parámetros persistidos de recordatorios, enlaces de comunicaciones y gestión de colaboradores.
+          Consulta las reglas operativas, el estado de comunicaciones y la gestión de colaboradores.
         </p>
 
         {/* Pestañas de Navegación */}
@@ -216,7 +170,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
           {configSuccess && <Alert variant="success" message={configSuccess} onClose={() => setConfigSuccess('')} />}
 
           {loadingConfig ? (
-            <LoadingState message="Cargando parámetros de recordatorios desde PostgreSQL..." />
+            <LoadingState message="Cargando la configuración de recordatorios…" />
           ) : (
             <>
               {/* Tarjeta: Formulario de Parámetros Persistidos */}
@@ -227,7 +181,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
                       <Icon name="bell" size={20} />
                     </span>
                     <h2 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
-                      Evaluación Automática de Expiración
+                      Evaluación de vencimientos
                     </h2>
                   </div>
                   <Badge variant={isAdmin() ? 'gold' : 'neutral'}>
@@ -235,103 +189,45 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
                   </Badge>
                 </div>
 
-                <form onSubmit={handleSaveConfig}>
-                  <fieldset disabled={!isAdmin() || savingConfig} style={{ border: 'none', padding: 0, margin: 0 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
-                      {/* Control: Habilitado/Deshabilitado */}
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="reminder-enabled-toggle">
-                          Estado del Servicio de Notificaciones
-                        </label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
-                          <input
-                            id="reminder-enabled-toggle"
-                            type="checkbox"
-                            checked={form.enabled}
-                            onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
-                            style={{ width: '18px', height: '18px', accentColor: 'var(--color-gold)', cursor: 'pointer' }}
-                          />
-                          <span style={{ fontSize: '14px', fontWeight: 600, color: form.enabled ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
-                            {form.enabled ? 'Habilitado (Envío activo)' : 'Desactivado (Cortes pausados)'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Control: Días de Anticipación */}
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="days-before-input">
-                          Anticipación de Alerta (1 a 30 días)
-                        </label>
-                        <input
-                          id="days-before-input"
-                          type="number"
-                          min="1"
-                          max="30"
-                          className="form-input"
-                          value={form.daysBeforeExpiry}
-                          onChange={(e) => setForm({ ...form, daysBeforeExpiry: parseInt(e.target.value, 10) || 1 })}
-                          required
-                        />
-                        <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block' }}>
-                          Por defecto: <strong>7 días antes</strong> de expirar.
-                        </span>
-                      </div>
-
-                      {/* Control: Hora de Evaluación */}
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="hour-lima-input">
-                          Hora de Ejecución Diaria (0 a 23 hrs)
-                        </label>
-                        <input
-                          id="hour-lima-input"
-                          type="number"
-                          min="0"
-                          max="23"
-                          className="form-input"
-                          value={form.evaluationHourLima}
-                          onChange={(e) => setForm({ ...form, evaluationHourLima: parseInt(e.target.value, 10) || 0 })}
-                          required
-                        />
-                        <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block' }}>
-                          Horario de Lima: <strong>{String(form.evaluationHourLima).padStart(2, '0')}:00 hrs (UTC-5)</strong>.
-                        </span>
-                      </div>
-
-                      {/* Canal Oficial */}
-                      <div className="form-group">
-                        <label className="form-label">
-                          Canal Autorizado
-                        </label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                          <Icon name="message-circle" size={16} color="var(--color-gold)" />
-                          <strong style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>WhatsApp Business (Meta API)</strong>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Botones de Acción */}
-                    {isAdmin() && (
-                      <div style={{ display: 'flex', gap: '12px', marginTop: '20px', borderTop: '1px solid var(--color-border)', paddingTop: '16px', flexWrap: 'wrap' }}>
-                        <Button type="submit" variant="primary" disabled={savingConfig || evaluating}>
-                          <Icon name="check-circle" size={15} />
-                          <span>{savingConfig ? 'Guardando en BD...' : 'Guardar Parámetros'}</span>
-                        </Button>
-
-                        <Button type="button" variant="secondary" onClick={handleEvaluateNow} disabled={savingConfig || evaluating}>
-                          <Icon name="refresh" size={15} />
-                          <span>{evaluating ? 'Procesando corte...' : 'Ejecutar Corte Manual Ahora'}</span>
-                        </Button>
-                      </div>
-                    )}
-                  </fieldset>
-                </form>
-
-                {/* Metadatos de Auditoría */}
-                {auditMeta?.updatedAtUtc && (
-                  <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)', paddingTop: '10px' }}>
-                    Última actualización: {new Date(auditMeta.updatedAtUtc).toLocaleString('es-PE')} · Por: {auditMeta.updatedBy || 'admin@vipcenterfit.pe'}
+                {reminderConfig && (
+                  <p>Estado guardado: <strong>{reminderConfig.enabled ? 'Habilitado' : 'Pausado'}</strong></p>
+                )}
+                {isAdmin() && (
+                  <div className="reminder-actions">
+                    <Button onClick={() => onNavigate('reminders')}>Abrir Recordatorios</Button>
+                    <Button variant="secondary" onClick={handleEvaluateNow} disabled={evaluating}>
+                      <Icon name="refresh" size={15} />
+                      {evaluating ? 'Procesando corte…' : 'Ejecutar corte manual'}
+                    </Button>
                   </div>
                 )}
+                <details className="settings-reminder-history">
+                  <summary>Historial de cortes</summary>
+                  {cutsError ? (
+                    <Alert variant="danger" message={cutsError} />
+                  ) : cuts.length === 0 ? (
+                    <p>No se han registrado cortes de evaluación.</p>
+                  ) : (
+                    <div className="member-table-wrap">
+                      <table className="member-table">
+                        <thead>
+                          <tr><th>Fecha</th><th>Candidatos</th><th>Avisos solicitados</th><th>Omitidos</th><th>Ejecutado por</th></tr>
+                        </thead>
+                        <tbody>
+                          {cuts.map((cut) => (
+                            <tr key={cut.id}>
+                              <td>{cut.cut_date}</td>
+                              <td>{cut.candidates_evaluated}</td>
+                              <td>{cut.notices_requested}</td>
+                              <td>{cut.notices_skipped}</td>
+                              <td>{cut.triggered_by}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </details>
               </div>
 
               {/* Tarjeta: Reglas Canónicas Inmutables de Negocio */}

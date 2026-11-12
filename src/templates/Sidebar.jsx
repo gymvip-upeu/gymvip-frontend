@@ -14,9 +14,36 @@ export function Sidebar({
   currentView,
   onNavigate,
   navItems,
+  communicationItems = [],
   user,
   onLogout,
 }) {
+  const renderNavItem = (item) => {
+    const isOpGroup = item.id === 'operations' && ['operations', 'memberships', 'coverage', 'verification'].includes(currentView);
+    const isActive = currentView === item.id || isOpGroup;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+        onClick={() => onNavigate(item.id === 'operations' ? 'memberships' : item.id)}
+        aria-current={isActive ? 'page' : undefined}
+        aria-label={item.unavailable ? `${item.label} (próximamente)` : item.label}
+        disabled={item.unavailable}
+        title={item.unavailable ? 'Próximamente' : isCollapsed ? item.label : undefined}
+      >
+        <span className="nav-icon">
+          <Icon
+            name={item.iconName || 'home'}
+            size={19}
+            color={isActive ? 'var(--color-gold)' : 'var(--color-text-secondary)'}
+          />
+        </span>
+        {!isCollapsed && <span className="nav-label">{item.label}</span>}
+      </button>
+    );
+  };
+
   return (
     <>
       {/* Backdrop para drawer móvil */}
@@ -71,36 +98,13 @@ export function Sidebar({
 
         {/* Lista de Navegación */}
         <nav className="sidebar-nav">
-          {navItems.map((item) => {
-            const isOpGroup = item.id === 'operations' && ['operations', 'memberships', 'coverage', 'verification'].includes(currentView);
-            const isActive = currentView === item.id || isOpGroup;
-            const handleClick = () => {
-              if (item.id === 'operations') {
-                onNavigate('memberships');
-              } else {
-                onNavigate(item.id);
-              }
-            };
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                onClick={handleClick}
-                aria-current={isActive ? 'page' : undefined}
-                title={isCollapsed ? item.label : undefined}
-              >
-                <span className="nav-icon">
-                  <Icon
-                    name={item.iconName || 'home'}
-                    size={19}
-                    color={isActive ? 'var(--color-gold)' : 'var(--color-text-secondary)'}
-                  />
-                </span>
-                {!isCollapsed && <span className="nav-label">{item.label}</span>}
-              </button>
-            );
-          })}
+          {navItems.map(renderNavItem)}
+          {communicationItems.length > 0 && (
+            <div className="sidebar-nav-group" role="group" aria-label="Comunicaciones">
+              {!isCollapsed && <div className="sidebar-nav-group-title">Comunicaciones</div>}
+              {communicationItems.map(renderNavItem)}
+            </div>
+          )}
         </nav>
 
         {/* Zona Inferior: Información del Usuario y Logout */}
