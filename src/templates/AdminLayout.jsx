@@ -69,7 +69,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     promotions: 'Gestión de Promociones y Descuentos',
     reminders: 'Comunicaciones',
     faq: 'Comunicaciones',
-    communications: 'Monitoreo y Estado de Comunicaciones',
+    communications: 'Comunicaciones',
     staff: 'Gestión de Personal y Roles',
     settings: 'Configuración Operativa del Sistema',
   };

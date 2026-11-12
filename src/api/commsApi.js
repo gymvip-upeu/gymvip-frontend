@@ -4,7 +4,7 @@
 
 import { httpClient } from './httpClient';
 
-export async function getCommunicationsApi({ status = '', channel = '', search = '', page = 0, size = 20 } = {}, token = null) {
+export async function getCommunicationsApi({ status = '', channel = '', search = '', page = 0, size = 20, signal } = {}, token = null) {
   const params = new URLSearchParams();
   if (status && status !== 'TODOS') params.append('status', status);
   if (channel && channel !== 'TODOS') params.append('channel', channel);
@@ -13,7 +13,7 @@ export async function getCommunicationsApi({ status = '', channel = '', search =
   params.append('size', size);
 
   const url = `/api/v1/communications?${params.toString()}`;
-  const response = await httpClient(url, {}, token);
+  const response = await httpClient(url, { signal }, token);
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
