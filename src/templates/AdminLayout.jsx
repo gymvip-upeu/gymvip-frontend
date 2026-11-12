@@ -53,7 +53,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
 
   const communicationItems = isAdmin() || isRecepcion() ? [
     ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell' }] : []),
-    { id: 'faq', label: 'Respuestas frecuentes', iconName: 'message-circle', unavailable: true },
+    { id: 'faq', label: 'Respuestas frecuentes', iconName: 'message-circle' },
     { id: 'communications', label: 'WhatsApp y envíos', iconName: 'send' },
   ] : [];
 
@@ -68,6 +68,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     supplements: 'Catálogo de Suplementos y Stock',
     promotions: 'Gestión de Promociones y Descuentos',
     reminders: 'Comunicaciones',
+    faq: 'Comunicaciones',
     communications: 'Monitoreo y Estado de Comunicaciones',
     staff: 'Gestión de Personal y Roles',
     settings: 'Configuración Operativa del Sistema',

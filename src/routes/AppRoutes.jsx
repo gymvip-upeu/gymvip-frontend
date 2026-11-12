@@ -18,6 +18,7 @@ import StaffPage from '../pages/StaffPage';
 import MembershipsPage from '../pages/MembershipsPage';
 import SettingsPage from '../pages/SettingsPage';
 import ReminderConfigPage from '../pages/ReminderConfigPage';
+import FaqPage from '../pages/FaqPage';
 import CommunicationsPage from '../pages/CommunicationsPage';
 import LoginModal from '../components/modals/LoginModal';
 import LockScreenModal from '../components/modals/LockScreenModal';
@@ -45,12 +46,15 @@ export function AppRoutes() {
 
   useEffect(() => {
     const deniedReminder = currentView === 'reminders' && !isAdmin();
-    if (user && deniedReminder) {
-      setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.');
+    const deniedFaq = currentView === 'faq' && !isAdmin() && !isRecepcion();
+    if (user && (deniedReminder || deniedFaq)) {
+      setAccessError(deniedReminder
+        ? 'Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.'
+        : 'Acceso Denegado (403): Respuestas frecuentes requiere rol Administrador o Recepción.');
       setCurrentView('home');
       window.history.replaceState({ view: 'home' }, '', '/inicio');
     }
-  }, [user, isAdmin, currentView]);
+  }, [user, isAdmin, isRecepcion, currentView]);
 
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId) => {
@@ -63,7 +67,7 @@ export function AppRoutes() {
       setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.');
       return;
     }
-    if (['settings', 'communications'].includes(viewId) && !isAdmin() && !isRecepcion()) {
+    if (['settings', 'communications', 'faq'].includes(viewId) && !isAdmin() && !isRecepcion()) {
       setAccessError('Acceso Denegado (403): La sección solicitada requiere rol Administrador o Recepción.');
       return;
     }
@@ -98,7 +102,7 @@ export function AppRoutes() {
         window.history.replaceState({ view: 'home' }, '', '/inicio');
         return;
       }
-      if (nextView === 'communications' && !isAdmin() && !isRecepcion()) {
+      if (['communications', 'faq'].includes(nextView) && !isAdmin() && !isRecepcion()) {
         setAccessError('Acceso Denegado (403): La sección de comunicaciones requiere rol Administrador o Recepción.');
         setCurrentView('home');
         window.history.replaceState({ view: 'home' }, '', '/inicio');
@@ -157,6 +161,7 @@ export function AppRoutes() {
         {currentView === 'promotions' && <PromotionsPage />}
         {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
         {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
+        {currentView === 'faq' && (isAdmin() || isRecepcion()) && <FaqPage />}
         {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
         {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
         {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
