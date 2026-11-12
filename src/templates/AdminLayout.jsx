@@ -48,8 +48,9 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     { id: 'plans', label: 'Planes', iconName: 'tag', title: 'Catálogo Tarifario y Versiones de Planes' },
     { id: 'supplements', label: 'Suplementos', iconName: 'package', title: 'Catálogo de Suplementos y Stock' },
     { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Gestión de Promociones y Descuentos' },
-    { id: 'settings', label: 'Configuración', iconName: 'settings', title: 'Parámetros Operativos del Sistema' },
   ];
+
+  const settingsItem = { id: 'settings', label: 'Configuración', iconName: 'settings' };
 
   const communicationItems = isAdmin() || isRecepcion() ? [
     ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell' }] : []),
@@ -97,6 +98,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         onNavigate={handleNavigate}
         navItems={navItems}
         communicationItems={communicationItems}
+        settingsItem={settingsItem}
         user={user}
         onLogout={logout}
       />

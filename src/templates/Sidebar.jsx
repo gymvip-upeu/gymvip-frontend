@@ -15,6 +15,7 @@ export function Sidebar({
   onNavigate,
   navItems,
   communicationItems = [],
+  settingsItem,
   user,
   onLogout,
 }) {
@@ -105,6 +106,7 @@ export function Sidebar({
               {communicationItems.map(renderNavItem)}
             </div>
           )}
+          {settingsItem && renderNavItem(settingsItem)}
         </nav>
 
         {/* Zona Inferior: Información del Usuario y Logout */}
