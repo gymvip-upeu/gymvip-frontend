@@ -534,13 +534,32 @@ button {
 .sidebar-nav {
   padding: 16px 8px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
+.sidebar-nav-group {
+  display: grid;
+  gap: 4px;
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.sidebar-nav-group-title {
+  padding: 0 12px 4px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
 .sidebar-nav-item {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 12px;
   min-height: 44px;
@@ -564,9 +583,14 @@ button {
   margin: 0 auto;
 }
 
-.sidebar-nav-item:hover {
+.sidebar-nav-item:hover:not(:disabled) {
   background-color: var(--color-surface-elevated);
   color: var(--color-gold);
+}
+
+.sidebar-nav-item:disabled {
+  cursor: default;
+  opacity: .55;
 }
 
 .sidebar-nav-item.active {

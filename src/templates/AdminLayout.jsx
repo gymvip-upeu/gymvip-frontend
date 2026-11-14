@@ -48,8 +48,15 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     { id: 'plans', label: 'Planes', iconName: 'tag', title: 'Catálogo Tarifario y Versiones de Planes' },
     { id: 'supplements', label: 'Suplementos', iconName: 'package', title: 'Catálogo de Suplementos y Stock' },
     { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Gestión de Promociones y Descuentos' },
-    { id: 'settings', label: 'Configuración', iconName: 'settings', title: 'Parámetros Operativos del Sistema' },
   ];
+
+  const settingsItem = { id: 'settings', label: 'Configuración', iconName: 'settings' };
+
+  const communicationItems = isAdmin() || isRecepcion() ? [
+    ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell' }] : []),
+    { id: 'faq', label: 'Respuestas frecuentes', iconName: 'message-circle' },
+    { id: 'communications', label: 'WhatsApp y envíos', iconName: 'send' },
+  ] : [];
 
   const viewTitles = {
     home: 'Panel de Control Principal',
@@ -61,8 +68,9 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     plans: 'Catálogo de Planes y Tarifas',
     supplements: 'Catálogo de Suplementos y Stock',
     promotions: 'Gestión de Promociones y Descuentos',
-    reminders: 'Configuración y Cortes de Recordatorios',
-    communications: 'Monitoreo y Estado de Comunicaciones',
+    reminders: 'Comunicaciones',
+    faq: 'Comunicaciones',
+    communications: 'Comunicaciones',
     staff: 'Gestión de Personal y Roles',
     settings: 'Configuración Operativa del Sistema',
   };
@@ -89,6 +97,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         currentView={currentView}
         onNavigate={handleNavigate}
         navItems={navItems}
+        communicationItems={communicationItems}
+        settingsItem={settingsItem}
         user={user}
         onLogout={logout}
       />

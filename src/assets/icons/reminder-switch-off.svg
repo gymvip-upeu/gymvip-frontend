@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="44" height="24" viewBox="0 0 44 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Desactivado">
+<path d="M12 0.5H32C38.3513 0.5 43.5 5.64873 43.5 12C43.5 18.3513 38.3513 23.5 32 23.5H12C5.64873 23.5 0.5 18.3513 0.5 12C0.5 5.64873 5.64873 0.5 12 0.5Z" fill="#242424"/>
+<path d="M12 0.5H32C38.3513 0.5 43.5 5.64873 43.5 12C43.5 18.3513 38.3513 23.5 32 23.5H12C5.64873 23.5 0.5 18.3513 0.5 12C0.5 5.64873 5.64873 0.5 12 0.5Z" stroke="#383834"/>
+<circle id="Indicador" cx="13" cy="12" r="8" fill="#A7A7A2"/>
+</g>
+</svg>

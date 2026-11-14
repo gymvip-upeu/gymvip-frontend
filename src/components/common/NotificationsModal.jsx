@@ -314,16 +314,20 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px', fontSize: '12px' }}>
                 <div style={{ padding: '8px', background: 'var(--color-surface-input)', borderRadius: '6px' }}>
                   <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block' }}>Anticipación</span>
-                  <strong>{reminderConfig?.daysBeforeExpiry ?? 7} días antes</strong>
+                  <strong>{reminderConfig?.anticipationDays?.length ? `${reminderConfig.anticipationDays.join(', ')} días antes` : 'Sin días seleccionados'}</strong>
                 </div>
                 <div style={{ padding: '8px', background: 'var(--color-surface-input)', borderRadius: '6px' }}>
-                  <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block' }}>Hora de Corte</span>
-                  <strong>{String(reminderConfig?.evaluationHourLima ?? 9).padStart(2, '0')}:00 (Lima)</strong>
+                  <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block' }}>Evaluación disponible</span>
+                  <strong>Corte manual</strong>
                 </div>
               </div>
 
               <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                Canal de Despacho: <strong style={{ color: 'var(--color-gold)' }}>WhatsApp Business (Meta API)</strong>
+                Canales guardados: <strong style={{ color: 'var(--color-gold)' }}>
+                  {reminderConfig?.channels?.length ? reminderConfig.channels.map((channel) => (
+                    channel === 'APP' ? 'Aplicación móvil' : channel === 'WHATSAPP' ? 'WhatsApp' : channel
+                  )).join(', ') : 'Sin canales seleccionados'}
+                </strong>
               </div>
             </div>
 
@@ -344,10 +348,10 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
                   style={{ fontSize: '11px', width: '100%' }}
                   onClick={() => {
                     onClose();
-                    onNavigate?.('settings');
+                    onNavigate?.('reminders');
                   }}
                 >
-                  Ir a Ajustes de Recordatorios en Configuración
+                  Abrir Recordatorios
                 </button>
               </div>
             )}
