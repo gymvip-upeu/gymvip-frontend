@@ -1,0 +1,45 @@
+name: CI Frontend GymVIP
+
+on:
+  push:
+    branches:
+      - S2-REVISION-QA
+      - 'feature/**'
+      - main
+  pull_request:
+    branches:
+      - S2-REVISION-QA
+      - main
+
+jobs:
+  build-and-test:
+    name: Build & Test React Vite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalación Limpia Reproducible
+        run: npm ci
+
+      - name: Auditoría de Seguridad de Dependencias
+        run: npm audit --audit-level=high || true
+
+      - name: Ejecutar Pruebas Automatizadas de Sesión y Contratos
+        run: npm test
+
+      - name: Compilación de Paquete de Producción
+        run: npm run build
+
+      - name: Publicar Artefacto de Distribución Web
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
