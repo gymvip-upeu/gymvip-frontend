@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Auditoría de Seguridad de Dependencias
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
 
       - name: Ejecutar Pruebas Automatizadas de Sesión y Contratos
         run: npm test
