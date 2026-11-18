@@ -24,7 +24,7 @@ export default function ReminderConfigPage() {
   const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
-  const [evaluateResult, setEvaluateResult] = useState(null);
+  const [_evaluateResult, setEvaluateResult] = useState(null);
 
   // Form State
   const [enabled, setEnabled] = useState(true);
@@ -37,7 +37,7 @@ export default function ReminderConfigPage() {
 
   // Historial de Cortes
   const [cuts, setCuts] = useState([]);
-  const [loadingCuts, setLoadingCuts] = useState(false);
+  const [_loadingCuts, _setLoadingCuts] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);

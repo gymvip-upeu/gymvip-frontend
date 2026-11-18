@@ -8,7 +8,7 @@ import CatalogImage from '../components/catalog/CatalogImage';
 import CatalogHistory from '../components/catalog/CatalogHistory';
 import SupplementPicker from '../components/catalog/SupplementPicker';
 import PromotionEditor from '../components/catalog/PromotionEditor';
-import { dateLabel,availabilityLabel,presentationLabel,promotionStateLabel,updatedLabel } from '../components/catalog/catalogUtils';
+import { dateLabel,presentationLabel,promotionStateLabel,updatedLabel } from '../components/catalog/catalogUtils';
 import { formatCurrencyPen } from '../utils/formatters';
 
 export default function PromotionsPage() {

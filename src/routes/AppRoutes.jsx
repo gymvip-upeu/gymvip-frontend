@@ -15,7 +15,6 @@ import AttendanceAgendaPage from '../pages/AttendanceAgendaPage';
 import PlansPage from '../pages/PlansPage';
 import SupplementsPage from '../pages/SupplementsPage';
 import PromotionsPage from '../pages/PromotionsPage';
-import StaffPage from '../pages/StaffPage';
 import MembershipsPage from '../pages/MembershipsPage';
 import SettingsPage from '../pages/SettingsPage';
 import ReminderConfigPage from '../pages/ReminderConfigPage';
@@ -23,7 +22,6 @@ import FaqPage from '../pages/FaqPage';
 import CommunicationsPage from '../pages/CommunicationsPage';
 import LoginModal from '../components/modals/LoginModal';
 import LockScreenModal from '../components/modals/LockScreenModal';
-import { FeedbackModal } from '../components/feedback/FeedbackModal';
 import { Alert } from '../components/common/Alert';
 import '../themes/jorge.css';
 import '../themes/memberships.css';
@@ -31,7 +29,7 @@ import '../themes/members.css';
 import '../themes/plans.css';
 import '../themes/catalog.css';
 
-import { PATH_VIEW_MAP, VIEW_PATH_MAP, resolveViewFromPath } from './routeConfig';
+import { VIEW_PATH_MAP, resolveViewFromPath } from './routeConfig';
 
 export function AppRoutes() {
   const { user, isLocked, isAdmin, isRecepcion } = useAuth();

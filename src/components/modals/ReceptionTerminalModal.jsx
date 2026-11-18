@@ -44,7 +44,7 @@ export default function ReceptionTerminalModal({
   const [challengeData, setChallengeData] = useState(null);
   const [feed, setFeed] = useState([]);
   const [secondsRemaining, setSecondsRemaining] = useState(20);
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const countdownTimerRef = useRef(null);

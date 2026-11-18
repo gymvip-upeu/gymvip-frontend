@@ -33,7 +33,7 @@ function loadPreferences(email) {
         reducedMotion: ['system', 'reduce', 'normal'].includes(parsed.reducedMotion) ? parsed.reducedMotion : DEFAULT_PREFERENCES.reducedMotion,
       };
     }
-  } catch (err) {
+  } catch {
     // Si falla el parseo o acceso a localStorage, usar valores por defecto
   }
   return { ...DEFAULT_PREFERENCES };
@@ -55,7 +55,7 @@ export function ThemeProvider({ children }) {
       try {
         const key = getStorageKey(user?.email);
         localStorage.setItem(key, JSON.stringify(updated));
-      } catch (err) {
+      } catch {
         // Ignorar fallos de cuota de localStorage
       }
       return updated;

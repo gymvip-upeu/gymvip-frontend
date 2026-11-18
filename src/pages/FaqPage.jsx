@@ -7,7 +7,6 @@ import { useFaqCatalog } from '../hooks/useFaqCatalog';
 import { FAQ_CATEGORIES, FAQ_FILTERS, faqStatus, filterFaqCatalog, normalizeFaqText, saveFaq } from '../services/faqCatalog';
 import searchIcon from '../assets/icons/faq-search.svg';
 import filterIcon from '../assets/icons/faq-filter.svg';
-import closeIcon from '../assets/icons/faq-close.svg';
 import switchOn from '../assets/icons/faq-switch-on.svg';
 import switchOff from '../assets/icons/faq-switch-off.svg';
 import '../themes/faq.css';
