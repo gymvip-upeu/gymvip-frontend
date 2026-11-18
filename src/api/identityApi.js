@@ -2,7 +2,7 @@
 // GYM VIP — API de Consulta Autoritativa de Identidad (ApiPeruDev / DNI)
 // ==============================================================================
 
-import { httpClient } from './httpClient';
+import { httpClient } from './httpClient.js';
 
 /**
  * Consulta autoritativa de identidad por DNI mediante el backend de GYM VIP.

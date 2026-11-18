@@ -2,7 +2,7 @@
 // GYM VIP — Cliente de Transporte HTTP Centralizado
 // ==============================================================================
 
-import { config } from '../config/environment';
+import { config } from '../config/environment.js';
 
 let unauthorizedHandler = null;
 
