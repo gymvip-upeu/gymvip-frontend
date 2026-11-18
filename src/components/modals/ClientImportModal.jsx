@@ -22,6 +22,7 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
   const [errorMsg, setErrorMsg] = useState(null);
   const [previewData, setPreviewData] = useState(null);
   const [resultData, setResultData] = useState(null);
+  const [verifyDni, setVerifyDni] = useState(false);
   const fileInputRef = useRef(null);
 
   // Cierre accesible con tecla Escape
@@ -72,7 +73,7 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const data = await previewClientImport(file, token);
+      const data = await previewClientImport(file, token, verifyDni);
       setPreviewData(data);
       setStep('PREVIEW');
     } catch (err) {
@@ -88,7 +89,7 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const result = await confirmClientImport(file, token);
+      const result = await confirmClientImport(file, token, verifyDni);
       setResultData(result);
       setStep('RESULT');
     } catch (err) {
@@ -96,6 +97,45 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExportReport = () => {
+    if (!previewData?.rows) return;
+    const sanitizeCsvCell = (val) => {
+      if (!val) return '""';
+      let str = String(val).replace(/"/g, '""');
+      // Neutralizar fórmulas peligrosas (=, +, -, @)
+      if (/^[=+@-]/.test(str)) {
+        str = "'" + str;
+      }
+      return `"${str}"`;
+    };
+
+    const headers = ['Fila', 'DNI', 'TipoDoc', 'Nombre_Archivo', 'Nombre_ApiPeruDev', 'Estado_Importacion', 'Estado_Identidad', 'Discrepancia_Mensaje'];
+    const csvRows = [headers.join(',')];
+
+    previewData.rows.forEach((r) => {
+      csvRows.push([
+        r.rowNumber,
+        sanitizeCsvCell(r.documentNumber),
+        sanitizeCsvCell(r.documentType),
+        sanitizeCsvCell(`${r.firstName} ${r.lastName}`),
+        sanitizeCsvCell(r.verifiedName || ''),
+        sanitizeCsvCell(r.status),
+        sanitizeCsvCell(r.identityStatus || ''),
+        sanitizeCsvCell(r.nameDiscrepancy || r.message || '')
+      ].join(','));
+    });
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `reporte_importacion_diagnostico_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleFinish = () => {
@@ -273,6 +313,36 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
               )}
             </div>
 
+            {/* Opción de Verificación Autoritativa de DNI con ApiPeruDev */}
+            <div
+              style={{
+                background: 'var(--color-surface-card, #1A1D24)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md, 8px)',
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+              }}
+            >
+              <input
+                id="verify-dni-toggle"
+                type="checkbox"
+                checked={verifyDni}
+                onChange={(e) => setVerifyDni(e.target.checked)}
+                disabled={loading}
+                style={{ width: '18px', height: '18px', marginTop: '2px', accentColor: 'var(--color-gold, #D4AF37)', cursor: 'pointer' }}
+              />
+              <label htmlFor="verify-dni-toggle" style={{ cursor: 'pointer', fontSize: '13px' }}>
+                <strong style={{ color: 'var(--color-gold, #D4AF37)', display: 'block', marginBottom: '2px' }}>
+                  🔍 Verificar DNI con ApiPeruDev (Opcional)
+                </strong>
+                <span style={{ color: 'var(--color-text-secondary)', fontSize: '12px', lineHeight: 1.4, display: 'block' }}>
+                  Contrasta los números de DNI en tiempo real con ApiPeruDev para verificar nombres oficiales y advertir inconsistencias antes de la persistencia final.
+                </span>
+              </label>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
               <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
                 Cancelar
@@ -317,6 +387,18 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
                 <span style={{ fontSize: '11px', color: 'var(--color-danger)', display: 'block' }}>Errores (Rechazar)</span>
                 <strong style={{ fontSize: '18px', color: 'var(--color-danger)' }}>{previewData.invalidCount}</strong>
               </div>
+              {previewData.dniVerificationEnabled && (
+                <>
+                  <div className="card" style={{ padding: '12px', textAlign: 'center', borderColor: 'var(--color-gold)' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--color-gold)', display: 'block' }}>DNI en Padrón</span>
+                    <strong style={{ fontSize: '18px', color: 'var(--color-gold)' }}>{previewData.dniValidCount}</strong>
+                  </div>
+                  <div className="card" style={{ padding: '12px', textAlign: 'center', borderColor: previewData.nameDiscrepancyCount > 0 ? 'var(--color-warning)' : 'var(--color-border)' }}>
+                    <span style={{ fontSize: '11px', color: previewData.nameDiscrepancyCount > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)', display: 'block' }}>Discrepancias</span>
+                    <strong style={{ fontSize: '18px', color: previewData.nameDiscrepancyCount > 0 ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>{previewData.nameDiscrepancyCount}</strong>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Tabla de registros */}
@@ -329,6 +411,7 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
                     <th>Documento</th>
                     <th>Fecha Nac.</th>
                     <th>Estado</th>
+                    {previewData.dniVerificationEnabled && <th style={{ minWidth: '140px' }}>ApiPeruDev</th>}
                     <th>Diagnóstico</th>
                   </tr>
                 </thead>
@@ -349,9 +432,37 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
                         </span>
                       </td>
                       <td>{getStatusBadge(row.status)}</td>
+                      {previewData.dniVerificationEnabled && (
+                        <td>
+                          {row.identityStatus === 'ENCONTRADO_EN_FUENTE' && (
+                            <Badge variant="success">Padrón OK</Badge>
+                          )}
+                          {row.identityStatus === 'DISCREPANCIA_NOMBRES' && (
+                            <div>
+                              <Badge variant="warning">Discrepancia</Badge>
+                              <div style={{ fontSize: '11px', color: 'var(--color-gold)', marginTop: '2px' }} title={row.nameDiscrepancy}>
+                                {row.verifiedName}
+                              </div>
+                            </div>
+                          )}
+                          {row.identityStatus === 'NO_ENCONTRADO_EN_FUENTE' && (
+                            <Badge variant="neutral">No en padrón</Badge>
+                          )}
+                          {row.identityStatus === 'FORMATO_INVALIDO' && (
+                            <Badge variant="danger">Formato inválido</Badge>
+                          )}
+                          {row.identityStatus === 'CUOTA_AGOTADA' && (
+                            <Badge variant="danger">Cuota agotada</Badge>
+                          )}
+                          {row.identityStatus === 'REVISION_MANUAL' && (
+                            <Badge variant="warning">Revisión manual</Badge>
+                          )}
+                          {!row.identityStatus && <span style={{ color: 'var(--color-text-muted)', fontSize: '12px' }}>—</span>}
+                        </td>
+                      )}
                       <td>
                         <span style={{ fontSize: '12px', color: row.status === 'VALID' ? 'var(--color-text-secondary)' : 'var(--color-text-muted)' }}>
-                          {row.message}
+                          {row.nameDiscrepancy || row.message}
                         </span>
                       </td>
                     </tr>
@@ -361,14 +472,25 @@ export default function ClientImportModal({ token, onClose, onSuccess }) {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setStep('SELECT')}
-                disabled={loading}
-              >
-                Volver a seleccionar
-              </Button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setStep('SELECT')}
+                  disabled={loading}
+                >
+                  Volver a seleccionar
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleExportReport}
+                  style={{ fontSize: '12px' }}
+                  title="Descargar reporte diagnóstico de auditoría en CSV"
+                >
+                  📥 Exportar Diagnóstico (.csv)
+                </Button>
+              </div>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
                   Cancelar

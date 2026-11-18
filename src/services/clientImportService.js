@@ -1,7 +1,7 @@
 // ==============================================================================
-// GYM VIP — Servicio de Importación Masiva de Clientes (HU-06 / Sprint 1)
+// GYM VIP — Servicio de Importación Masiva de Clientes (HU-06 / Sprint 1 & 2)
 // Conexión con endpoints /api/v1/clients/import (plantilla, vista previa y confirmación)
-// Compatible con desarrollo local (proxy Vite) y despliegue Vercel/Render
+// Soporta verificación autoritativa de DNI con ApiPeruDev
 // ==============================================================================
 
 import { config } from '../config/environment.js';
@@ -43,7 +43,7 @@ export async function downloadClientTemplate(token) {
   window.URL.revokeObjectURL(url);
 }
 
-export async function previewClientImport(file, token) {
+export async function previewClientImport(file, token, verifyDni = false) {
   if (!file) {
     throw new Error('Debe seleccionar un archivo .xlsx para validar.');
   }
@@ -56,9 +56,11 @@ export async function previewClientImport(file, token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const url = `${getEndpoint('/preview')}?verifyDni=${verifyDni ? 'true' : 'false'}`;
+
   // IMPORTANTE: Para peticiones FormData, NUNCA fijar manualmente 'Content-Type'.
   // El navegador añade automáticamente 'multipart/form-data; boundary=...'
-  const response = await fetch(getEndpoint('/preview'), {
+  const response = await fetch(url, {
     method: 'POST',
     headers,
     body: formData,
@@ -76,7 +78,7 @@ export async function previewClientImport(file, token) {
   return data;
 }
 
-export async function confirmClientImport(file, token) {
+export async function confirmClientImport(file, token, verifyDni = false) {
   if (!file) {
     throw new Error('Debe proporcionar el archivo validado para confirmar la importación.');
   }
@@ -89,8 +91,10 @@ export async function confirmClientImport(file, token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const url = `${getEndpoint('/confirm')}?verifyDni=${verifyDni ? 'true' : 'false'}`;
+
   // IMPORTANTE: Para peticiones FormData, NUNCA fijar manualmente 'Content-Type'.
-  const response = await fetch(getEndpoint('/confirm'), {
+  const response = await fetch(url, {
     method: 'POST',
     headers,
     body: formData,

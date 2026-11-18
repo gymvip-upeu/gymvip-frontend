@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { isAdult, calculateAge } from '../../utils/dateUtils';
 import { registerMember } from '../../api/memberApi';
+import { lookupDniApi } from '../../api/identityApi';
 import { validateClientRegistration } from '../../validators/clientValidator';
 import { Alert } from '../common/Alert';
 import { Button } from '../common/Button';
@@ -22,6 +23,82 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  // Estados para consulta autoritativa con ApiPeruDev
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupSuccess, setLookupSuccess] = useState(null);
+  const [lookupNotice, setLookupNotice] = useState(null);
+  const [notFoundModalOpen, setNotFoundModalOpen] = useState(false);
+  const [pendingOverwrite, setPendingOverwrite] = useState(null);
+
+  const isDniLookupAvailable =
+    documentType === 'DNI' &&
+    /^\d{8}$/.test(documentNumber.trim()) &&
+    !lookupLoading &&
+    !submitting;
+
+  const handleLookupDni = async () => {
+    if (!isDniLookupAvailable) return;
+    const targetDni = documentNumber.trim();
+
+    setLookupLoading(true);
+    setLookupSuccess(null);
+    setLookupNotice(null);
+    setErrorMsg(null);
+
+    try {
+      const res = await lookupDniApi(targetDni, token);
+
+      // Descartar si el operador modificó el DNI mientras la consulta estaba en vuelo
+      if (documentNumber.trim() !== targetDni) {
+        return;
+      }
+
+      if (res.status === 'ENCONTRADO' && res.nombres) {
+        const newFirst = res.nombres;
+        const newLast = res.apellidos || '';
+
+        // Si ya existen nombres o apellidos escritos y difieren de la API, solicitar confirmación
+        if ((firstName.trim() || lastName.trim()) &&
+            (firstName.trim().toUpperCase() !== newFirst.toUpperCase() ||
+             lastName.trim().toUpperCase() !== newLast.toUpperCase())) {
+          setPendingOverwrite({ nombres: newFirst, apellidos: newLast });
+        } else {
+          setFirstName(newFirst);
+          setLastName(newLast);
+          setLookupSuccess('Datos encontrados en la fuente consultada (ApiPeruDev).');
+        }
+      } else if (res.status === 'NO_ENCONTRADO') {
+        setNotFoundModalOpen(true);
+      } else if (res.status === 'CUOTA_AGOTADA') {
+        setLookupNotice({
+          variant: 'warning',
+          message: 'Se ha alcanzado el límite de consultas de ApiPeruDev. Complete los datos manualmente.'
+        });
+      } else if (res.status === 'SERVICIO_NO_DISPONIBLE') {
+        setLookupNotice({
+          variant: 'warning',
+          message: 'El servicio de consulta no está disponible temporalmente. Puede reintentar o completar los datos manualmente.'
+        });
+      } else {
+        setLookupNotice({
+          variant: 'info',
+          message: res.mensaje || 'No se pudo completar la verificación automática de identidad.'
+        });
+      }
+    } catch (err) {
+      if (err.status === 404) {
+        setNotFoundModalOpen(true);
+      } else {
+        setLookupNotice({
+          variant: 'warning',
+          message: err.message || 'Error al conectar con el servicio de consulta de identidad.'
+        });
+      }
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   const age = birthDate ? calculateAge(birthDate) : null;
   const isEligible = birthDate ? isAdult(birthDate) : false;
@@ -188,8 +265,8 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '16px', marginTop: '16px' }}>
-            <div className="form-group">
+          <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr auto', gap: '12px', alignItems: 'flex-end', marginTop: '16px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label" htmlFor="client-doc-type">
                 Tipo Doc. *
               </label>
@@ -197,8 +274,12 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 id="client-doc-type"
                 className="form-input"
                 value={documentType}
-                onChange={(e) => setDocumentType(e.target.value)}
-                disabled={submitting}
+                onChange={(e) => {
+                  setDocumentType(e.target.value);
+                  setLookupSuccess(null);
+                  setLookupNotice(null);
+                }}
+                disabled={submitting || lookupLoading}
               >
                 <option value="DNI">DNI</option>
                 <option value="CE">C.E.</option>
@@ -206,7 +287,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
               </select>
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label" htmlFor="client-doc-number">
                 Número de Documento *
               </label>
@@ -215,14 +296,53 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 type="text"
                 className="form-input"
                 value={documentNumber}
-                onChange={(e) => setDocumentNumber(e.target.value)}
+                onChange={(e) => {
+                  setDocumentNumber(e.target.value);
+                  setLookupSuccess(null);
+                  setLookupNotice(null);
+                }}
                 placeholder="72819201"
                 maxLength={50}
                 required
-                disabled={submitting}
+                disabled={submitting || lookupLoading}
               />
             </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleLookupDni}
+              disabled={!isDniLookupAvailable}
+              style={{
+                minHeight: '42px',
+                whiteSpace: 'nowrap',
+                borderColor: isDniLookupAvailable ? 'var(--color-gold, #D4AF37)' : 'var(--color-border)',
+                color: isDniLookupAvailable ? 'var(--color-gold, #D4AF37)' : 'var(--color-text-muted)',
+                fontWeight: 600,
+              }}
+              title={
+                documentType !== 'DNI'
+                  ? 'Consulta disponible solo para DNI'
+                  : !/^\d{8}$/.test(documentNumber.trim())
+                  ? 'Ingrese exactamente 8 dígitos para consultar'
+                  : 'Consultar nombres y apellidos en ApiPeruDev'
+              }
+            >
+              {lookupLoading ? 'Consultando...' : '🔍 Consultar DNI'}
+            </Button>
           </div>
+
+          {lookupSuccess && (
+            <div style={{ marginTop: '12px' }}>
+              <Alert variant="success" message={lookupSuccess} onClose={() => setLookupSuccess(null)} />
+            </div>
+          )}
+
+          {lookupNotice && (
+            <div style={{ marginTop: '12px' }}>
+              <Alert variant={lookupNotice.variant} message={lookupNotice.message} onClose={() => setLookupNotice(null)} />
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
             <div className="form-group">
@@ -341,6 +461,124 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
             </Button>
           </div>
         </form>
+
+        {/* Modal de confirmación para reemplazo de nombres existentes */}
+        {pendingOverwrite && (
+          <div
+            className="modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="overwrite-modal-title"
+            style={{ zIndex: 1200, backgroundColor: 'rgba(11, 13, 18, 0.85)', backdropFilter: 'blur(4px)', position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                maxWidth: '460px',
+                width: '100%',
+                padding: '24px',
+                background: 'var(--color-surface-panel, #12141A)',
+                border: '1px solid var(--color-gold-border, rgba(212, 175, 55, 0.35))',
+                borderRadius: 'var(--radius-lg, 12px)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.85)',
+              }}
+            >
+              <h3 id="overwrite-modal-title" style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
+                ¿Desea reemplazar los nombres actuales?
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 16px', lineHeight: 1.5 }}>
+                El formulario ya contiene datos que difieren de la identidad encontrada en ApiPeruDev.
+              </p>
+              <div style={{ background: 'var(--color-surface-card, #1A1D24)', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '20px', border: '1px solid var(--color-border)' }}>
+                <div style={{ color: 'var(--color-text-secondary)' }}>
+                  <strong>Actual en formulario:</strong> {firstName} {lastName}
+                </div>
+                <div style={{ marginTop: '8px', color: 'var(--color-gold, #D4AF37)' }}>
+                  <strong>Fuente ApiPeruDev:</strong> {pendingOverwrite.nombres} {pendingOverwrite.apellidos}
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setPendingOverwrite(null);
+                    setLookupSuccess('Se conservaron los nombres ingresados en el formulario.');
+                  }}
+                >
+                  Conservar actuales
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => {
+                    setFirstName(pendingOverwrite.nombres);
+                    setLastName(pendingOverwrite.apellidos);
+                    setPendingOverwrite(null);
+                    setLookupSuccess('Datos del padrón ApiPeruDev aplicados exitosamente.');
+                  }}
+                >
+                  Reemplazar nombres
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal profesional para DNI no encontrado */}
+        {notFoundModalOpen && (
+          <div
+            className="modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notfound-modal-title"
+            style={{ zIndex: 1200, backgroundColor: 'rgba(11, 13, 18, 0.85)', backdropFilter: 'blur(4px)', position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                maxWidth: '480px',
+                width: '100%',
+                padding: '26px',
+                background: 'var(--color-surface-panel, #12141A)',
+                border: '1px solid var(--color-gold-border, rgba(212, 175, 55, 0.35))',
+                borderRadius: 'var(--radius-lg, 12px)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.85)',
+              }}
+            >
+              <h3 id="notfound-modal-title" style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 10px', color: 'var(--color-text-primary)' }}>
+                DNI no encontrado en el padrón consultado
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px', lineHeight: 1.5 }}>
+                No se encontraron datos asociados a este DNI en las fuentes disponibles de ApiPeruDev. Esto no significa necesariamente que el documento sea inválido.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setNotFoundModalOpen(false);
+                    const docInput = document.getElementById('client-doc-number');
+                    if (docInput) docInput.focus();
+                  }}
+                >
+                  Corregir DNI
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => {
+                    setNotFoundModalOpen(false);
+                    const firstInput = document.getElementById('client-first-name');
+                    if (firstInput) firstInput.focus();
+                  }}
+                >
+                  Continuar con revisión manual
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

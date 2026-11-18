@@ -1,7 +1,8 @@
 // ==============================================================================
-// GYM VIP — Modal de Ajustes de Apariencia y Preferencias Personales
+// GYM VIP — Popover / Panel Desplegable de Ajustes de Apariencia y Accesibilidad
+// Anclado directamente al control de ajustes del Header (sin backdrop bloqueante)
+// Permite previsualizar los cambios en tiempo real en la pantalla
 // Accesible para todos los usuarios autenticados (ADMIN y RECEPCION)
-// Persistencia por cuenta sin alterar la Configuración Operativa de negocio
 // ==============================================================================
 
 import React, { useEffect, useRef } from 'react';
@@ -13,10 +14,9 @@ import { Badge } from './Badge';
 export function AppearanceModal({ isOpen, onClose }) {
   const { preferences, updatePreferences } = useThemePreferences();
   const { user } = useAuth();
-  const modalRef = useRef(null);
-  const closeButtonRef = useRef(null);
+  const panelRef = useRef(null);
 
-  // Cierre accesible con tecla Escape y foco inicial
+  // Cierre accesible con tecla Escape y clic exterior
   useEffect(() => {
     if (!isOpen) return;
 
@@ -27,78 +27,85 @@ export function AppearanceModal({ isOpen, onClose }) {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    setTimeout(() => {
-      closeButtonRef.current?.focus();
-    }, 50);
+    const handleClickOutside = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        // Ignorar clic si provino del propio botón del header que dispara la apertura
+        const settingsBtn = document.querySelector('.header-icon-btn[aria-label="Ajustes de apariencia"]');
+        if (settingsBtn && settingsBtn.contains(e.target)) return;
+        onClose();
+      }
+    };
 
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const currentTheme = preferences.theme || 'dark';
-  const currentFontSize = preferences.fontSize || 'normal';
-  const currentMotion = preferences.reducedMotion || 'system';
+  const currentTheme = preferences?.theme || 'dark';
+  const currentFontSize = preferences?.fontSize || 'normal';
+  const currentMotion = preferences?.reducedMotion || 'system';
 
   return (
     <div
-      className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="appearance-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      ref={panelRef}
+      className="appearance-dropdown-panel"
+      role="region"
+      aria-label="Panel de Ajustes de Apariencia"
     >
-      <div
-        ref={modalRef}
-        className="modal-content appearance-dialog"
-        style={{
-          maxWidth: '520px',
-          padding: '28px',
-          position: 'relative',
-        }}
-      >
-        {/* Cabecera del Diálogo */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '1px solid var(--color-border)', paddingBottom: '14px' }}>
+      {/* Encabezado del Popover */}
+      <div className="appearance-dropdown-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
+            <Icon name="settings" size={17} />
+          </span>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
-                <Icon name="settings" size={18} />
-              </span>
-              <Badge variant="gold">PREFERENCIAS VISUALES</Badge>
-            </div>
-            <h2 id="appearance-title" style={{ fontSize: '18px', fontWeight: 800, margin: '2px 0 0', color: 'var(--color-text-primary)' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
               Ajustes de Apariencia
-            </h2>
-            <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '4px 0 0' }}>
-              Personalice la experiencia visual en su dispositivo. Configurado para: <strong>{user?.email || 'Sesión Actual'}</strong>
-            </p>
+            </h3>
+            <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+              Cambios visuales en tiempo real
+            </span>
           </div>
-
-          <button
-            ref={closeButtonRef}
-            type="button"
-            className="btn-action-icon"
-            onClick={onClose}
-            aria-label="Cerrar ajustes de apariencia"
-            title="Cerrar ajustes"
-          >
-            <Icon name="x-circle" size={18} />
-          </button>
         </div>
 
-        {/* Sección 1: Selección de Tema Visual */}
-        <section style={{ marginBottom: '22px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'block', marginBottom: '8px' }}>
+        <button
+          type="button"
+          className="btn-action-icon"
+          onClick={onClose}
+          aria-label="Cerrar ajustes"
+          title="Cerrar ajustes"
+          style={{ width: '28px', height: '28px' }}
+        >
+          <Icon name="x-circle" size={16} />
+        </button>
+      </div>
+
+      {/* Cuerpo del Popover con Opciones Visuales */}
+      <div className="appearance-dropdown-body">
+        {/* Identificación de Usuario */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-text-secondary)', paddingBottom: '4px' }}>
+          <span>Perfil activo:</span>
+          <Badge variant="gold" style={{ fontSize: '10px' }}>
+            {user?.email || 'Sesión Actual'}
+          </Badge>
+        </div>
+
+        {/* Sección 1: Tema de Interfaz */}
+        <section>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
             Tema de Interfaz
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
             {[
-              { id: 'dark', label: 'Oscuro', icon: 'moon', desc: 'Dark & Gold (Oficial)' },
-              { id: 'light', label: 'Claro', icon: 'sun', desc: 'Fondo luminoso' },
-              { id: 'system', label: 'Sistema', icon: 'monitor', desc: 'Automático del SO' },
+              { id: 'dark', label: 'Oscuro', icon: 'moon', desc: 'Dark & Gold' },
+              { id: 'light', label: 'Claro', icon: 'sun', desc: 'Luminoso' },
+              { id: 'system', label: 'Sistema', icon: 'monitor', desc: 'Del SO' },
             ].map((opt) => {
               const isSelected = currentTheme === opt.id;
               return (
@@ -108,7 +115,7 @@ export function AppearanceModal({ isOpen, onClose }) {
                   onClick={() => updatePreferences({ theme: opt.id })}
                   className={`theme-option-card ${isSelected ? 'active' : ''}`}
                   style={{
-                    padding: '12px 8px',
+                    padding: '10px 6px',
                     borderRadius: 'var(--radius-md)',
                     border: isSelected ? '2px solid var(--color-gold)' : '1px solid var(--color-border)',
                     background: isSelected ? 'var(--color-gold-subtle)' : 'var(--color-surface-elevated)',
@@ -116,19 +123,19 @@ export function AppearanceModal({ isOpen, onClose }) {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     textAlign: 'center',
                     transition: 'all var(--transition-fast)',
                   }}
                   aria-pressed={isSelected}
                 >
                   <span style={{ color: isSelected ? 'var(--color-gold)' : 'var(--color-text-secondary)' }}>
-                    <Icon name={opt.icon} size={20} />
+                    <Icon name={opt.icon} size={18} />
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: isSelected ? 700 : 500, color: 'var(--color-text-primary)' }}>
+                  <span style={{ fontSize: '12px', fontWeight: isSelected ? 700 : 500, color: 'var(--color-text-primary)' }}>
                     {opt.label}
                   </span>
-                  <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
+                  <span style={{ fontSize: '9px', color: 'var(--color-text-muted)' }}>
                     {opt.desc}
                   </span>
                 </button>
@@ -137,15 +144,15 @@ export function AppearanceModal({ isOpen, onClose }) {
           </div>
         </section>
 
-        {/* Sección 2: Tamaño de Texto */}
-        <section style={{ marginBottom: '22px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'block', marginBottom: '8px' }}>
+        {/* Sección 2: Tamaño de Tipografía */}
+        <section>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
             Tamaño de Tipografía
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
             {[
-              { id: 'normal', label: 'Normal (Estándar)', desc: '14px base optimizado' },
-              { id: 'large', label: 'Grande (+10%)', desc: 'Mayor legibilidad en mostrador' },
+              { id: 'normal', label: 'Normal (14px)', desc: 'Estándar balanceado' },
+              { id: 'large', label: 'Grande (+10%)', desc: 'Legibilidad mostrador' },
             ].map((opt) => {
               const isSelected = currentFontSize === opt.id;
               return (
@@ -155,7 +162,7 @@ export function AppearanceModal({ isOpen, onClose }) {
                   onClick={() => updatePreferences({ fontSize: opt.id })}
                   className={`theme-option-card ${isSelected ? 'active' : ''}`}
                   style={{
-                    padding: '12px 14px',
+                    padding: '8px 10px',
                     borderRadius: 'var(--radius-md)',
                     border: isSelected ? '2px solid var(--color-gold)' : '1px solid var(--color-border)',
                     background: isSelected ? 'var(--color-gold-subtle)' : 'var(--color-surface-elevated)',
@@ -169,16 +176,16 @@ export function AppearanceModal({ isOpen, onClose }) {
                   aria-pressed={isSelected}
                 >
                   <div>
-                    <span style={{ fontSize: '13px', fontWeight: isSelected ? 700 : 500, display: 'block', color: 'var(--color-text-primary)' }}>
+                    <span style={{ fontSize: '12px', fontWeight: isSelected ? 700 : 500, display: 'block', color: 'var(--color-text-primary)' }}>
                       {opt.label}
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
                       {opt.desc}
                     </span>
                   </div>
                   {isSelected && (
                     <span style={{ color: 'var(--color-gold)' }}>
-                      <Icon name="check-circle" size={16} />
+                      <Icon name="check-circle" size={14} />
                     </span>
                   )}
                 </button>
@@ -187,16 +194,16 @@ export function AppearanceModal({ isOpen, onClose }) {
           </div>
         </section>
 
-        {/* Sección 3: Animaciones y Efectos */}
-        <section style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'block', marginBottom: '8px' }}>
+        {/* Sección 3: Animaciones y Transiciones */}
+        <section>
+          <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'block', marginBottom: '6px' }}>
             Animaciones Visuales
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
             {[
-              { id: 'system', label: 'Del Sistema', desc: 'Ajuste del SO' },
-              { id: 'normal', label: 'Fluidas', desc: 'Transiciones activas' },
-              { id: 'reduce', label: 'Reducidas', desc: 'Sin transiciones' },
+              { id: 'system', label: 'Sistema', desc: 'Preferencia SO' },
+              { id: 'normal', label: 'Fluidas', desc: 'Completas' },
+              { id: 'reduce', label: 'Reducidas', desc: 'Sin transición' },
             ].map((opt) => {
               const isSelected = currentMotion === opt.id;
               return (
@@ -206,7 +213,7 @@ export function AppearanceModal({ isOpen, onClose }) {
                   onClick={() => updatePreferences({ reducedMotion: opt.id })}
                   className={`theme-option-card ${isSelected ? 'active' : ''}`}
                   style={{
-                    padding: '10px 8px',
+                    padding: '8px 6px',
                     borderRadius: 'var(--radius-md)',
                     border: isSelected ? '2px solid var(--color-gold)' : '1px solid var(--color-border)',
                     background: isSelected ? 'var(--color-gold-subtle)' : 'var(--color-surface-elevated)',
@@ -216,10 +223,10 @@ export function AppearanceModal({ isOpen, onClose }) {
                   }}
                   aria-pressed={isSelected}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: isSelected ? 700 : 500, display: 'block', color: 'var(--color-text-primary)' }}>
+                  <span style={{ fontSize: '11px', fontWeight: isSelected ? 700 : 500, display: 'block', color: 'var(--color-text-primary)' }}>
                     {opt.label}
                   </span>
-                  <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
+                  <span style={{ fontSize: '9px', color: 'var(--color-text-muted)' }}>
                     {opt.desc}
                   </span>
                 </button>
@@ -228,40 +235,40 @@ export function AppearanceModal({ isOpen, onClose }) {
           </div>
         </section>
 
-        {/* Separación Funcional Explícita */}
+        {/* Nota de Separación de Ámbitos */}
         <div
           style={{
             background: 'var(--color-surface-elevated)',
             border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            padding: '12px',
-            marginBottom: '16px',
-            fontSize: '11px',
+            borderRadius: 'var(--radius-sm)',
+            padding: '8px 10px',
+            fontSize: '10px',
             color: 'var(--color-text-secondary)',
-            lineHeight: 1.5,
+            lineHeight: 1.4,
           }}
         >
-          <strong style={{ color: 'var(--color-text-primary)', display: 'block', marginBottom: '2px' }}>
-            Separación de Ámbitos:
-          </strong>
-          Estos ajustes son personales de visualización y se guardan únicamente en su navegador. Las reglas de negocio (umbral de vencimiento, tarifas y usuarios) corresponden al módulo <em>Configuración Operativa</em>, reservado a Administradores.
+          <strong style={{ color: 'var(--color-text-primary)' }}>Aviso: </strong>
+          Estas preferencias son personales del navegador. Los parámetros de negocio corresponden a <em>Configuración Operativa</em>.
         </div>
+      </div>
 
-        {/* Pie del Diálogo */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--color-border)', paddingTop: '14px' }}>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={onClose}
-            style={{ minHeight: '36px' }}
-          >
-            Listo
-          </button>
-        </div>
+      {/* Pie del Popover */}
+      <div className="appearance-dropdown-footer">
+        <span style={{ color: 'var(--color-text-muted)' }}>
+          Aplicado inmediatamente
+        </span>
+        <button
+          type="button"
+          className="btn btn-primary btn-sm"
+          onClick={onClose}
+          style={{ minHeight: '28px', fontSize: '11px', padding: '4px 12px' }}
+        >
+          Listo
+        </button>
       </div>
     </div>
   );
 }
 
+export const AppearanceDropdown = AppearanceModal;
 export default AppearanceModal;
-

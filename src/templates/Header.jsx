@@ -47,12 +47,15 @@ export function Header({
           </div>
         </div>
 
-        {/* Acciones de Esquina Superior Derecha: Notificaciones y Apariencia */}
+        {/* Acciones de Esquina Superior Derecha: Notificaciones y Apariencia (Popovers Anclados) */}
         <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
           <button
             type="button"
             className="header-icon-btn"
-            onClick={() => setIsNotificationsOpen((prev) => !prev)}
+            onClick={() => {
+              setIsNotificationsOpen((prev) => !prev);
+              setIsAppearanceOpen(false);
+            }}
             aria-label="Notificaciones"
             title="Notificaciones"
             aria-expanded={isNotificationsOpen}
@@ -64,10 +67,14 @@ export function Header({
           <button
             type="button"
             className="header-icon-btn"
-            onClick={() => setIsAppearanceOpen(true)}
+            onClick={() => {
+              setIsAppearanceOpen((prev) => !prev);
+              setIsNotificationsOpen(false);
+            }}
             aria-label="Ajustes de apariencia"
             title="Ajustes de apariencia"
             aria-expanded={isAppearanceOpen}
+            aria-haspopup="true"
           >
             <Icon name="settings" size={19} />
           </button>
@@ -78,14 +85,14 @@ export function Header({
             onClose={() => setIsNotificationsOpen(false)}
             onNavigate={onNavigate}
           />
+
+          {/* Popover Anclado de Apariencia y Preferencias Visuales */}
+          <AppearanceModal
+            isOpen={isAppearanceOpen}
+            onClose={() => setIsAppearanceOpen(false)}
+          />
         </div>
       </header>
-
-      {/* Modal Accesible de Apariencia */}
-      <AppearanceModal
-        isOpen={isAppearanceOpen}
-        onClose={() => setIsAppearanceOpen(false)}
-      />
     </>
   );
 }
