@@ -1,0 +1,498 @@
+// ==============================================================================
+// GYM VIP — Modal de Terminal de Asistencia QR Invertido (Mostrador / Recepción)
+// Genera y rota el desafío temporal de la terminal cada 20 segundos y muestra
+// el feed de ingresos validados en tiempo real.
+// ==============================================================================
+
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  getTerminalsApi,
+  activateTerminalApi,
+  getTerminalChallengeApi,
+  getTerminalFeedApi,
+} from '../../api/attendanceApi.js';
+import QrCodeSvg from '../common/QrCodeSvg.jsx';
+import { Button } from '../common/Button.jsx';
+import { Alert } from '../common/Alert.jsx';
+import { Icon } from '../common/Icons.jsx';
+
+function formatLimaTime(utcString) {
+  if (!utcString) return '-';
+  try {
+    const iso = utcString.endsWith('Z') ? utcString : `${utcString}Z`;
+    const d = new Date(iso);
+    return d.toLocaleTimeString('es-PE', {
+      timeZone: 'America/Lima',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return utcString;
+  }
+}
+
+export default function ReceptionTerminalModal({
+  isOpen,
+  onClose,
+  token,
+  user,
+  onNavigateAgenda,
+}) {
+  const [terminal, setTerminal] = useState(null);
+  const [challengeData, setChallengeData] = useState(null);
+  const [feed, setFeed] = useState([]);
+  const [secondsRemaining, setSecondsRemaining] = useState(20);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const countdownTimerRef = useRef(null);
+  const challengePollTimerRef = useRef(null);
+  const feedPollTimerRef = useRef(null);
+
+  // Inicializar terminal al abrir
+  useEffect(() => {
+    if (!isOpen) {
+      clearInterval(countdownTimerRef.current);
+      clearInterval(challengePollTimerRef.current);
+      clearInterval(feedPollTimerRef.current);
+      return;
+    }
+
+    async function initTerminal() {
+      setLoading(true);
+      setError('');
+      try {
+        const terminals = await getTerminalsApi(token);
+        if (!terminals || terminals.length === 0) {
+          setError('No hay terminales mostrador configuradas en el sistema.');
+          setLoading(false);
+          return;
+        }
+
+        // Seleccionar terminal principal o primera activa
+        let activeTerm = terminals.find((t) => t.status === 'ACTIVO') || terminals[0];
+
+        // Si no está activa o tiene operador distinto, activarla para este usuario
+        const opName = user?.name || user?.email || 'Recepcionista';
+        if (activeTerm.status !== 'ACTIVO' || activeTerm.currentOperator !== opName) {
+          try {
+            activeTerm = await activateTerminalApi(activeTerm.id, opName, token);
+          } catch {
+            // Continuar con la terminal seleccionada
+          }
+        }
+
+        setTerminal(activeTerm);
+        await fetchNewChallenge(activeTerm.id);
+        await fetchFeed(activeTerm.id);
+
+        // Iniciar polling de feed cada 4s
+        feedPollTimerRef.current = setInterval(() => {
+          fetchFeed(activeTerm.id);
+        }, 4000);
+      } catch (err) {
+        setError(err.message || 'Error al conectar con la terminal mostrador.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    initTerminal();
+
+    return () => {
+      clearInterval(countdownTimerRef.current);
+      clearInterval(challengePollTimerRef.current);
+      clearInterval(feedPollTimerRef.current);
+    };
+  }, [isOpen, token, user]);
+
+  async function fetchNewChallenge(terminalId) {
+    if (!terminalId) return;
+    try {
+      const data = await getTerminalChallengeApi(terminalId, token);
+      setChallengeData(data);
+      const ttl = data.refreshIntervalSeconds || 20;
+      setSecondsRemaining(ttl);
+
+      // Reiniciar cuenta regresiva
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = setInterval(() => {
+        setSecondsRemaining((prev) => {
+          if (prev <= 1) {
+            fetchNewChallenge(terminalId);
+            return 20;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      setError(err.message || 'Error al rotar el desafío QR.');
+    }
+  }
+
+  async function fetchFeed(terminalId) {
+    if (!terminalId) return;
+    try {
+      const feedItems = await getTerminalFeedApi(terminalId, 10, token);
+      setFeed(Array.isArray(feedItems) ? feedItems : []);
+    } catch {
+      // Ignorar fallas momentáneas de sondeo
+    }
+  }
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+      }}
+    >
+      <div
+        className="card"
+        style={{
+          width: '100%',
+          maxWidth: '920px',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: 'var(--color-bg-surface, #14161D)',
+          border: '1px solid var(--color-gold, #D4AF37)',
+          borderRadius: '18px',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Cabecera */}
+        <div
+          style={{
+            padding: '18px 24px',
+            borderBottom: '1px solid rgba(212, 175, 55, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'linear-gradient(90deg, rgba(212,175,55,0.12) 0%, transparent 100%)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(212, 175, 55, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--color-gold, #D4AF37)',
+              }}
+            >
+              <Icon name="qr-code" size={20} />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '18px', color: 'var(--color-text-primary, #FFFFFF)', fontWeight: 700 }}>
+                Terminal Mostrador — QR en Pantalla
+              </h2>
+              <span style={{ fontSize: '12px', color: 'var(--color-gold, #D4AF37)' }}>
+                {terminal?.name || 'Iniciando terminal mostrador...'}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 700,
+                backgroundColor: terminal?.status === 'ACTIVO' ? 'rgba(46, 204, 113, 0.2)' : 'rgba(231, 76, 60, 0.2)',
+                color: terminal?.status === 'ACTIVO' ? '#2ECC71' : '#E74C3C',
+              }}
+            >
+              {terminal?.status === 'ACTIVO' ? '● TERMINAL ACTIVA' : 'INACTIVA'}
+            </span>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--color-text-muted, #8A92A6)',
+                cursor: 'pointer',
+                fontSize: '22px',
+                lineHeight: 1,
+              }}
+              title="Cerrar terminal"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ padding: '12px 24px' }}>
+            <Alert type="danger" message={error} />
+          </div>
+        )}
+
+        {/* Contenido Principal: QR + Feed */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(320px, 1fr) 340px',
+            gap: '24px',
+            padding: '24px',
+            overflowY: 'auto',
+          }}
+        >
+          {/* Lado Izquierdo: Código QR con temporizador */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.35)',
+              borderRadius: '16px',
+              padding: '28px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+            }}
+          >
+            <div style={{ marginBottom: '14px', textAlign: 'center' }}>
+              <span
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: 'var(--color-text-secondary, #A0AEC0)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Escanear con App GYM VIP Móvil
+              </span>
+            </div>
+
+            {/* Código QR */}
+            <div
+              style={{
+                padding: '14px',
+                backgroundColor: '#0E0F12',
+                borderRadius: '16px',
+                border: '2px solid var(--color-gold, #D4AF37)',
+                boxShadow: '0 0 24px rgba(212, 175, 55, 0.2)',
+              }}
+            >
+              <QrCodeSvg
+                value={challengeData?.challengeToken || ''}
+                size={230}
+                color="#D4AF37"
+                bgColor="#0E0F12"
+              />
+            </div>
+
+            {/* Temporizador de rotación */}
+            <div
+              style={{
+                marginTop: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '13px',
+                color: 'var(--color-text-primary, #FFFFFF)',
+              }}
+            >
+              <div
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  backgroundColor: secondsRemaining <= 5 ? '#E74C3C' : '#D4AF37',
+                  animation: 'pulse 1s infinite',
+                }}
+              />
+              <span>
+                Rotación de seguridad en:{' '}
+                <strong style={{ color: 'var(--color-gold, #D4AF37)', fontSize: '15px' }}>
+                  {secondsRemaining}s
+                </strong>
+              </span>
+            </div>
+
+            {/* Barra de progreso de cuenta regresiva */}
+            <div
+              style={{
+                width: '240px',
+                height: '4px',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '2px',
+                marginTop: '10px',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  width: `${(secondsRemaining / (challengeData?.refreshIntervalSeconds || 20)) * 100}%`,
+                  backgroundColor: secondsRemaining <= 5 ? '#E74C3C' : '#D4AF37',
+                  transition: 'width 1s linear',
+                }}
+              />
+            </div>
+
+            <div style={{ marginTop: '16px' }}>
+              <Button
+                variant="ghost"
+                onClick={() => terminal && fetchNewChallenge(terminal.id)}
+                style={{ fontSize: '12px', padding: '6px 12px' }}
+              >
+                <Icon name="refresh" size={13} />
+                <span>Rotar desafío ahora</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Lado Derecho: Feed de Asistencias en Vivo */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: 'rgba(0, 0, 0, 0.25)',
+              borderRadius: '16px',
+              padding: '18px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '12px',
+                paddingBottom: '8px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                  Feed en Vivo
+                </span>
+                <span
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#2ECC71',
+                  }}
+                />
+              </div>
+              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                Últimos ingresos
+              </span>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {feed.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--color-text-muted)', fontSize: '12px' }}>
+                  <p style={{ margin: 0 }}>Esperando escaneos de socios...</p>
+                  <p style={{ margin: '6px 0 0', fontSize: '11px', opacity: 0.8 }}>
+                    Los ingresos registrados aparecerán aquí automáticamente.
+                  </p>
+                </div>
+              ) : (
+                feed.map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      borderLeft: `3px solid ${
+                        item.status === 'ATTENDANCE_RECORDED'
+                          ? '#2ECC71'
+                          : item.status === 'ALREADY_REGISTERED'
+                          ? '#D4AF37'
+                          : '#E74C3C'
+                      }`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '3px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                        {item.memberName || 'Socio GYM VIP'}
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
+                        {formatLimaTime(item.checkedAtUtc || item.checked_at_utc)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                      <span style={{ color: 'var(--color-gold)', fontFamily: 'monospace' }}>
+                        {item.memberCode || item.member_code}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 600,
+                          color:
+                            item.status === 'ATTENDANCE_RECORDED'
+                              ? '#2ECC71'
+                              : item.status === 'ALREADY_REGISTERED'
+                              ? '#D4AF37'
+                              : '#E74C3C',
+                        }}
+                      >
+                        {item.status === 'ATTENDANCE_RECORDED'
+                          ? 'INGRESO'
+                          : item.status === 'ALREADY_REGISTERED'
+                          ? 'YA INGRESÓ HOY'
+                          : 'RECHAZADO'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: '14px 24px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          <Button
+            variant="secondary"
+            onClick={() => {
+              onClose();
+              if (onNavigateAgenda) onNavigateAgenda();
+            }}
+          >
+            <Icon name="calendar" size={15} />
+            <span>Consultar Agenda de Asistencias</span>
+          </Button>
+
+          <Button variant="primary" onClick={onClose}>
+            <span>Listo / Cerrar</span>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

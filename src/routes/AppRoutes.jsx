@@ -11,6 +11,7 @@ import MemberAppPage from '../pages/MemberAppPage';
 import ClientsPage from '../pages/ClientsPage';
 import CoveragePage from '../pages/CoveragePage';
 import VerificationPage from '../pages/VerificationPage';
+import AttendanceAgendaPage from '../pages/AttendanceAgendaPage';
 import PlansPage from '../pages/PlansPage';
 import SupplementsPage from '../pages/SupplementsPage';
 import PromotionsPage from '../pages/PromotionsPage';
@@ -156,6 +157,7 @@ export function AppRoutes() {
         {currentView === 'clients' && <ClientsPage />}
         {currentView === 'coverage' && (isAdmin() || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
         {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
+        {currentView === 'attendance' && (isAdmin() || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
         {currentView === 'plans' && <PlansPage />}
         {currentView === 'supplements' && <SupplementsPage />}
         {currentView === 'promotions' && <PromotionsPage />}

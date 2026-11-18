@@ -13,6 +13,7 @@ export function OperationsNav({ activeTab, onNavigate }) {
     { id: 'memberships', label: 'Membresías y cobros', icon: 'credit-card' },
     { id: 'coverage', label: 'Vigencias y alertas', icon: 'calendar' },
     { id: 'verification', label: 'Verificar ingreso', icon: 'check-circle' },
+    { id: 'attendance', label: 'Agenda de asistencias', icon: 'qr-code' },
   ];
 
   return (

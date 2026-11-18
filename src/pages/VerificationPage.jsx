@@ -10,6 +10,7 @@ import { verifyCoverage } from '../api/jorgeApi';
 import { checkInMember, getMemberAttendance } from '../api/memberApi';
 import CoverageCard from '../components/common/CoverageCard';
 import QrScannerModal from '../components/modals/QrScannerModal';
+import ReceptionTerminalModal from '../components/modals/ReceptionTerminalModal';
 import { Button } from '../components/common/Button';
 import { Alert } from '../components/common/Alert';
 import { Icon } from '../components/common/Icons';
@@ -33,7 +34,7 @@ function formatLimaTime(utcString) {
 }
 
 export default function VerificationPage({ onNavigate }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [query, setQuery] = useState('');
   const [clients, setClients] = useState(null);
   const [page, setPage] = useState(0);
@@ -45,6 +46,7 @@ export default function VerificationPage({ onNavigate }) {
 
   // Estados de Asistencia y QR (HU-13)
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [terminalModalOpen, setTerminalModalOpen] = useState(false);
   const [attendanceSuccess, setAttendanceSuccess] = useState('');
   const [attendanceError, setAttendanceError] = useState('');
   const [recordingAttendance, setRecordingAttendance] = useState(false);
@@ -273,6 +275,18 @@ export default function VerificationPage({ onNavigate }) {
             <span>Escanear Código QR</span>
           </Button>
 
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setTerminalModalOpen(true)}
+            disabled={busy}
+            style={{ minHeight: '44px', borderColor: 'var(--color-gold)', backgroundColor: 'rgba(212, 175, 55, 0.12)' }}
+            title="Mostrar código QR de recepción en pantalla para que los socios escaneen con su celular"
+          >
+            <Icon name="qr-code" size={16} color="var(--color-gold)" />
+            <span>Terminal QR Pantalla</span>
+          </Button>
+
           {(clients || value) && (
             <Button type="button" variant="secondary" onClick={handleClear} disabled={busy} style={{ minHeight: '44px' }}>
               <span>Nueva Consulta</span>
@@ -479,6 +493,18 @@ export default function VerificationPage({ onNavigate }) {
         isOpen={qrModalOpen}
         onClose={() => setQrModalOpen(false)}
         onScanSuccess={handleQrSuccess}
+      />
+
+      {/* Modal de Terminal Mostrador QR Invertido */}
+      <ReceptionTerminalModal
+        isOpen={terminalModalOpen}
+        onClose={() => setTerminalModalOpen(false)}
+        token={token}
+        user={user}
+        onNavigateAgenda={() => {
+          setTerminalModalOpen(false);
+          if (onNavigate) onNavigate('attendance');
+        }}
       />
     </section>
   );

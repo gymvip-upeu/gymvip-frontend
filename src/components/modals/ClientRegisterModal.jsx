@@ -579,7 +579,6 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
             </div>
           </div>
         )}
-        </form>
       </div>
     </div>
   );
