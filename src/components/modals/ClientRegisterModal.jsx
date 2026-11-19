@@ -96,15 +96,14 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
         });
       }
     } catch (err) {
-      if (err.status === 404) {
-        setNotFoundModalOpen(true);
-      } else {
-        setLookupNotice({
-          variant: 'warning',
-          message: err.message || 'Error al conectar con el servicio de consulta de identidad. Puede reintentar o ingresar los datos manualmente.',
-          retryable: true,
-        });
-      }
+      const routeUnavailable = err.status === 404 || err.status === 405;
+      setLookupNotice({
+        variant: 'warning',
+        message: routeUnavailable
+          ? 'La consulta de DNI no está disponible en este despliegue. Avise al administrador o complete los datos manualmente.'
+          : err.message || 'Error al conectar con el servicio de consulta de identidad. Puede reintentar o ingresar los datos manualmente.',
+        retryable: !routeUnavailable,
+      });
     } finally {
       setLookupLoading(false);
     }
