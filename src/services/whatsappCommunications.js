@@ -45,7 +45,7 @@ const STATUS_LABELS = {
   RETRY_TRIGGERED: 'Pendiente',
   ENVIADO: 'Enviado',
   ENTREGADO: 'Entregado',
-  LEIDO: 'Entregado',
+  LEIDO: 'Leído',
   FALLIDO: 'Fallido',
 };
 
@@ -146,7 +146,7 @@ export function normalizeDispatch(row) {
     recipientMasked: maskedPhone(row.recipientMasked || row.recipient),
     expiryDate,
     detail: detail || 'Sin detalle del evento',
-    statusLabel: STATUS_LABELS[row.status] || 'Sin confirmar',
+    statusLabel: row.externalMessageId?.startsWith('wamid.sim_') ? 'Simulado · sin envío real' : STATUS_LABELS[row.status] || 'Sin confirmar',
   };
 }
 

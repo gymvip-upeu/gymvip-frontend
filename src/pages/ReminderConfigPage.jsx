@@ -10,6 +10,7 @@ import {
   evaluateRemindersNowApi,
   getReminderCutsApi,
 } from '../api/reminderApi';
+import ReminderHistory from '../components/common/ReminderHistory';
 import { Icon } from '../components/common/Icons';
 import '../themes/commsAndReminders.css';
 
@@ -30,7 +31,9 @@ export default function ReminderConfigPage() {
   const [enabled, setEnabled] = useState(true);
   const [anticipationDays, setAnticipationDays] = useState([3, 5, 7]);
   const [postExpiryDays, setPostExpiryDays] = useState(2);
+  const [channels, setChannels] = useState(['WHATSAPP']);
   const [defaultChannel, setDefaultChannel] = useState('WHATSAPP');
+  const [historyVersion, setHistoryVersion] = useState(0);
 
   // Preview Mode: 'anticipado' | 'vencido'
   const [previewMode, setPreviewMode] = useState('anticipado');
@@ -47,8 +50,11 @@ export default function ReminderConfigPage() {
       setEnabled(config.enabled ?? true);
       setAnticipationDays(Array.isArray(config.anticipationDays) ? config.anticipationDays : [3, 5, 7]);
       setPostExpiryDays(config.postExpiryDays ?? 2);
-      const initialChannel = (Array.isArray(config.channels) && config.channels[0]) || config.defaultChannel || 'WHATSAPP';
-      setDefaultChannel(initialChannel);
+      const chs = Array.isArray(config.channels) && config.channels.length > 0
+        ? config.channels
+        : [config.defaultChannel || 'WHATSAPP'];
+      setChannels(chs);
+      setDefaultChannel(chs[0] || 'WHATSAPP');
 
       const cutsData = await getReminderCutsApi(token).catch(() => []);
       setCuts(cutsData || []);
@@ -80,11 +86,12 @@ export default function ReminderConfigPage() {
           enabled,
           anticipationDays,
           postExpiryDays: Number(postExpiryDays),
-          channels: [defaultChannel],
-          defaultChannel,
+          channels: channels.length > 0 ? channels : [defaultChannel],
+          defaultChannel: channels[0] || defaultChannel,
         },
         token
       );
+      setHistoryVersion((v) => v + 1);
       setSuccessMsg('Configuración de recordatorios guardada con éxito.');
     } catch (err) {
       setError(err.message || 'Error al guardar la configuración.');
@@ -103,7 +110,8 @@ export default function ReminderConfigPage() {
     try {
       const result = await evaluateRemindersNowApi(token);
       setEvaluateResult(result);
-      setSuccessMsg(`Corte evaluado: ${result.candidatosEvaluados} socios analizados, ${result.avisosSolicitados} enviados, ${result.avisosOmitidos} omitidos.`);
+      setHistoryVersion((v) => v + 1);
+      setSuccessMsg(result.message || `Corte evaluado: ${result.candidatosEvaluados ?? 0} socios analizados, ${result.avisosSolicitados ?? 0} enviados, ${result.avisosOmitidos ?? 0} omitidos.`);
       // Refrescar cortes
       const cutsData = await getReminderCutsApi(token).catch(() => []);
       setCuts(cutsData || []);
@@ -220,22 +228,34 @@ export default function ReminderConfigPage() {
                 </div>
               </div>
 
-              {/* Canal Preferido */}
+              {/* Canales Oficiales de Emisión */}
               <div className="form-group-reminders">
-                <label className="section-title">Canal Oficial de Emisión</label>
+                <label className="section-title">Canales de Emisión (Multicanal)</label>
                 <div className="days-chips-group">
-                  {['WHATSAPP', 'EMAIL', 'APP'].map((channel) => (
-                    <label key={channel} className={`day-chip ${defaultChannel === channel ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="defaultChannel"
-                        checked={defaultChannel === channel}
-                        onChange={() => setDefaultChannel(channel)}
-                        disabled={!isAdmin()}
-                      />
-                      <span>{channel === 'WHATSAPP' ? 'WhatsApp Cloud' : channel === 'EMAIL' ? 'Correo Electrónico' : 'App Móvil (Push)'}</span>
-                    </label>
-                  ))}
+                  {['WHATSAPP', 'EMAIL', 'APP'].map((channel) => {
+                    const isSelected = channels.includes(channel);
+                    return (
+                      <label key={channel} className={`day-chip ${isSelected ? 'active' : ''}`}>
+                        <input
+                          type="checkbox"
+                          name="channels"
+                          checked={isSelected}
+                          onChange={() => {
+                            setChannels((prev) => {
+                              const next = prev.includes(channel)
+                                ? prev.filter((c) => c !== channel)
+                                : [...prev, channel];
+                              const safeNext = next.length === 0 ? [channel] : next;
+                              setDefaultChannel(safeNext[0]);
+                              return safeNext;
+                            });
+                          }}
+                          disabled={!isAdmin()}
+                        />
+                        <span>{channel === 'WHATSAPP' ? 'WhatsApp Cloud' : channel === 'EMAIL' ? 'Correo Electrónico' : 'App Móvil (Avisos)'}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -296,6 +316,9 @@ export default function ReminderConfigPage() {
               </div>
             </div>
           </div>
+
+          {/* Seguimiento de Recordatorios por Canal */}
+          <ReminderHistory token={token} version={historyVersion} />
 
           {/* Historial de Cortes Evaluados */}
           <div className="reminders-card" style={{ marginTop: 24 }}>
