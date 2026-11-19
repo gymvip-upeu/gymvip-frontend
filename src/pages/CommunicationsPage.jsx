@@ -1,3 +1,5 @@
+import ReminderHistory from '../components/common/ReminderHistory';
+import '../themes/commsAndReminders.css';
 import React, { useEffect, useState } from 'react';
 import { Button } from '../components/common/Button';
 import {
@@ -171,6 +173,7 @@ export default function CommunicationsPage() {
         ) : <span className="whatsapp-muted">{accountState}</span>}
       </header>
 
+      <ReminderHistory token={token} />
       <nav className="whatsapp-types" aria-label="Tipos de mensaje">
         {MESSAGE_TYPES.map(item => (
           <Button key={item.id} variant={type.id === item.id ? 'primary' : 'secondary'}

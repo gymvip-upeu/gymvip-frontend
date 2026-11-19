@@ -10,6 +10,8 @@ import {
   evaluateRemindersNowApi,
   getReminderCutsApi,
 } from '../api/reminderApi';
+import { MESSAGE_TYPES } from '../services/whatsappCommunications';
+import ReminderHistory from '../components/common/ReminderHistory';
 import { Icon } from '../components/common/Icons';
 import '../themes/commsAndReminders.css';
 
@@ -29,8 +31,10 @@ export default function ReminderConfigPage() {
   // Form State
   const [enabled, setEnabled] = useState(true);
   const [anticipationDays, setAnticipationDays] = useState([3, 5, 7]);
-  const [postExpiryDays, setPostExpiryDays] = useState(2);
-  const [defaultChannel, setDefaultChannel] = useState('WHATSAPP');
+  const [postExpiryDays, setPostExpiryDays] = useState([1, 2]);
+  const [channels, setChannels] = useState(['WHATSAPP', 'APP']);
+  const [dirty, setDirty] = useState(false);
+  const [historyVersion, setHistoryVersion] = useState(0);
 
   // Preview Mode: 'anticipado' | 'vencido'
   const [previewMode, setPreviewMode] = useState('anticipado');
@@ -46,9 +50,9 @@ export default function ReminderConfigPage() {
       const config = await getReminderConfigApi(token);
       setEnabled(config.enabled ?? true);
       setAnticipationDays(Array.isArray(config.anticipationDays) ? config.anticipationDays : [3, 5, 7]);
-      setPostExpiryDays(config.postExpiryDays ?? 2);
-      const initialChannel = (Array.isArray(config.channels) && config.channels[0]) || config.defaultChannel || 'WHATSAPP';
-      setDefaultChannel(initialChannel);
+      setPostExpiryDays(config.postExpiryDaysSelected ?? Array.from({ length: config.postExpiryDays ?? 2 }, (_, i) => i + 1));
+      setChannels(config.channels ?? ['WHATSAPP']);
+      setDirty(false);
 
       const cutsData = await getReminderCutsApi(token).catch(() => []);
       setCuts(cutsData || []);
@@ -79,12 +83,13 @@ export default function ReminderConfigPage() {
         {
           enabled,
           anticipationDays,
-          postExpiryDays: Number(postExpiryDays),
-          channels: [defaultChannel],
-          defaultChannel,
+          postExpiryDays: Math.max(...postExpiryDays),
+          postExpiryDaysSelected: postExpiryDays,
+          channels,
         },
         token
       );
+      setDirty(false);
       setSuccessMsg('Configuración de recordatorios guardada con éxito.');
     } catch (err) {
       setError(err.message || 'Error al guardar la configuración.');
@@ -94,16 +99,14 @@ export default function ReminderConfigPage() {
   };
 
   const handleEvaluateNow = async () => {
-    if (!window.confirm('¿Desea ejecutar una evaluación y corte de vencimientos en este momento?')) {
-      return;
-    }
     setEvaluating(true);
     setError(null);
     setSuccessMsg(null);
     try {
       const result = await evaluateRemindersNowApi(token);
       setEvaluateResult(result);
-      setSuccessMsg(`Corte evaluado: ${result.candidatosEvaluados} socios analizados, ${result.avisosSolicitados} enviados, ${result.avisosOmitidos} omitidos.`);
+      setHistoryVersion(value => value + 1);
+      setSuccessMsg(result.message);
       // Refrescar cortes
       const cutsData = await getReminderCutsApi(token).catch(() => []);
       setCuts(cutsData || []);
@@ -126,7 +129,7 @@ export default function ReminderConfigPage() {
             type="button"
             className="btn btn-secondary"
             onClick={handleEvaluateNow}
-            disabled={evaluating || loading}
+            disabled={evaluating || loading || dirty || saving}
           >
             <Icon name="refresh" size={15} style={{ marginRight: 6 }} />
             {evaluating ? 'Evaluando...' : 'Evaluar Ahora'}
@@ -154,7 +157,7 @@ export default function ReminderConfigPage() {
         <>
           <div className="reminders-grid">
             {/* Panel de Configuración de Reglas */}
-            <form onSubmit={handleSave} className="reminders-card">
+            <form onSubmit={handleSave} className="reminders-card" onChange={() => setDirty(true)}>
               <header>
                 <h2>Reglas de Notificación de Membresías</h2>
                 <span style={{ fontSize: 11, color: '#888' }}>Zona horaria: America/Lima</span>
@@ -164,7 +167,7 @@ export default function ReminderConfigPage() {
               <div className="master-toggle">
                 <div className="toggle-label">
                   <strong>Servicio Automatizado de Recordatorios</strong>
-                  <span>Habilita la emisión periódica de avisos antes y después del vencimiento.</span>
+                  <span>Habilita la generación al ejecutar una evaluación de vencimientos.</span>
                 </div>
                 <label className="switch">
                   <input
@@ -203,14 +206,14 @@ export default function ReminderConfigPage() {
                 <label className="section-title">Aviso de Gracia / Posterior al Vencimiento</label>
                 <div className="days-chips-group">
                   {AVAILABLE_POST_EXPIRY_DAYS.map((day) => {
-                    const isSelected = postExpiryDays === day;
+                    const isSelected = postExpiryDays.includes(day);
                     return (
                       <label key={day} className={`day-chip ${isSelected ? 'active' : ''}`}>
                         <input
-                          type="radio"
+                          type="checkbox"
                           name="postExpiryDays"
                           checked={isSelected}
-                          onChange={() => setPostExpiryDays(day)}
+                          onChange={() => setPostExpiryDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort())}
                           disabled={!isAdmin()}
                         />
                         <span>{day} {day === 1 ? 'día después' : 'días después'}</span>
@@ -222,18 +225,18 @@ export default function ReminderConfigPage() {
 
               {/* Canal Preferido */}
               <div className="form-group-reminders">
-                <label className="section-title">Canal Oficial de Emisión</label>
+                <label className="section-title">Canales para ambos tipos de aviso · selecciona uno o más</label>
                 <div className="days-chips-group">
                   {['WHATSAPP', 'EMAIL', 'APP'].map((channel) => (
-                    <label key={channel} className={`day-chip ${defaultChannel === channel ? 'active' : ''}`}>
+                    <label key={channel} className={`day-chip ${channels.includes(channel) ? 'active' : ''}`}>
                       <input
-                        type="radio"
-                        name="defaultChannel"
-                        checked={defaultChannel === channel}
-                        onChange={() => setDefaultChannel(channel)}
+                        type="checkbox"
+                        name="channels"
+                        checked={channels.includes(channel)}
+                        onChange={() => setChannels(prev => prev.includes(channel) ? prev.filter(c => c !== channel) : [...prev, channel])}
                         disabled={!isAdmin()}
                       />
-                      <span>{channel === 'WHATSAPP' ? 'WhatsApp Cloud' : channel === 'EMAIL' ? 'Correo Electrónico' : 'App Móvil (Push)'}</span>
+                      <span>{channel === 'WHATSAPP' ? 'WhatsApp Cloud' : channel === 'EMAIL' ? 'Correo Electrónico' : 'App móvil (bandeja de Avisos)'}</span>
                     </label>
                   ))}
                 </div>
@@ -241,7 +244,7 @@ export default function ReminderConfigPage() {
 
               {isAdmin() && (
                 <div className="reminders-actions">
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
+                  <button type="submit" className="btn btn-primary" disabled={saving || !channels.length || !postExpiryDays.length}>
                     {saving ? 'Guardando...' : 'Guardar Configuración'}
                   </button>
                 </div>
@@ -251,7 +254,7 @@ export default function ReminderConfigPage() {
             {/* Panel de Vista Previa de Plantilla Meta / WhatsApp */}
             <div className="reminders-card">
               <header>
-                <h2>Vista Previa de Plantilla ({defaultChannel})</h2>
+                <h2>Vista Previa de Plantilla (WHATSAPP)</h2>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button
                     type="button"
@@ -279,24 +282,23 @@ export default function ReminderConfigPage() {
                 </div>
 
                 <div className="template-bubble">
-                  {previewMode === 'anticipado' ? (
-                    `Hola {{1}}, te recordamos que tu membresía VIP {{2}} en GYM VIP vencerá el {{3}} (en {{4}} días).\n\nRenueva a tiempo para mantener tus accesos sin interrupción. Puedes hacerlo en recepción o vía nuestra plataforma.`
-                  ) : (
-                    `Estimado(a) {{1}}, tu membresía VIP {{2}} en GYM VIP venció el {{3}}.\n\nPara continuar disfrutando de las instalaciones, acércate a recepción o renueva desde tu panel digital. ¡Te esperamos!`
-                  )}
+                  {MESSAGE_TYPES.find(type => type.id === (previewMode === 'anticipado' ? 'recordatorio_vencimiento' : 'aviso_vencido')).original}
+
                 </div>
 
                 <div style={{ marginTop: 14, fontSize: 11, color: '#999', lineHeight: 1.5 }}>
                   <strong style={{ color: '#dcdad4' }}>Variables inyectadas:</strong>
-                  <div><code>{`{{1}}`}</code>: Nombre y apellido del socio</div>
-                  <div><code>{`{{2}}`}</code>: Denominación del plan tarifario</div>
-                  <div><code>{`{{3}}`}</code>: Fecha de término (DD/MM/YYYY)</div>
-                  {previewMode === 'anticipado' && <div><code>{`{{4}}`}</code>: Días de anticipación restantes</div>}
+                  <div><code>{`{nombre}`}</code>: Nombre y apellido del socio</div>
+                  <div><code>{`{plan}`}</code>: Denominación del plan tarifario</div>
+                  <div><code>{`{fecha}`}</code>: Fecha de término (DD/MM/YYYY)</div>
+                  <div><code>{`{dias}`}</code>: Días restantes o transcurridos</div>
                 </div>
               </div>
             </div>
           </div>
 
+          {dirty && <p role="status">Guarda la configuración antes de evaluar.</p>}
+          <ReminderHistory token={token} version={historyVersion} />
           {/* Historial de Cortes Evaluados */}
           <div className="reminders-card" style={{ marginTop: 24 }}>
             <header>
@@ -311,7 +313,7 @@ export default function ReminderConfigPage() {
                     <th>Fecha de Corte</th>
                     <th>Tipo de Ejecución</th>
                     <th>Candidatos</th>
-                    <th>Avisos Solicitados</th>
+                    <th>Avisos Registrados</th>
                     <th>Omitidos (Sin Consentimiento / Repetidos)</th>
                     <th>Ejecutado Por</th>
                   </tr>
