@@ -1,22 +1,43 @@
-import { useCallback, useEffect, useState } from 'react';
-import { readFaqCatalog, watchFaqCatalog } from '../services/faqCatalog';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { readFaqCatalog } from '../services/faqCatalog';
+import { useAuth } from '../contexts/AuthContext';
 
 export function useFaqCatalog() {
-  const [catalog, setCatalog] = useState({ records: [], error: '' });
-  const refresh = useCallback(() => {
+  const { token } = useAuth();
+  const [catalog, setCatalog] = useState({ records: [], error: '', loading: true });
+  const controller = useRef(null);
+  const refresh = useCallback(async () => {
+    controller.current?.abort();
+    const request = new AbortController();
+    controller.current = request;
+    setCatalog(previous => ({ ...previous, loading: true, error: '' }));
     try {
-      setCatalog({ records: readFaqCatalog(), error: '' });
+      const records = await readFaqCatalog(token, request.signal);
+      if (request.signal.aborted) return false;
+      setCatalog({ records, error: '', loading: false });
       return true;
-    } catch {
-      setCatalog({ records: [], error: 'No se pudo leer el catálogo guardado en este navegador.' });
+    } catch (error) {
+      if (request.signal.aborted) return false;
+      setCatalog(previous => ({ ...previous, error: error.message || 'No se pudo consultar el catálogo.', loading: false }));
       return false;
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     refresh();
-    return watchFaqCatalog(refresh);
+    return () => controller.current?.abort();
   }, [refresh]);
 
-  return { ...catalog, refresh };
+  const applyRecord = (record) => {
+    controller.current?.abort();
+    setCatalog(previous => ({
+      records: previous.records.some(item => item.id === record.id)
+        ? previous.records.map(item => item.id === record.id ? record : item)
+        : [...previous.records, record],
+      error: '',
+      loading: false,
+    }));
+  };
+
+  return { ...catalog, refresh, applyRecord };
 }

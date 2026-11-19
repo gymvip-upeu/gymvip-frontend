@@ -1,8 +1,8 @@
-export const FAQ_CATEGORIES = ['Horarios', 'Membresías', 'Renovaciones', 'Servicios', 'Suplementos'];
+import { getFaqCatalogApi, createFaqApi, editFaqApi, transitionFaqApi } from '../api/faqApi.js';
+
+export const FAQ_CATEGORIES = ['Horarios', 'Membresías', 'Renovaciones', 'Servicios', 'Suplementos', 'Pagos', 'Historial', 'Instalaciones', 'Cuenta', 'Catálogo'];
 export const FAQ_FILTERS = { category: '', status: '' };
 
-const STORAGE_KEY = 'gymvip.faq-catalog.v1';
-const CHANGE_EVENT = 'gymvip:faq-catalog';
 const SEED = [
   ['holiday', 'Horarios', '¿Atienden los feriados?', 'En feriados atendemos de 8:00 a. m. a 12:00 p. m. Consulta en recepción si hay un horario especial.'],
   ['renew', 'Renovaciones', '¿Cómo renuevo mi membresía?', 'Acércate a recepción para consultar los planes vigentes y confirmar tu renovación.'],
@@ -28,83 +28,29 @@ function validRecord(record) {
     && (record.proposal === null || validContent(record.proposal));
 }
 
-export function readFaqCatalog() {
-  const value = window.localStorage.getItem(STORAGE_KEY);
-  if (value === null) {
-    return SEED.map(([id, category, question, answer]) => ({
-      id, content: { category, question, answer }, active: true, proposal: null, revision: 1,
-    }));
-  }
-  const records = JSON.parse(value);
-  if (!Array.isArray(records) || !records.every(validRecord) || new Set(records.map(({ id }) => id)).size !== records.length) {
-    throw new Error('El catálogo guardado tiene un formato inválido.');
+export async function readFaqCatalog(token, signal) {
+  const records = await getFaqCatalogApi(token, signal);
+  if (!Array.isArray(records) || !records.every(validRecord)) {
+    throw new Error('El catálogo recibido tiene un formato inválido.');
   }
   return records;
 }
 
-export function watchFaqCatalog(listener) {
-  function onStorage(event) {
-    if (event.key === STORAGE_KEY || event.key === null) listener();
-  }
-  window.addEventListener('storage', onStorage);
-  window.addEventListener(CHANGE_EVENT, listener);
-  return () => {
-    window.removeEventListener('storage', onStorage);
-    window.removeEventListener(CHANGE_EVENT, listener);
-  };
-}
-
-function writeCatalog(records) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-}
-
-function validateUnique(records, content, id) {
-  if (!validContent(content)) throw new Error('Completa la categoría, la pregunta y la respuesta.');
-  const question = normalizeFaqText(content.question);
-  const duplicate = records.find((record) => record.id !== id && [record.content, record.proposal]
-    .some((version) => version && normalizeFaqText(version.question) === question));
-  if (duplicate) {
-    const error = new Error('Ya existe una pregunta equivalente.');
-    error.duplicate = duplicate;
-    throw error;
-  }
-}
-
-export function saveFaq({ action, record, values }, role) {
-  const editingContent = action === 'create' || action === 'edit';
-  if (role !== 'ADMIN' && !(role === 'RECEPCION' && editingContent)) {
-    throw new Error('Solo administración puede publicar o cambiar la disponibilidad.');
-  }
-  const records = readFaqCatalog();
-  const current = record && records.find((item) => item.id === record.id);
-  if (action !== 'create' && (!current || current.revision !== record?.revision)) {
-    throw new Error('La respuesta cambió en otra vista. Vuelve al listado y abre la versión actual.');
-  }
-
-  let updated;
-  if (editingContent) {
+export async function saveFaq({ action, record, values, records = [] }, token) {
+  if (action === 'create' || action === 'edit') {
     const content = { category: values.category, question: values.question.trim(), answer: values.answer.trim() };
-    validateUnique(records, content, current?.id);
-    if (action === 'create') {
-      updated = { id: crypto.randomUUID(), content, active: false, proposal: null, revision: 1 };
-    } else if (current.active) {
-      updated = { ...current, proposal: content };
-    } else {
-      updated = { ...current, content, proposal: null };
+    if (!validContent(content)) throw new Error('Completa la categoría, la pregunta y la respuesta.');
+    const duplicate = records.find(item => item.id !== record?.id && [item.content, item.proposal]
+      .some(version => version && normalizeFaqText(version.question) === normalizeFaqText(content.question)));
+    if (duplicate) {
+      const error = new Error('Ya existe una pregunta equivalente.');
+      error.duplicate = duplicate;
+      throw error;
     }
-  } else if (action === 'publish' && current.proposal) {
-    validateUnique(records, current.proposal, current.id);
-    updated = { ...current, content: current.proposal, active: true, proposal: null };
-  } else if (action === 'activate' || action === 'deactivate') {
-    updated = { ...current, active: action === 'activate' };
-  } else {
-    throw new Error('La respuesta no tiene un cambio pendiente de publicación.');
+    return action === 'create' ? createFaqApi(content, token) : editFaqApi(record.id, record.revision, content, token);
   }
-
-  if (current) updated.revision = current.revision + 1;
-  writeCatalog(current ? records.map((item) => item.id === current.id ? updated : item) : [...records, updated]);
-  return updated;
+  if (!['publish', 'activate', 'deactivate'].includes(action)) throw new Error('Acción inválida.');
+  return transitionFaqApi(record.id, record.revision, action, token);
 }
 
 export function faqStatus(record) {

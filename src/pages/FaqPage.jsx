@@ -63,9 +63,9 @@ function FilterDialog({ filters, onApply, onClose }) {
 }
 
 export default function FaqPage() {
-  const { isAdmin } = useAuth();
+  const { token, isAdmin } = useAuth();
   const admin = isAdmin();
-  const { records, error: loadError, refresh } = useFaqCatalog();
+  const { records, error: loadError, loading, refresh, applyRecord } = useFaqCatalog();
   const [view, setView] = useState('list');
   const [selectedId, setSelectedId] = useState(null);
   const [editRecord, setEditRecord] = useState(null);
@@ -78,6 +78,8 @@ export default function FaqPage() {
   const [failure, setFailure] = useState(null);
   const [invalid, setInvalid] = useState(false);
   const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  const mutation = useRef(false);
   const heading = useRef(null);
   const record = records.find((item) => item.id === selectedId);
   const filtered = filterFaqCatalog(records, search, filters);
@@ -98,14 +100,17 @@ export default function FaqPage() {
     open('form', item);
   }
 
-  function save(event) {
+  async function save(event) {
     event.preventDefault();
     setFailure(null);
     const incomplete = !form.category || !normalizeFaqText(form.question) || !form.answer.trim();
     setInvalid(incomplete);
-    if (incomplete) return;
+    if (incomplete || mutation.current) return;
+    mutation.current = true;
+    setSaving(true);
     try {
-      const updated = saveFaq({ action: editRecord ? 'edit' : 'create', record: editRecord, values: form }, admin ? 'ADMIN' : 'RECEPCION');
+      const updated = await saveFaq({ action: editRecord ? 'edit' : 'create', record: editRecord, values: form, records }, token);
+      applyRecord(updated);
       open('saved', updated);
     } catch (error) {
       if (error.duplicate) {
@@ -114,17 +119,27 @@ export default function FaqPage() {
       } else {
         setFailure(error.message);
       }
+    } finally {
+      mutation.current = false;
+      setSaving(false);
     }
   }
 
-  function changeAvailability(action) {
+  async function changeAvailability(action) {
+    if (mutation.current) return;
+    mutation.current = true;
+    setSaving(true);
     try {
-      const updated = saveFaq({ action, record }, admin ? 'ADMIN' : 'RECEPCION');
+      const updated = await saveFaq({ action, record }, token);
+      applyRecord(updated);
       setModal(null);
       open('detail', updated);
       setMessage(action === 'deactivate' ? 'Respuesta desactivada' : 'Respuesta publicada');
     } catch (error) {
       setFailure(error.message);
+    } finally {
+      mutation.current = false;
+      setSaving(false);
     }
   }
 
@@ -135,8 +150,8 @@ export default function FaqPage() {
     duplicate: ['Ya existe una pregunta equivalente', 'Usa el registro existente para mantener una sola respuesta por consulta.'],
     saved: [record?.proposal ? 'Cambio pendiente de aprobación' : 'Respuesta guardada', record?.proposal ? 'El cambio quedó guardado para revisión.' : 'El contenido quedó registrado como inactivo.'],
     review: ['Revisar cambio pendiente', 'Compara la versión aprobada con la propuesta antes de publicarla.'],
-    member: ['Vista del miembro', 'Consulta las respuestas activas del catálogo local.'],
-    whatsapp: ['Simulación de WhatsApp', 'Prueba el menú de temas y la atención automática con el catálogo local.'],
+    member: ['Vista del miembro', 'Consulta las respuestas publicadas del gimnasio.'],
+    whatsapp: ['Simulación de WhatsApp', 'Prueba el menú de temas con las respuestas publicadas del gimnasio.'],
   };
   const [title, subtitle] = headings[view];
 
@@ -147,11 +162,8 @@ export default function FaqPage() {
         <h1 tabIndex={-1} ref={heading}>{title}</h1>
         <p>{subtitle}</p>
       </header>
-      <Notice title="Prototipo de Administración Local / Fixtures (HU-16 / HU-32)">
-        Este catálogo administrativo de preguntas frecuentes funciona en modo demostración local con fixtures. La fuente de datos autoritativa para socios se expone en el endpoint REST de lectura /api/v1/member-app/faqs.
-      </Notice>
-      {message && <Notice title={message}>El catálogo local está actualizado.</Notice>}
-      {loadError ? (
+      {message && <Notice title={message}>El catálogo compartido está actualizado.</Notice>}
+      {loading && !records.length ? <Notice title="Cargando respuestas">Consultando el catálogo del gimnasio…</Notice> : loadError ? (
         <>
           <Notice title="No se pudo consultar el catálogo" error>{loadError}</Notice>
           <div className="faq-actions"><Button onClick={refresh}>Volver a consultar</Button></div>
@@ -166,7 +178,7 @@ export default function FaqPage() {
             </form>
             <button className="faq-icon-button" type="button" aria-label="Filtrar por categoría o estado" onClick={() => setModal('filter')}><img src={filterIcon} alt="" /></button>
             <Button onClick={() => edit()}>Nueva respuesta</Button>
-            <Button variant="secondary" onClick={() => setMessage(refresh() ? 'Catálogo actualizado' : '')}>Actualizar</Button>
+            <Button variant="secondary" disabled={loading} onClick={async () => setMessage(await refresh() ? 'Catálogo actualizado' : '')}>Actualizar</Button>
           </div>
           {(filters.category || filters.status) && (
             <div className="faq-applied">
@@ -196,7 +208,7 @@ export default function FaqPage() {
             {admin ? 'Abre una respuesta para revisar el contenido y administrar su disponibilidad.' : 'Puedes crear y editar. La publicación y los cambios de estado corresponden al administrador.'}
           </Notice>
           <div className="faq-demo">
-            <p>Catálogo de demostración guardado en este navegador.</p>
+            <p>Catálogo compartido con la aplicación móvil.</p>
             <div className="faq-actions">
               <Button variant="secondary" onClick={() => open('member')}>Vista del miembro</Button>
               <Button variant="secondary" onClick={() => open('whatsapp')}>Simular WhatsApp</Button>
@@ -216,18 +228,18 @@ export default function FaqPage() {
               </select>
             </label>
             <label className="faq-field">Pregunta *
-              <input className="form-input" required placeholder="Escribe una pregunta" value={form.question}
+              <input className="form-input" required maxLength={300} placeholder="Escribe una pregunta" value={form.question}
                 onChange={(event) => setForm({ ...form, question: event.target.value })} />
             </label>
             <label className="faq-field">Respuesta *
-              <textarea className="form-input" rows={4} required placeholder="Escribe una respuesta" value={form.answer}
+              <textarea className="form-input" rows={4} maxLength={10000} required placeholder="Escribe una respuesta" value={form.answer}
                 onChange={(event) => setForm({ ...form, answer: event.target.value })} />
             </label>
             <p className="faq-muted">Cada entrada debe resolver una sola consulta.</p>
             {editRecord?.active && <p className="faq-gold">La versión aprobada seguirá disponible mientras se revisa el cambio.</p>}
           </section>
           <div className="faq-actions">
-            <Button type="submit">{failure ? 'Reintentar guardado' : editRecord ? 'Guardar edición' : 'Guardar respuesta'}</Button>
+            <Button type="submit" disabled={saving}>{failure ? 'Reintentar guardado' : editRecord ? 'Guardar edición' : 'Guardar respuesta'}</Button>
             <Button variant="secondary" onClick={() => open('list')}>Cancelar</Button>
           </div>
         </form>
@@ -259,7 +271,7 @@ export default function FaqPage() {
           </div>
           <Notice title="Publicación en el catálogo">La vista del miembro y la simulación de WhatsApp usarán la propuesta aprobada.</Notice>
           <div className="faq-actions">
-            <Button onClick={() => changeAvailability('publish')}>Publicar cambio</Button>
+            <Button disabled={saving} onClick={() => changeAvailability('publish')}>Publicar cambio</Button>
             <Button variant="secondary" onClick={() => open('detail', record)}>Volver sin publicar</Button>
           </div>
         </>
@@ -306,7 +318,7 @@ export default function FaqPage() {
           </Notice>
           {failure && <Notice title="No se pudo actualizar la disponibilidad" error>{failure}</Notice>}
           <div className="faq-actions">
-            <Button onClick={() => changeAvailability(modal)}>{modal === 'activate' ? 'Activar y publicar' : 'Confirmar desactivación'}</Button>
+            <Button disabled={saving} onClick={() => changeAvailability(modal)}>{modal === 'activate' ? 'Activar y publicar' : 'Confirmar desactivación'}</Button>
             <Button variant="secondary" onClick={() => { setModal(null); setFailure(null); }}>Cancelar</Button>
           </div>
         </FaqDialog>
