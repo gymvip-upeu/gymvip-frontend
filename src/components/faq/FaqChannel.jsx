@@ -6,7 +6,7 @@ import '../../themes/faq.css';
 
 export function FaqChannel({ mode }) {
   const whatsapp = mode === 'whatsapp';
-  const { records, error, refresh } = useFaqCatalog();
+  const { records, error, loading, refresh } = useFaqCatalog();
   const published = records.filter(({ active }) => active);
   const [view, setView] = useState('catalog');
   const [query, setQuery] = useState('');
@@ -50,6 +50,9 @@ export function FaqChannel({ mode }) {
     </div>
   );
 
+  if (loading && !records.length) {
+    return <section className="faq-channel" role="status">Consultando preguntas frecuentes…</section>;
+  }
   if (error) {
     return (
       <section className="faq-channel">
