@@ -46,25 +46,39 @@ export default function ReceptionTerminalModal({
   const [secondsRemaining, setSecondsRemaining] = useState(20);
   const [_loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [feedSuspended, setFeedSuspended] = useState(false);
+  const [feedError, setFeedError] = useState('');
 
   const countdownTimerRef = useRef(null);
-  const challengePollTimerRef = useRef(null);
-  const feedPollTimerRef = useRef(null);
+  const feedTimeoutRef = useRef(null);
+  const consecutiveErrorsRef = useRef(0);
+  const feedAbortControllerRef = useRef(null);
+  const challengeAbortControllerRef = useRef(null);
+
+  // Limpiar todos los temporizadores y peticiones abortables
+  const clearAllTimersAndRequests = () => {
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    if (feedTimeoutRef.current) clearTimeout(feedTimeoutRef.current);
+    if (feedAbortControllerRef.current) feedAbortControllerRef.current.abort();
+    if (challengeAbortControllerRef.current) challengeAbortControllerRef.current.abort();
+  };
 
   // Inicializar terminal al abrir
   useEffect(() => {
     if (!isOpen) {
-      clearInterval(countdownTimerRef.current);
-      clearInterval(challengePollTimerRef.current);
-      clearInterval(feedPollTimerRef.current);
+      clearAllTimersAndRequests();
       return;
     }
+
+    let isSubscribed = true;
 
     async function initTerminal() {
       setLoading(true);
       setError('');
       try {
         const terminals = await getTerminalsApi(token);
+        if (!isSubscribed) return;
+
         if (!terminals || terminals.length === 0) {
           setError('No hay terminales mostrador configuradas en el sistema.');
           setLoading(false);
@@ -84,27 +98,28 @@ export default function ReceptionTerminalModal({
           }
         }
 
+        if (!isSubscribed) return;
+
         setTerminal(activeTerm);
         await fetchNewChallenge(activeTerm.id);
-        await fetchFeed(activeTerm.id);
-
-        // Iniciar polling de feed cada 4s
-        feedPollTimerRef.current = setInterval(() => {
-          fetchFeed(activeTerm.id);
-        }, 4000);
+        consecutiveErrorsRef.current = 0;
+        setFeedSuspended(false);
+        setFeedError('');
+        scheduleNextFeedPoll(activeTerm.id, 0);
       } catch (err) {
-        setError(err.message || 'Error al conectar con la terminal mostrador.');
+        if (isSubscribed) {
+          setError(err.message || 'Error al conectar con la terminal mostrador.');
+        }
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     }
 
     initTerminal();
 
     return () => {
-      clearInterval(countdownTimerRef.current);
-      clearInterval(challengePollTimerRef.current);
-      clearInterval(feedPollTimerRef.current);
+      isSubscribed = false;
+      clearAllTimersAndRequests();
     };
   }, [isOpen, token, user]);
 
@@ -117,7 +132,7 @@ export default function ReceptionTerminalModal({
       setSecondsRemaining(ttl);
 
       // Reiniciar cuenta regresiva
-      clearInterval(countdownTimerRef.current);
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
       countdownTimerRef.current = setInterval(() => {
         setSecondsRemaining((prev) => {
           if (prev <= 1) {
@@ -132,14 +147,55 @@ export default function ReceptionTerminalModal({
     }
   }
 
-  async function fetchFeed(terminalId) {
+  function scheduleNextFeedPoll(terminalId, delayMs = 4000) {
+    if (feedTimeoutRef.current) clearTimeout(feedTimeoutRef.current);
+    feedTimeoutRef.current = setTimeout(async () => {
+      await executeFeedPoll(terminalId);
+    }, delayMs);
+  }
+
+  async function executeFeedPoll(terminalId) {
     if (!terminalId) return;
-    try {
-      const feedItems = await getTerminalFeedApi(terminalId, 10, token);
-      setFeed(Array.isArray(feedItems) ? feedItems : []);
-    } catch {
-      // Ignorar fallas momentáneas de sondeo
+
+    if (feedAbortControllerRef.current) {
+      feedAbortControllerRef.current.abort();
     }
+    const controller = new AbortController();
+    feedAbortControllerRef.current = controller;
+
+    try {
+      const feedItems = await getTerminalFeedApi(terminalId, 10, token, controller.signal);
+      setFeed(Array.isArray(feedItems) ? feedItems : []);
+      consecutiveErrorsRef.current = 0;
+      setFeedSuspended(false);
+      setFeedError('');
+
+      // Siguiente sondeo a velocidad normal (4s)
+      scheduleNextFeedPoll(terminalId, 4000);
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+
+      consecutiveErrorsRef.current += 1;
+      const errors = consecutiveErrorsRef.current;
+
+      if (errors >= 3) {
+        // Suspender sondeo tras 3 fallos consecutivos para evitar saturación de red y consola
+        setFeedSuspended(true);
+        setFeedError('Sondeo pausado tras 3 intentos fallidos de conexión con la terminal.');
+      } else {
+        // Backoff exponencial progresivo: 4s -> 8s -> 16s
+        const backoffMs = Math.min(16000, 4000 * Math.pow(2, errors));
+        scheduleNextFeedPoll(terminalId, backoffMs);
+      }
+    }
+  }
+
+  function handleRetryFeed() {
+    if (!terminal?.id) return;
+    consecutiveErrorsRef.current = 0;
+    setFeedSuspended(false);
+    setFeedError('');
+    scheduleNextFeedPoll(terminal.id, 0);
   }
 
   if (!isOpen) return null;
@@ -391,78 +447,114 @@ export default function ReceptionTerminalModal({
                     width: '8px',
                     height: '8px',
                     borderRadius: '50%',
-                    backgroundColor: '#2ECC71',
+                    backgroundColor: feedSuspended ? '#E74C3C' : '#2ECC71',
                   }}
                 />
               </div>
-              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                Últimos ingresos
+              <span style={{ fontSize: '11px', color: feedSuspended ? '#E74C3C' : 'var(--color-text-muted)' }}>
+                {feedSuspended ? 'Pausado por error' : 'Últimos ingresos'}
               </span>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {feed.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--color-text-muted)', fontSize: '12px' }}>
-                  <p style={{ margin: 0 }}>Esperando escaneos de socios...</p>
-                  <p style={{ margin: '6px 0 0', fontSize: '11px', opacity: 0.8 }}>
-                    Los ingresos registrados aparecerán aquí automáticamente.
+            {feedSuspended ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '30px 16px',
+                  backgroundColor: 'rgba(231, 76, 60, 0.08)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(231, 76, 60, 0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ color: '#E74C3C' }}>
+                  <Icon name="alert-triangle" size={28} />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: '#FFFFFF' }}>
+                    Sondeo Temporalmente Pausado
+                  </p>
+                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                    {feedError || 'No se pudo comunicar con el feed de la terminal tras 3 intentos.'}
                   </p>
                 </div>
-              ) : (
-                feed.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                      borderLeft: `3px solid ${
-                        item.status === 'ATTENDANCE_RECORDED'
-                          ? '#2ECC71'
-                          : item.status === 'ALREADY_REGISTERED'
-                          ? '#D4AF37'
-                          : '#E74C3C'
-                      }`,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '3px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                        {item.memberName || 'Socio GYM VIP'}
-                      </span>
-                      <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                        {formatLimaTime(item.checkedAtUtc || item.checked_at_utc)}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                      <span style={{ color: 'var(--color-gold)', fontFamily: 'monospace' }}>
-                        {item.memberCode || item.member_code}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '10px',
-                          fontWeight: 600,
-                          color:
-                            item.status === 'ATTENDANCE_RECORDED'
-                              ? '#2ECC71'
-                              : item.status === 'ALREADY_REGISTERED'
-                              ? '#D4AF37'
-                              : '#E74C3C',
-                        }}
-                      >
-                        {item.status === 'ATTENDANCE_RECORDED'
-                          ? 'INGRESO'
-                          : item.status === 'ALREADY_REGISTERED'
-                          ? 'YA INGRESÓ HOY'
-                          : 'RECHAZADO'}
-                      </span>
-                    </div>
+                <Button
+                  variant="secondary"
+                  onClick={handleRetryFeed}
+                  style={{ fontSize: '12px', padding: '6px 14px' }}
+                >
+                  <Icon name="refresh" size={13} />
+                  <span>Reconectar sondeo</span>
+                </Button>
+              </div>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {feed.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--color-text-muted)', fontSize: '12px' }}>
+                    <p style={{ margin: 0 }}>Esperando escaneos de socios...</p>
+                    <p style={{ margin: '6px 0 0', fontSize: '11px', opacity: 0.8 }}>
+                      Los ingresos registrados aparecerán aquí automáticamente.
+                    </p>
                   </div>
-                ))
-              )}
-            </div>
+                ) : (
+                  feed.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                        borderLeft: `3px solid ${
+                          item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
+                            ? '#2ECC71'
+                            : item.status === 'ALREADY_REGISTERED'
+                            ? '#D4AF37'
+                            : '#E74C3C'
+                        }`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '3px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                          {item.memberName || 'Socio GYM VIP'}
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
+                          {formatLimaTime(item.checkedAtUtc || item.checked_at_utc)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                        <span style={{ color: 'var(--color-gold)', fontFamily: 'monospace' }}>
+                          {item.memberCode || item.member_code}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            color:
+                              item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
+                                ? '#2ECC71'
+                                : item.status === 'ALREADY_REGISTERED'
+                                ? '#D4AF37'
+                                : '#E74C3C',
+                          }}
+                        >
+                          {item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
+                            ? 'INGRESO'
+                            : item.status === 'ALREADY_REGISTERED'
+                            ? 'YA INGRESÓ HOY'
+                            : 'RECHAZADO'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
 

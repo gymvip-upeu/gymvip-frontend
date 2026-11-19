@@ -78,13 +78,16 @@ export async function previewClientImport(file, token, verifyDni = false) {
   return data;
 }
 
-export async function confirmClientImport(file, token, verifyDni = false) {
+export async function confirmClientImport(file, token, verifyDni = false, decisions = null) {
   if (!file) {
     throw new Error('Debe proporcionar el archivo validado para confirmar la importación.');
   }
 
   const formData = new FormData();
   formData.append('file', file);
+  if (decisions && Array.isArray(decisions) && decisions.length > 0) {
+    formData.append('decisions', JSON.stringify(decisions));
+  }
 
   const headers = {};
   if (token) {

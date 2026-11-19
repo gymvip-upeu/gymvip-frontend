@@ -59,11 +59,24 @@ export default function AttendanceAgendaPage({ onNavigate }) {
   const [error, setError] = useState('');
   const [terminalModalOpen, setTerminalModalOpen] = useState(false);
 
+  const agendaAbortControllerRef = React.useRef(null);
+
   useEffect(() => {
     loadAgenda(0);
+    return () => {
+      if (agendaAbortControllerRef.current) {
+        agendaAbortControllerRef.current.abort();
+      }
+    };
   }, [startDate, endDate, method, status]);
 
   async function loadAgenda(targetPage = 0) {
+    if (agendaAbortControllerRef.current) {
+      agendaAbortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    agendaAbortControllerRef.current = controller;
+
     setLoading(true);
     setError('');
     try {
@@ -77,11 +90,13 @@ export default function AttendanceAgendaPage({ onNavigate }) {
           page: targetPage,
           size: 20,
         },
-        token
+        token,
+        controller.signal
       );
       setAgendaData(data);
       setPage(targetPage);
     } catch (err) {
+      if (err.name === 'AbortError') return;
       setError(err.message || 'Error al consultar la agenda de asistencias.');
     } finally {
       setLoading(false);
@@ -124,7 +139,7 @@ export default function AttendanceAgendaPage({ onNavigate }) {
 
   // Métricas rápidas de los ítems en pantalla
   const items = agendaData.items || [];
-  const totalRecorded = items.filter((i) => i.status === 'ATTENDANCE_RECORDED').length;
+  const totalRecorded = items.filter((i) => i.status === 'ATTENDANCE_RECORDED' || i.status === 'APROBADO').length;
   const qrInvertedCount = items.filter((i) => i.checkInMethod === 'QR_INVERTIDO').length;
 
   return (
@@ -287,6 +302,7 @@ export default function AttendanceAgendaPage({ onNavigate }) {
                 <option value="ATTENDANCE_RECORDED">Ingreso Aprobado</option>
                 <option value="ALREADY_REGISTERED">Ya asistió hoy</option>
                 <option value="COVERAGE_EXPIRED">Membresía Vencida</option>
+                <option value="RECHAZADO">Rechazo General</option>
               </select>
             </div>
           </div>
@@ -406,20 +422,20 @@ export default function AttendanceAgendaPage({ onNavigate }) {
                           borderRadius: '4px',
                           fontWeight: 700,
                           backgroundColor:
-                            item.status === 'ATTENDANCE_RECORDED'
+                            item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
                               ? 'rgba(46, 204, 113, 0.2)'
                               : item.status === 'ALREADY_REGISTERED'
                               ? 'rgba(212, 175, 55, 0.2)'
                               : 'rgba(231, 76, 60, 0.2)',
                           color:
-                            item.status === 'ATTENDANCE_RECORDED'
+                            item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
                               ? '#2ECC71'
                               : item.status === 'ALREADY_REGISTERED'
                               ? '#D4AF37'
                               : '#E74C3C',
                         }}
                       >
-                        {item.status === 'ATTENDANCE_RECORDED'
+                        {item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
                           ? 'APROBADO'
                           : item.status === 'ALREADY_REGISTERED'
                           ? 'YA ASISTIÓ'

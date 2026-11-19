@@ -60,8 +60,9 @@ export async function getTerminalChallengeApi(terminalId, token = null) {
 /**
  * Obtiene el feed en vivo de los últimos ingresos validados en la terminal.
  */
-export async function getTerminalFeedApi(terminalId, limit = 15, token = null) {
-  const response = await httpClient(`/api/v1/attendance/terminals/${terminalId}/feed?limit=${limit}`, {}, token);
+export async function getTerminalFeedApi(terminalId, limit = 15, token = null, signal = null) {
+  const options = signal ? { signal } : {};
+  const response = await httpClient(`/api/v1/attendance/terminals/${terminalId}/feed?limit=${limit}`, options, token);
   if (!response.ok) {
     const errJson = await response.json().catch(() => ({}));
     throw new Error(errJson.message || 'Error al consultar el feed de asistencia.');
@@ -72,10 +73,18 @@ export async function getTerminalFeedApi(terminalId, limit = 15, token = null) {
 /**
  * Consulta la agenda general de asistencias con filtros administrativos.
  */
-export async function getAttendanceAgendaApi(params = {}, token = null) {
+export async function getAttendanceAgendaApi(params = {}, token = null, signal = null) {
   const qs = new URLSearchParams();
-  if (params.startDate) qs.set('startDate', params.startDate);
-  if (params.endDate) qs.set('endDate', params.endDate);
+  const fromVal = params.from || params.startDate;
+  const toVal = params.to || params.endDate;
+  if (fromVal) {
+    qs.set('from', fromVal);
+    qs.set('startDate', fromVal);
+  }
+  if (toVal) {
+    qs.set('to', toVal);
+    qs.set('endDate', toVal);
+  }
   if (params.query) qs.set('query', params.query);
   if (params.status) qs.set('status', params.status);
   if (params.checkInMethod) qs.set('checkInMethod', params.checkInMethod);
@@ -83,7 +92,8 @@ export async function getAttendanceAgendaApi(params = {}, token = null) {
   if (params.page !== undefined) qs.set('page', params.page);
   if (params.size !== undefined) qs.set('size', params.size);
 
-  const response = await httpClient(`/api/v1/attendance/agenda?${qs.toString()}`, {}, token);
+  const options = signal ? { signal } : {};
+  const response = await httpClient(`/api/v1/attendance/agenda?${qs.toString()}`, options, token);
   if (!response.ok) {
     const errJson = await response.json().catch(() => ({}));
     throw new Error(errJson.message || 'Error al consultar la agenda de asistencia.');
@@ -96,8 +106,16 @@ export async function getAttendanceAgendaApi(params = {}, token = null) {
  */
 export async function exportAttendanceCsvApi(params = {}, token = null) {
   const qs = new URLSearchParams();
-  if (params.startDate) qs.set('startDate', params.startDate);
-  if (params.endDate) qs.set('endDate', params.endDate);
+  const fromVal = params.from || params.startDate;
+  const toVal = params.to || params.endDate;
+  if (fromVal) {
+    qs.set('from', fromVal);
+    qs.set('startDate', fromVal);
+  }
+  if (toVal) {
+    qs.set('to', toVal);
+    qs.set('endDate', toVal);
+  }
   if (params.query) qs.set('query', params.query);
   if (params.status) qs.set('status', params.status);
 

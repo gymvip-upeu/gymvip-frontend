@@ -136,8 +136,10 @@ test('2. Validación: valida que el DNI contenga estrictamente 8 dígitos numér
 
 test('3. Validación: rechaza cliente menor de 18 años según fecha de nacimiento', () => {
   const underAge = new Date();
-  underAge.setFullYear(underAge.getFullYear() - 17);
-  const birthStr = underAge.toISOString().slice(0, 10);
+  const y = underAge.getFullYear() - 17;
+  const m = String(underAge.getMonth() + 1).padStart(2, '0');
+  const d = String(underAge.getDate()).padStart(2, '0');
+  const birthStr = `${y}-${m}-${d}`;
 
   assert.equal(isAdult(birthStr), false);
   const errors = validateClientRegistration({
@@ -152,8 +154,10 @@ test('3. Validación: rechaza cliente menor de 18 años según fecha de nacimien
 
 test('4. Validación: acepta cliente mayor de 18 años cumplidos exactamente', () => {
   const adultDate = new Date();
-  adultDate.setFullYear(adultDate.getFullYear() - 18);
-  const birthStr = adultDate.toISOString().slice(0, 10);
+  const y = adultDate.getFullYear() - 18;
+  const m = String(adultDate.getMonth() + 1).padStart(2, '0');
+  const d = String(adultDate.getDate()).padStart(2, '0');
+  const birthStr = `${y}-${m}-${d}`;
 
   assert.equal(isAdult(birthStr), true);
   assert.ok(calculateAge(birthStr) >= 18);

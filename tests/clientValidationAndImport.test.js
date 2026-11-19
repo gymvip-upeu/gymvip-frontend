@@ -102,3 +102,40 @@ test('confirmClientImport: lanza error si se invoca sin archivo', async () => {
   );
 });
 
+test('confirmClientImport: adjunta decisions al FormData si se proporcionan', async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedFormData = null;
+
+  globalThis.fetch = async (url, options) => {
+    capturedFormData = options.body;
+    return {
+      ok: true,
+      json: async () => ({
+        fileName: 'test.xlsx',
+        totalRows: 2,
+        createdCount: 1,
+        skippedCount: 1,
+        rejectedCount: 0,
+        results: [],
+      }),
+    };
+  };
+
+  try {
+    const mockFile = new Blob(['mock content'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    mockFile.name = 'test.xlsx';
+
+    const decisions = [
+      { rowNumber: 2, excluded: true },
+      { rowNumber: 3, excluded: false, edited: true, firstName: 'Juan' },
+    ];
+
+    const result = await confirmClientImport(mockFile, 'test-token', false, decisions);
+    assert.equal(result.createdCount, 1);
+    assert.ok(capturedFormData instanceof FormData);
+    assert.equal(capturedFormData.get('decisions'), JSON.stringify(decisions));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
