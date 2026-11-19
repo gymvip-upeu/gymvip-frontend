@@ -5,6 +5,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { authenticate, signOut, isAdminUser, isRecepcionUser } from '../services/authService';
 import { registerUnauthorizedHandler } from '../api/httpClient';
+import { setSentryUser, clearSentryUser, addSentryBreadcrumb } from '../config/sentry';
 
 const AuthContext = createContext(null);
 
@@ -43,11 +44,19 @@ export function AuthProvider({ children }) {
 
   const lastActivityRef = useRef(Date.now());
 
+  // Sincronizar usuario con Sentry cuando cambia la sesión
+  useEffect(() => {
+    if (user && !isLocked) {
+      setSentryUser(user);
+    }
+  }, [user, isLocked]);
+
   // Bloquear la sesión (oculta la interfaz operativa sin comparar contraseñas en frontend)
   const lockSession = useCallback((reason = 'inactivity') => {
     setIsLocked(true);
     setLockReason(reason);
     sessionStorage.setItem('gymvip_locked', 'true');
+    addSentryBreadcrumb('auth', 'Sesión bloqueada', { reason });
 
     if (user) {
       const accountSummary = { email: user.email, roles: user.roles };
@@ -74,6 +83,8 @@ export function AuthProvider({ children }) {
       sessionStorage.removeItem('gymvip_locked');
       localStorage.setItem('gymvip_token', data.token);
       localStorage.setItem('gymvip_user', JSON.stringify(data));
+      setSentryUser(data);
+      addSentryBreadcrumb('auth', 'Sesión desbloqueada');
       lastActivityRef.current = Date.now();
       return data;
     } catch (err) {
@@ -98,6 +109,8 @@ export function AuthProvider({ children }) {
       localStorage.setItem('gymvip_token', data.token);
       localStorage.setItem('gymvip_user', JSON.stringify(data));
       localStorage.setItem('gymvip_locked_account', JSON.stringify({ email: data.email, roles: data.roles }));
+      setSentryUser(data);
+      addSentryBreadcrumb('auth', 'Inicio de sesión exitoso');
       lastActivityRef.current = Date.now();
       return data;
     } catch (err) {
@@ -113,6 +126,8 @@ export function AuthProvider({ children }) {
     if (token) {
       await signOut(token);
     }
+    clearSentryUser();
+    addSentryBreadcrumb('auth', 'Cierre de sesión');
     setToken(null);
     setUser(null);
     setIsLocked(false);

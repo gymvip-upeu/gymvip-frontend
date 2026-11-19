@@ -5,6 +5,10 @@ import './index.css';
 import './themes/plans.css';
 import './themes/members.css';
 import './themes/catalog.css';
+import { initSentry } from './config/sentry';
+
+// Inicialización centralizada de observabilidad con Sentry
+initSentry();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

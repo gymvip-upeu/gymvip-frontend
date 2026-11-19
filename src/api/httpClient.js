@@ -3,6 +3,7 @@
 // ==============================================================================
 
 import { config } from '../config/environment.js';
+import { addSentryBreadcrumb, captureSentryException } from '../config/sentry.js';
 
 let unauthorizedHandler = null;
 
@@ -33,10 +34,35 @@ export async function httpClient(endpoint, options = {}, token = null) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
+  const method = options.method || 'GET';
+  let response;
+
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (netError) {
+    if (netError.name !== 'AbortError') {
+      addSentryBreadcrumb('http', `Fallo de red: ${method} ${endpoint}`, { error: netError.message }, 'warning');
+    }
+    throw netError;
+  }
+
+  // Registrar breadcrumb de respuesta HTTP (sin datos sensibles)
+  addSentryBreadcrumb('http', `${method} ${endpoint} -> ${response.status}`, {
+    status: response.status,
+    statusText: response.statusText,
   });
+
+  // Reportar errores técnicos del servidor (5xx) automáticamente a Sentry
+  if (response.status >= 500) {
+    captureSentryException(new Error(`HTTP ${response.status} en ${method} ${endpoint}`), {
+      module: 'httpClient',
+      httpStatus: response.status,
+      action: `${method} ${endpoint}`,
+    });
+  }
 
   if (response.status === 401 && unauthorizedHandler) {
     // Si no es la ruta explícita de login, disparar desautenticación automática

@@ -6,13 +6,16 @@ import React from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AppRoutes } from './routes/AppRoutes';
+import { SentryErrorBoundary } from './components/common/SentryErrorBoundary';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <AppRoutes />
-      </ThemeProvider>
-    </AuthProvider>
+    <SentryErrorBoundary section="Sistema Central GYM VIP">
+      <AuthProvider>
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
+      </AuthProvider>
+    </SentryErrorBoundary>
   );
 }
