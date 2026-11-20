@@ -14,15 +14,19 @@ import VerificationPage from '../pages/VerificationPage';
 import AttendanceAgendaPage from '../pages/AttendanceAgendaPage';
 import PlansPage from '../pages/PlansPage';
 import SupplementsPage from '../pages/SupplementsPage';
+import SupplementOrdersPage from '../pages/SupplementOrdersPage';
 import PromotionsPage from '../pages/PromotionsPage';
 import MembershipsPage from '../pages/MembershipsPage';
 import SettingsPage from '../pages/SettingsPage';
 import ReminderConfigPage from '../pages/ReminderConfigPage';
 import FaqPage from '../pages/FaqPage';
+import FacilitiesPage from '../pages/FacilitiesPage';
 import CommunicationsPage from '../pages/CommunicationsPage';
 import LoginModal from '../components/modals/LoginModal';
 import LockScreenModal from '../components/modals/LockScreenModal';
 import { Alert } from '../components/common/Alert';
+import { SentryErrorBoundary } from '../components/common/SentryErrorBoundary';
+import { addSentryBreadcrumb } from '../config/sentry';
 import '../themes/jorge.css';
 import '../themes/memberships.css';
 import '../themes/members.css';
@@ -44,12 +48,18 @@ export function AppRoutes() {
   const [accessError, setAccessError] = useState(null);
 
   useEffect(() => {
+    addSentryBreadcrumb('navigation', `Navegación a vista: ${currentView}`, { view: currentView });
+  }, [currentView]);
+
+  useEffect(() => {
     const deniedReminder = currentView === 'reminders' && !isAdmin();
     const deniedFaq = currentView === 'faq' && !isAdmin() && !isRecepcion();
     if (user && (deniedReminder || deniedFaq)) {
-      setAccessError(deniedReminder
+      const msg = deniedReminder
         ? 'Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.'
-        : 'Acceso Denegado (403): Respuestas frecuentes requiere rol Administrador o Recepción.');
+        : 'Acceso Denegado (403): Respuestas frecuentes requiere rol Administrador o Recepción.';
+      setAccessError(msg);
+      addSentryBreadcrumb('auth', 'Acceso denegado (403)', { view: currentView, reason: msg }, 'warning');
       setCurrentView('home');
       window.history.replaceState({ view: 'home' }, '', '/inicio');
     }
@@ -145,26 +155,34 @@ export function AppRoutes() {
 
   // Rutas de auto-servicio móvil para clientes
   if (user.roles?.includes('CLIENTE')) {
-    return <MemberAppPage />;
+    return (
+      <SentryErrorBoundary section="Portal del Socio Móvil">
+        <MemberAppPage />
+      </SentryErrorBoundary>
+    );
   }
 
   return (
     <>
       <AdminLayout currentView={currentView} onNavigate={handleNavigate}>
-        {currentView === 'home' && <HomePage onNavigate={handleNavigate} />}
-        {currentView === 'clients' && <ClientsPage />}
-        {currentView === 'coverage' && (isAdmin() || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
-        {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
-        {currentView === 'attendance' && (isAdmin() || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
-        {currentView === 'plans' && <PlansPage />}
-        {currentView === 'supplements' && <SupplementsPage />}
-        {currentView === 'promotions' && <PromotionsPage />}
-        {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
-        {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
-        {currentView === 'faq' && (isAdmin() || isRecepcion()) && <FaqPage />}
-        {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
-        {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
-        {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
+        <SentryErrorBoundary section={`Vista ${currentView}`}>
+          {currentView === 'home' && <HomePage onNavigate={handleNavigate} />}
+          {currentView === 'clients' && <ClientsPage />}
+          {currentView === 'coverage' && (isAdmin() || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
+          {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
+          {currentView === 'attendance' && (isAdmin() || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
+          {currentView === 'plans' && <PlansPage />}
+          {currentView === 'supplements' && <SupplementsPage />}
+          {currentView === 'supplementOrders' && (isAdmin() || isRecepcion()) && <SupplementOrdersPage />}
+          {currentView === 'promotions' && <PromotionsPage />}
+          {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
+          {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
+          {currentView === 'faq' && (isAdmin() || isRecepcion()) && <FaqPage />}
+          {currentView === 'facilities' && (isAdmin() || isRecepcion()) && <FacilitiesPage />}
+          {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
+          {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
+          {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
+        </SentryErrorBoundary>
       </AdminLayout>
 
       {/* Aviso accesible superior derecho de Error 403 / Denegación de permisos (INC-S1-07) */}

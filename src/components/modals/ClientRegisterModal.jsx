@@ -73,28 +73,37 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
       } else if (res.status === 'CUOTA_AGOTADA') {
         setLookupNotice({
           variant: 'warning',
-          message: 'Se ha alcanzado el límite de consultas de ApiPeruDev. Complete los datos manualmente.'
+          message: 'Se ha alcanzado el límite de consultas de ApiPeruDev. Complete los datos manualmente.',
+          retryable: false,
         });
       } else if (res.status === 'SERVICIO_NO_DISPONIBLE') {
         setLookupNotice({
           variant: 'warning',
-          message: 'El servicio de consulta no está disponible temporalmente. Puede reintentar o completar los datos manualmente.'
+          message: res.mensaje || 'El servicio de consulta no está disponible temporalmente. Puede reintentar o completar los datos manualmente.',
+          retryable: true,
+        });
+      } else if (res.status === 'NO_AUTORIZADO') {
+        setLookupNotice({
+          variant: 'warning',
+          message: 'El servicio de consulta no cuenta con credenciales activas del proveedor. Ingrese los datos manualmente.',
+          retryable: false,
         });
       } else {
         setLookupNotice({
           variant: 'info',
-          message: res.mensaje || 'No se pudo completar la verificación automática de identidad.'
+          message: res.mensaje || 'No se pudo completar la verificación automática de identidad. Puede ingresar los datos manualmente.',
+          retryable: true,
         });
       }
     } catch (err) {
-      if (err.status === 404) {
-        setNotFoundModalOpen(true);
-      } else {
-        setLookupNotice({
-          variant: 'warning',
-          message: err.message || 'Error al conectar con el servicio de consulta de identidad.'
-        });
-      }
+      const routeUnavailable = err.status === 404 || err.status === 405;
+      setLookupNotice({
+        variant: 'warning',
+        message: routeUnavailable
+          ? 'La consulta de DNI no está disponible en este despliegue. Avise al administrador o complete los datos manualmente.'
+          : err.message || 'Error al conectar con el servicio de consulta de identidad. Puede reintentar o ingresar los datos manualmente.',
+        retryable: !routeUnavailable,
+      });
     } finally {
       setLookupLoading(false);
     }
@@ -339,8 +348,24 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
           )}
 
           {lookupNotice && (
-            <div style={{ marginTop: '12px' }}>
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <Alert variant={lookupNotice.variant} message={lookupNotice.message} onClose={() => setLookupNotice(null)} />
+              {lookupNotice.retryable && (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '-4px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleLookupDni}
+                    disabled={lookupLoading || !isDniLookupAvailable}
+                    style={{ fontSize: '12px', padding: '4px 10px', height: 'auto', minHeight: '28px' }}
+                  >
+                    🔄 Reintentar consulta de DNI
+                  </button>
+                  <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                    o complete los nombres y apellidos manualmente.
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

@@ -17,6 +17,7 @@ import {
   evaluateRemindersNowApi,
 } from '../api/reminderApi';
 import { httpClient } from '../api/httpClient';
+import { triggerSentryTestVerification } from '../config/sentry';
 
 export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
   const { token, isAdmin } = useAuth();
@@ -29,6 +30,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
   const [configSuccess, setConfigSuccess] = useState('');
   const [reminderConfig, setReminderConfig] = useState(null);
   const [cuts, setCuts] = useState([]);
+  const [sentryTestMessage, setSentryTestMessage] = useState(null);
   const [cutsError, setCutsError] = useState('');
 
   // Estado del microservicio de comunicaciones
@@ -158,6 +160,19 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
               <Icon name="shield-check" size={15} />
               <span>Personal y Roles</span>
               <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>ADMIN</Badge>
+            </button>
+          )}
+
+          {isAdmin() && (
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === 'diagnostics' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setActiveTab('diagnostics')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
+            >
+              <Icon name="activity" size={15} />
+              <span>Monitoreo & Sentry</span>
+              <Badge variant="info" style={{ fontSize: '10px', marginLeft: '4px' }}>OBS</Badge>
             </button>
           )}
         </div>
@@ -342,6 +357,104 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
       {/* PESTAÑA 3: PERSONAL Y ROLES (ADMIN) */}
       {activeTab === 'staff' && isAdmin() && (
         <StaffPage />
+      )}
+
+      {/* PESTAÑA 4: MONITOREO Y DIAGNÓSTICO SENTRY (ADMIN) */}
+      {activeTab === 'diagnostics' && isAdmin() && (
+        <div style={{ display: 'grid', gap: '24px' }}>
+          {sentryTestMessage && (
+            <Alert
+              variant={sentryTestMessage.variant}
+              title={sentryTestMessage.title}
+              message={sentryTestMessage.message}
+              onClose={() => setSentryTestMessage(null)}
+            />
+          )}
+
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
+                <Icon name="activity" size={20} />
+              </span>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
+                Observabilidad y Monitoreo de Errores (Sentry)
+              </h2>
+            </div>
+
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
+              Sentry monitorea en tiempo real excepciones de frontend, trazas de rendimiento y sesiones en vivo con enmascaramiento estricto de privacidad.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ padding: '16px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                <strong style={{ display: 'block', color: 'var(--color-gold)', marginBottom: '8px', fontSize: '13px' }}>
+                  Proyecto Sentry
+                </strong>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  Organización: <code>universidad-peruana-union-p0</code><br />
+                  Proyecto Frontend: <code>gymvip-frontend</code><br />
+                  Proyecto Backend: <code>gymvip-backend</code>
+                </p>
+              </div>
+
+              <div style={{ padding: '16px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                <strong style={{ display: 'block', color: 'var(--color-gold)', marginBottom: '8px', fontSize: '13px' }}>
+                  Parámetros de Telemetría
+                </strong>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  Traces Sample Rate: <code>0.2</code> (Prod) / <code>1.0</code> (Dev)<br />
+                  Replays en Error: <code>1.0 (100%)</code><br />
+                  Privacidad: <code>maskAllText + blockAllMedia + maskAllInputs</code>
+                </p>
+              </div>
+
+              <div style={{ padding: '16px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                <strong style={{ display: 'block', color: 'var(--color-gold)', marginBottom: '8px', fontSize: '13px' }}>
+                  Filtros de Seguridad y Privacidad
+                </strong>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  ✔ Sanitización de contraseñas y tokens JWT.<br />
+                  ✔ PII de clientes excluido en breadcrumbs.<br />
+                  ✔ Respuestas HTTP 400 y 401 excluidas de alertas críticas.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ padding: '18px', background: 'var(--color-surface-panel)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
+                Prueba Controlada de Verificación
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '14px' }}>
+                Emite intencionalmente una excepción de prueba tipificada hacia Sentry para comprobar que la tubería de captura y notificación se encuentra operativa. Esta acción está restringida a administradores.
+              </p>
+
+              <Button
+                type="button"
+                variant="warning"
+                onClick={() => {
+                  try {
+                    const error = triggerSentryTestVerification('Panel de Control GYM VIP');
+                    setSentryTestMessage({
+                      variant: 'success',
+                      title: 'Excepción de Prueba Enviada a Sentry',
+                      message: `Se emitió exitosamente el evento "${error.message}". Consulta el issue generado en el dashboard de Sentry para confirmar la recepción.`,
+                    });
+                  } catch (err) {
+                    setSentryTestMessage({
+                      variant: 'danger',
+                      title: 'Fallo al Emitir Prueba',
+                      message: err.message || 'Error al comunicarse con el SDK de Sentry.',
+                    });
+                  }
+                }}
+                style={{ minHeight: '38px', fontSize: '13px' }}
+              >
+                <Icon name="activity" size={15} />
+                <span>Emitir Excepción de Prueba Controlada a Sentry</span>
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
