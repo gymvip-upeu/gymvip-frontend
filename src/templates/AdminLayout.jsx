@@ -47,6 +47,9 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     ] : []),
     { id: 'plans', label: 'Planes', iconName: 'tag', title: 'Catálogo Tarifario y Versiones de Planes' },
     { id: 'supplements', label: 'Suplementos', iconName: 'package', title: 'Catálogo de Suplementos y Stock' },
+    ...(isAdmin() || isRecepcion() ? [
+      { id: 'supplementOrders', label: 'Pedidos Suplementos', iconName: 'package', title: 'Bandeja de Pagos, Preparación y Retiro QR' },
+    ] : []),
     { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Gestión de Promociones y Descuentos' },
   ];
 
@@ -68,6 +71,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     verification: 'Control Manual de Acceso en Recepción',
     plans: 'Catálogo de Planes y Tarifas',
     supplements: 'Catálogo de Suplementos y Stock',
+    supplementOrders: 'Bandeja de Pedidos de Suplementos y Retiro QR',
     promotions: 'Gestión de Promociones y Descuentos',
     facilities: 'Áreas e Instalaciones del Gimnasio',
     reminders: 'Comunicaciones',

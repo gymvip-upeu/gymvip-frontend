@@ -14,6 +14,7 @@ import VerificationPage from '../pages/VerificationPage';
 import AttendanceAgendaPage from '../pages/AttendanceAgendaPage';
 import PlansPage from '../pages/PlansPage';
 import SupplementsPage from '../pages/SupplementsPage';
+import SupplementOrdersPage from '../pages/SupplementOrdersPage';
 import PromotionsPage from '../pages/PromotionsPage';
 import MembershipsPage from '../pages/MembershipsPage';
 import SettingsPage from '../pages/SettingsPage';
@@ -172,6 +173,7 @@ export function AppRoutes() {
           {currentView === 'attendance' && (isAdmin() || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
           {currentView === 'plans' && <PlansPage />}
           {currentView === 'supplements' && <SupplementsPage />}
+          {currentView === 'supplementOrders' && (isAdmin() || isRecepcion()) && <SupplementOrdersPage />}
           {currentView === 'promotions' && <PromotionsPage />}
           {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
           {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
