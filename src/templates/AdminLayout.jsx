@@ -54,6 +54,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
 
   const communicationItems = isAdmin() || isRecepcion() ? [
     ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell' }] : []),
+    { id: 'facilities', label: 'Instalaciones VIP', iconName: 'tool' },
     { id: 'faq', label: 'Respuestas frecuentes', iconName: 'message-circle' },
     { id: 'communications', label: 'WhatsApp y envíos', iconName: 'send' },
   ] : [];
@@ -68,6 +69,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     plans: 'Catálogo de Planes y Tarifas',
     supplements: 'Catálogo de Suplementos y Stock',
     promotions: 'Gestión de Promociones y Descuentos',
+    facilities: 'Áreas e Instalaciones del Gimnasio',
     reminders: 'Comunicaciones',
     faq: 'Comunicaciones',
     communications: 'Comunicaciones',

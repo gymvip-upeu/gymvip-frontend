@@ -19,6 +19,7 @@ import MembershipsPage from '../pages/MembershipsPage';
 import SettingsPage from '../pages/SettingsPage';
 import ReminderConfigPage from '../pages/ReminderConfigPage';
 import FaqPage from '../pages/FaqPage';
+import FacilitiesPage from '../pages/FacilitiesPage';
 import CommunicationsPage from '../pages/CommunicationsPage';
 import LoginModal from '../components/modals/LoginModal';
 import LockScreenModal from '../components/modals/LockScreenModal';
@@ -175,6 +176,7 @@ export function AppRoutes() {
           {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
           {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
           {currentView === 'faq' && (isAdmin() || isRecepcion()) && <FaqPage />}
+          {currentView === 'facilities' && (isAdmin() || isRecepcion()) && <FacilitiesPage />}
           {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
           {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
           {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
