@@ -9,6 +9,14 @@ export default defineConfig(({ mode }) => {
   return {
     build: {
       sourcemap: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-sentry': ['@sentry/react'],
+          },
+        },
+      },
     },
     plugins: [
       react(),

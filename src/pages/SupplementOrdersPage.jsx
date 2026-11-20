@@ -20,7 +20,7 @@ import { Button } from '../components/common/Button';
 import { formatCurrencyPen } from '../utils/formatters';
 
 export default function SupplementOrdersPage() {
-  const { token, isAdmin, isRecepcion } = useAuth();
+  const { token, isAdmin } = useAuth();
 
   // Estados de interfaz y filtrado
   const [activeTab, setActiveTab] = useState('PAGADO_POR_VERIFICAR'); // 'PAGADO_POR_VERIFICAR' | 'CONFIRMADO_PREPARACION' | 'LISTO_PARA_RETIRO' | 'TODOS' | 'SCANNER'

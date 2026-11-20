@@ -3,25 +3,10 @@
 // Sincronización bidireccional con URL, botón Atrás/Adelante, recarga y permisos RBAC
 // ==============================================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminLayout } from '../templates/AdminLayout';
 import HomePage from '../pages/HomePage';
-import MemberAppPage from '../pages/MemberAppPage';
-import ClientsPage from '../pages/ClientsPage';
-import CoveragePage from '../pages/CoveragePage';
-import VerificationPage from '../pages/VerificationPage';
-import AttendanceAgendaPage from '../pages/AttendanceAgendaPage';
-import PlansPage from '../pages/PlansPage';
-import SupplementsPage from '../pages/SupplementsPage';
-import SupplementOrdersPage from '../pages/SupplementOrdersPage';
-import PromotionsPage from '../pages/PromotionsPage';
-import MembershipsPage from '../pages/MembershipsPage';
-import SettingsPage from '../pages/SettingsPage';
-import ReminderConfigPage from '../pages/ReminderConfigPage';
-import FaqPage from '../pages/FaqPage';
-import FacilitiesPage from '../pages/FacilitiesPage';
-import CommunicationsPage from '../pages/CommunicationsPage';
 import LoginModal from '../components/modals/LoginModal';
 import LockScreenModal from '../components/modals/LockScreenModal';
 import { Alert } from '../components/common/Alert';
@@ -34,6 +19,23 @@ import '../themes/plans.css';
 import '../themes/catalog.css';
 
 import { VIEW_PATH_MAP, resolveViewFromPath } from './routeConfig';
+
+// Carga diferida (code splitting) de páginas secundarias para reducir el bundle inicial
+const MemberAppPage = lazy(() => import('../pages/MemberAppPage'));
+const ClientsPage = lazy(() => import('../pages/ClientsPage'));
+const CoveragePage = lazy(() => import('../pages/CoveragePage'));
+const VerificationPage = lazy(() => import('../pages/VerificationPage'));
+const AttendanceAgendaPage = lazy(() => import('../pages/AttendanceAgendaPage'));
+const PlansPage = lazy(() => import('../pages/PlansPage'));
+const SupplementsPage = lazy(() => import('../pages/SupplementsPage'));
+const SupplementOrdersPage = lazy(() => import('../pages/SupplementOrdersPage'));
+const PromotionsPage = lazy(() => import('../pages/PromotionsPage'));
+const MembershipsPage = lazy(() => import('../pages/MembershipsPage'));
+const SettingsPage = lazy(() => import('../pages/SettingsPage'));
+const ReminderConfigPage = lazy(() => import('../pages/ReminderConfigPage'));
+const FaqPage = lazy(() => import('../pages/FaqPage'));
+const FacilitiesPage = lazy(() => import('../pages/FacilitiesPage'));
+const CommunicationsPage = lazy(() => import('../pages/CommunicationsPage'));
 
 export function AppRoutes() {
   const { user, isLocked, isAdmin, isRecepcion } = useAuth();
@@ -157,7 +159,9 @@ export function AppRoutes() {
   if (user.roles?.includes('CLIENTE')) {
     return (
       <SentryErrorBoundary section="Portal del Socio Móvil">
-        <MemberAppPage />
+        <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: '#D4AF37' }}>Cargando portal...</div>}>
+          <MemberAppPage />
+        </Suspense>
       </SentryErrorBoundary>
     );
   }
@@ -166,22 +170,24 @@ export function AppRoutes() {
     <>
       <AdminLayout currentView={currentView} onNavigate={handleNavigate}>
         <SentryErrorBoundary section={`Vista ${currentView}`}>
-          {currentView === 'home' && <HomePage onNavigate={handleNavigate} />}
-          {currentView === 'clients' && <ClientsPage />}
-          {currentView === 'coverage' && (isAdmin() || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
-          {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
-          {currentView === 'attendance' && (isAdmin() || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
-          {currentView === 'plans' && <PlansPage />}
-          {currentView === 'supplements' && <SupplementsPage />}
-          {currentView === 'supplementOrders' && (isAdmin() || isRecepcion()) && <SupplementOrdersPage />}
-          {currentView === 'promotions' && <PromotionsPage />}
-          {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
-          {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
-          {currentView === 'faq' && (isAdmin() || isRecepcion()) && <FaqPage />}
-          {currentView === 'facilities' && (isAdmin() || isRecepcion()) && <FacilitiesPage />}
-          {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
-          {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
-          {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
+          <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: '#D4AF37' }}>Cargando sección...</div>}>
+            {currentView === 'home' && <HomePage onNavigate={handleNavigate} />}
+            {currentView === 'clients' && <ClientsPage />}
+            {currentView === 'coverage' && (isAdmin() || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
+            {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
+            {currentView === 'attendance' && (isAdmin() || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
+            {currentView === 'plans' && <PlansPage />}
+            {currentView === 'supplements' && <SupplementsPage />}
+            {currentView === 'supplementOrders' && (isAdmin() || isRecepcion()) && <SupplementOrdersPage />}
+            {currentView === 'promotions' && <PromotionsPage />}
+            {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
+            {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
+            {currentView === 'faq' && (isAdmin() || isRecepcion()) && <FaqPage />}
+            {currentView === 'facilities' && (isAdmin() || isRecepcion()) && <FacilitiesPage />}
+            {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
+            {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
+            {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
+          </Suspense>
         </SentryErrorBoundary>
       </AdminLayout>
 
