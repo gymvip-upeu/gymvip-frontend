@@ -59,7 +59,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell' }] : []),
     { id: 'facilities', label: 'Instalaciones VIP', iconName: 'tool' },
     { id: 'faq', label: 'Respuestas frecuentes', iconName: 'message-circle' },
-    { id: 'communications', label: 'WhatsApp y envíos', iconName: 'send' },
+    { id: 'communications', label: 'Seguimiento', iconName: 'send' },
   ] : [];
 
   const viewTitles = {
@@ -76,7 +76,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     facilities: 'Áreas e Instalaciones del Gimnasio',
     reminders: 'Comunicaciones',
     faq: 'Comunicaciones',
-    communications: 'Comunicaciones',
+    communications: 'Seguimiento',
     staff: 'Gestión de Personal y Roles',
     settings: 'Configuración Operativa del Sistema',
   };

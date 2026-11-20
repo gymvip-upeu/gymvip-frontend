@@ -28,6 +28,7 @@ export const PATH_VIEW_MAP = {
   '/respuestas-frecuentes': 'faq',
   '/instalaciones': 'facilities',
   '/comunicaciones': 'communications',
+  '/seguimiento': 'communications',
   '/personal': 'staff',
   '/configuracion': 'settings',
 };
@@ -50,7 +51,7 @@ export const VIEW_PATH_MAP = {
   memberships: '/cobros',
   reminders: '/recordatorios',
   faq: '/respuestas-frecuentes',
-  communications: '/comunicaciones',
+  communications: '/seguimiento',
   staff: '/personal',
   settings: '/configuracion',
 };

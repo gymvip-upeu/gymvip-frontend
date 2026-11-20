@@ -19,6 +19,8 @@ test('Routing: resuelve correctamente las rutas visibles del frontend a sus vist
   assert.equal(resolveViewFromPath('/membresias'), 'memberships');
   assert.equal(resolveViewFromPath('/recordatorios'), 'reminders');
   assert.equal(resolveViewFromPath('/comunicaciones'), 'communications');
+  assert.equal(resolveViewFromPath('/seguimiento'), 'communications');
+  assert.equal(VIEW_PATH_MAP.communications, '/seguimiento');
   assert.equal(resolveViewFromPath('/personal'), 'staff');
   assert.equal(resolveViewFromPath('/configuracion'), 'settings');
 });

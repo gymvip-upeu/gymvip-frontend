@@ -340,3 +340,16 @@
   outline: 2px solid var(--color-gold, #d5b24b); outline-offset: 2px;
 }
 .reminder-history details p { white-space: normal; min-width: 150px; line-height: 1.5; }
+
+.reminder-schedule { margin-bottom: 24px; padding: 16px; border: 1px solid #3d3d37; border-radius: 8px; }
+.reminder-schedule strong { font-size: 14px; color: #fff; }
+.reminder-schedule p, .tracking-templates p { color: var(--color-text-secondary, #b9b9b3); font-size: 13px; line-height: 1.6; }
+.tracking-templates summary { cursor: pointer; font-weight: 600; color: var(--color-gold, #c4a15a); }
+.tracking-templates section { margin-top: 20px; border-top: 1px solid #30302d; padding-top: 16px; }
+
+.channel-status-panel { margin-bottom: 24px; }
+.channel-status-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+.channel-status-grid h3 { font-size: 15px; margin: 0 0 12px; }
+.channel-status-panel p { font-size: 13px; line-height: 1.6; color: var(--color-text-secondary,#b9b9b3); }
+.channel-status-panel strong { color: var(--color-text-primary,#f5f5f5); }
+@media (max-width: 640px) { .channel-status-grid { grid-template-columns: 1fr; } }

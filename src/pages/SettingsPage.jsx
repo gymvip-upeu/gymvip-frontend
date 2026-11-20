@@ -16,7 +16,7 @@ import {
   getReminderCutsApi,
   evaluateRemindersNowApi,
 } from '../api/reminderApi';
-import { httpClient } from '../api/httpClient';
+import ChannelStatusPanel from '../components/common/ChannelStatusPanel';
 import { triggerSentryTestVerification } from '../config/sentry';
 
 export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
@@ -32,15 +32,6 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
   const [cuts, setCuts] = useState([]);
   const [sentryTestMessage, setSentryTestMessage] = useState(null);
   const [cutsError, setCutsError] = useState('');
-
-  // Estado del microservicio de comunicaciones
-  const [serviceHealth, setServiceHealth] = useState({
-    loading: true,
-    status: 'UNKNOWN',
-    mode: 'simulation',
-    provider: 'meta',
-    error: null,
-  });
 
   // Cargar configuración de recordatorios desde el backend
   const loadReminderConfig = useCallback(async () => {
@@ -62,44 +53,9 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
     }
   }, [token]);
 
-  // Consultar estado de salud del servicio de comunicaciones
-  const checkServiceHealth = useCallback(async () => {
-    setServiceHealth((prev) => ({ ...prev, loading: true, error: null }));
-    try {
-      const res = await httpClient('/api/v1/health', {}, token);
-      if (res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setServiceHealth({
-          loading: false,
-          status: body.status || 'UP',
-          mode: body.mode || 'simulation',
-          provider: body.whatsappProvider || 'meta',
-          error: null,
-        });
-      } else {
-        setServiceHealth({
-          loading: false,
-          status: 'DOWN',
-          mode: 'simulation',
-          provider: 'simulation',
-          error: `Respuesta HTTP ${res.status}`,
-        });
-      }
-    } catch (err) {
-      setServiceHealth({
-        loading: false,
-        status: 'DISCONNECTED',
-        mode: 'simulation',
-        provider: 'simulation',
-        error: err.message || 'No se pudo conectar con el microservicio.',
-      });
-    }
-  }, [token]);
-
   useEffect(() => {
     loadReminderConfig();
-    checkServiceHealth();
-  }, [loadReminderConfig, checkServiceHealth]);
+  }, [loadReminderConfig]);
 
   // Ejecución manual de corte
   const handleEvaluateNow = async () => {
@@ -287,72 +243,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
         </div>
       )}
 
-      {/* PESTAÑA 2: MICROSERVICIO DE COMUNICACIONES */}
-      {activeTab === 'comms' && (
-        <div style={{ display: 'grid', gap: '24px' }}>
-          <div className="card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
-                  <Icon name="message-circle" size={20} />
-                </span>
-                <h2 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
-                  Estado de Enlace con gymvip-comunicaciones
-                </h2>
-              </div>
-              <Button variant="secondary" onClick={checkServiceHealth} disabled={serviceHealth.loading}>
-                <Icon name="refresh" size={14} />
-                <span>Verificar Conexión</span>
-              </Button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', fontSize: '13px', marginBottom: '20px' }}>
-              <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Estado de Conexión</span>
-                <div style={{ marginTop: '6px' }}>
-                  <Badge variant={serviceHealth.status === 'UP' ? 'success' : 'danger'}>
-                    {serviceHealth.status === 'UP' ? 'EN LÍNEA (UP)' : 'DESCONECTADO O EN ESPERA'}
-                  </Badge>
-                </div>
-              </div>
-
-              <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Modo de Operación</span>
-                <strong style={{ fontSize: '14px', color: 'var(--color-gold)', display: 'block', marginTop: '4px' }}>
-                  {serviceHealth.mode === 'simulation' ? 'SIMULATION (Modo Seguro Sin Costos)' : 'PRODUCTION (Meta API)'}
-                </strong>
-              </div>
-
-              <div style={{ padding: '14px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '11px', textTransform: 'uppercase', display: 'block' }}>Proveedor WhatsApp</span>
-                <strong style={{ fontSize: '14px', color: 'var(--color-text-primary)', display: 'block', marginTop: '4px' }}>
-                  {serviceHealth.provider === 'meta' ? 'Meta Cloud API v20.0' : 'Simulation WhatsApp Adapter'}
-                </strong>
-              </div>
-            </div>
-
-            <div style={{ padding: '14px', background: 'var(--color-surface-panel)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-gold-border)', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 6px', color: 'var(--color-gold)' }}>
-                Plantillas Oficiales Registradas en Meta Business
-              </h3>
-              <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--color-text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
-                <li><code>recordatorio_vencimiento</code>: Envío anticipado a miembros próximos a expirar.</li>
-                <li><code>aviso_vencido</code>: Notificación cortés de cobertura finalizada y opción de renovación.</li>
-              </ul>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="secondary"
-                onClick={() => onNavigate?.('communications')}
-                style={{ fontSize: '13px' }}
-              >
-                <span>Abrir Centro de Monitoreo de Comunicaciones →</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {activeTab === 'comms' && <div><ChannelStatusPanel /><Button variant="secondary" onClick={() => onNavigate?.('communications')}>Abrir Seguimiento</Button></div>}
 
       {/* PESTAÑA 3: PERSONAL Y ROLES (ADMIN) */}
       {activeTab === 'staff' && isAdmin() && (

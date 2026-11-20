@@ -50,3 +50,11 @@ export async function getReminderCutsApi(token = null) {
   }
   return response.json();
 }
+
+export async function getReminderScheduleApi(token = null) {
+  const response = await httpClient('/api/v1/reminders/schedule', {}, token);
+  if (!response.ok) throw new Error('No se pudo consultar la programación de recordatorios.');
+  const data = await response.json();
+  if (typeof data.enabled !== 'boolean' || !data.dailyTime || !data.timeZone) throw new Error('Programación de recordatorios no disponible.');
+  return data;
+}
