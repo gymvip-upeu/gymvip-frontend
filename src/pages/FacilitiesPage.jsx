@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getFacilitiesApi, updateFacilityStatusApi, createFacilityApi, getChannelStatusApi } from '../api/facilityApi';
+import { getFacilitiesApi, getFacilitiesArchiveApi, restoreFacilityApi, updateFacilityStatusApi, createFacilityApi, getChannelStatusApi } from '../api/facilityApi';
 import { Badge } from '../components/common/Badge';
 import { Icon } from '../components/common/Icons';
 import { Alert } from '../components/common/Alert';
@@ -13,6 +13,7 @@ export default function FacilitiesPage() {
   const { token, isAdmin } = useAuth();
 
   const [facilities, setFacilities] = useState([]);
+  const [showArchive, setShowArchive] = useState(false);
   const [channelStatus, setChannelStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,7 +43,7 @@ export default function FacilitiesPage() {
     setError(null);
     try {
       const [facData, chanData] = await Promise.all([
-        getFacilitiesApi(token).catch(() => []),
+        showArchive ? getFacilitiesArchiveApi(token) : getFacilitiesApi(token),
         getChannelStatusApi(token).catch(() => null),
       ]);
       setFacilities(Array.isArray(facData) ? facData : []);
@@ -54,7 +55,7 @@ export default function FacilitiesPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, showArchive]);
 
   useEffect(() => {
     loadData();
@@ -119,6 +120,17 @@ export default function FacilitiesPage() {
     }
   };
 
+  const handleRestore = async (facility) => {
+    setError(null);
+    try {
+      await restoreFacilityApi(facility.id, token);
+      setSuccessMsg(`"${facility.name}" restaurada en estado MANTENIMIENTO. Confirma su disponibilidad antes de abrirla al público.`);
+      await loadData();
+    } catch (err) {
+      setError(err.message || 'No se pudo restaurar la instalación.');
+    }
+  };
+
   const renderStatusBadge = (status) => {
     switch (status) {
       case 'DISPONIBLE':
@@ -141,6 +153,11 @@ export default function FacilitiesPage() {
           <h1 style={{ fontSize: '24px', margin: '4px 0 0 0', color: 'var(--color-text-primary)' }}>Áreas e Instalaciones VIP</h1>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
+          {isAdmin() && (
+            <button type="button" className="btn btn-secondary" onClick={() => setShowArchive((value) => !value)}>
+              {showArchive ? 'Ver instalaciones activas' : 'Ver archivo'}
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-secondary"
@@ -210,7 +227,9 @@ export default function FacilitiesPage() {
             <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>Push Móvil (Firebase FCM)</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontWeight: 600 }}>Firebase Messaging</span>
-              <Badge variant="success">CONFIGURED_REAL</Badge>
+              <Badge variant={channelStatus?.push?.status === 'CONFIGURED_REAL' ? 'success' : 'warning'}>
+                {channelStatus?.push?.status || 'NO VERIFICADO'}
+              </Badge>
             </div>
           </div>
         </div>
@@ -223,7 +242,7 @@ export default function FacilitiesPage() {
         </div>
       ) : facilities.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px', background: 'var(--color-surface)', borderRadius: '12px' }}>
-          <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>No hay áreas registradas actualmente en el sistema.</p>
+          <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>{showArchive ? 'No hay instalaciones archivadas.' : 'No hay áreas registradas actualmente en el sistema.'}</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
@@ -261,14 +280,13 @@ export default function FacilitiesPage() {
               </div>
 
               <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => handleOpenStatusModal(fac)}
-                  style={{ fontSize: '12px', padding: '6px 12px' }}
-                >
-                  <Icon name="tool" size={14} /> Cambiar Estado
-                </button>
+                {showArchive ? (
+                  <button type="button" className="btn btn-outline" onClick={() => handleRestore(fac)}>Restaurar en mantenimiento</button>
+                ) : (
+                  <button type="button" className="btn btn-outline" onClick={() => handleOpenStatusModal(fac)} style={{ fontSize: '12px', padding: '6px 12px' }}>
+                    <Icon name="tool" size={14} /> Cambiar Estado
+                  </button>
+                )}
               </div>
             </div>
           ))}
