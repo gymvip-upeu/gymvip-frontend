@@ -20,10 +20,10 @@ import { Button } from '../components/common/Button';
 import { formatCurrencyPen } from '../utils/formatters';
 
 export default function SupplementOrdersPage() {
-  const { token, isAdmin } = useAuth();
+  const { token, isAdmin, isRecepcion } = useAuth();
 
   // Estados de interfaz y filtrado
-  const [activeTab, setActiveTab] = useState('PAGADO_POR_VERIFICAR'); // 'PAGADO_POR_VERIFICAR' | 'CONFIRMADO_PREPARACION' | 'LISTO_PARA_RETIRO' | 'TODOS' | 'SCANNER'
+  const [activeTab, setActiveTab] = useState('PENDIENTE_PAGO');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -233,6 +233,12 @@ export default function SupplementOrdersPage() {
 
       {/* Selector de Bandejas */}
       <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #374151', paddingBottom: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => { setActiveTab('PENDIENTE_PAGO'); setSelectedOrder(null); }}
+          className={`btn btn-sm ${activeTab === 'PENDIENTE_PAGO' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          Efectivo pendiente
+        </button>
         <button
           onClick={() => { setActiveTab('PAGADO_POR_VERIFICAR'); setSelectedOrder(null); }}
           style={{
@@ -544,9 +550,12 @@ export default function SupplementOrdersPage() {
                   </ul>
 
                   {/* Acciones de Flujo */}
-                  {selectedOrder.orderStatus === 'PAGADO_POR_VERIFICAR' && isAdmin() && (
+                  {((selectedOrder.orderStatus === 'PENDIENTE_PAGO' && selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' && (isAdmin() || isRecepcion())) ||
+                    (selectedOrder.orderStatus === 'PAGADO_POR_VERIFICAR' && isAdmin())) && (
                     <div style={{ background: '#1F2937', padding: '1rem', borderRadius: '6px', marginBottom: '1rem' }}>
-                      <h4 style={{ color: '#D4AF37', margin: '0 0 0.5rem 0' }}>Validación de Comprobante</h4>
+                      <h4 style={{ color: '#D4AF37', margin: '0 0 0.5rem 0' }}>
+                        {selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' ? 'Registrar cobro en efectivo' : 'Validación de comprobante'}
+                      </h4>
                       <form onSubmit={handleApprovePayment}>
                         <div style={{ marginBottom: '0.75rem' }}>
                           <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.8rem' }}>Monto Verificado en Caja (S/):</label>
@@ -571,12 +580,12 @@ export default function SupplementOrdersPage() {
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <Button type="submit" disabled={actionLoading}>
-                            Aprobar Pago
+                            {selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' ? 'Confirmar efectivo recibido' : 'Aprobar pago'}
                           </Button>
                         </div>
                       </form>
 
-                      <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '0.75rem' }}>
+                      {isAdmin() && <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '0.75rem' }}>
                         <input
                           type="text"
                           value={rejectReason}
@@ -587,7 +596,7 @@ export default function SupplementOrdersPage() {
                         <Button variant="danger" onClick={handleRejectPayment} disabled={actionLoading || !rejectReason.trim()}>
                           Rechazar Pago
                         </Button>
-                      </div>
+                      </div>}
                     </div>
                   )}
 
