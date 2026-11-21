@@ -2,7 +2,7 @@
 // GYM VIP — Servicio de Gestión de Personal y Roles (HU-04)
 // ==============================================================================
 
-import { listAccountsApi, createAccountApi, updateAccountRoleApi, inactivateAccountApi } from '../api/staffApi';
+import { listAccountsApi, createAccountApi, updateAccountRoleApi, updateStaffProfileApi, inactivateAccountApi } from '../api/staffApi';
 import { validateStaffCreation } from '../validators/staffValidator';
 
 export async function fetchStaffAccounts(token = null) {
@@ -20,6 +20,9 @@ export async function createStaffAccount(accountData, token = null) {
     password: accountData.password,
     role: accountData.role,
     roles: [accountData.role],
+    firstName: accountData.firstName?.trim() || null,
+    lastName: accountData.lastName?.trim() || null,
+    phone: accountData.phone?.trim() || null,
   };
 
   return await createAccountApi(payload, token);
@@ -27,6 +30,15 @@ export async function createStaffAccount(accountData, token = null) {
 
 export async function modifyStaffRole(id, role, token = null) {
   return await updateAccountRoleApi(id, role, token);
+}
+
+export async function modifyStaffProfile(id, profile, token = null) {
+  return updateStaffProfileApi(id, {
+    email: profile.email.trim(),
+    firstName: profile.firstName.trim(),
+    lastName: profile.lastName.trim(),
+    phone: profile.phone.trim(),
+  }, token);
 }
 
 export async function inactivateStaffAccount(id, token = null) {

@@ -25,6 +25,7 @@ export default function StaffPage() {
     actionSubmitting,
     loadAccounts,
     updateRole,
+    updateProfile,
     inactivateAccount,
   } = useStaff(token, isAdmin());
 
@@ -33,6 +34,7 @@ export default function StaffPage() {
   const [editingRoleAccount, setEditingRoleAccount] = useState(null);
   const [selectedRole, setSelectedRole] = useState('RECEPCION');
   const [confirmInactivateAccount, setConfirmInactivateAccount] = useState(null);
+  const [editingProfile, setEditingProfile] = useState(null);
 
   if (!isAdmin()) {
     return (
@@ -68,6 +70,11 @@ export default function StaffPage() {
     setConfirmInactivateAccount(null);
   };
 
+  const handleUpdateProfile = async (event) => {
+    event.preventDefault();
+    if (await updateProfile(editingProfile.id, editingProfile)) setEditingProfile(null);
+  };
+
   return (
     <div className="staff-page" style={{ maxWidth: '1120px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -76,7 +83,7 @@ export default function StaffPage() {
             Nómina de Personal y Roles
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-            Gestión de colaboradores, asignación de roles ADMIN/RECEPCIÓN y protección de integridad del último administrador.
+            Gestión de colaboradores, roles ADMIN/RECEPCIÓN/AUDITOR y protección del último administrador.
           </p>
         </div>
 
@@ -158,7 +165,8 @@ export default function StaffPage() {
                             {initial}
                           </div>
                           <div>
-                            <strong style={{ color: 'var(--color-text-primary)' }}>{acc.email}</strong>
+                            <strong style={{ color: 'var(--color-text-primary)' }}>{[acc.firstName, acc.lastName].filter(Boolean).join(' ') || acc.email}</strong>
+                            {(acc.firstName || acc.lastName) && <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>{acc.email}</div>}
                             {isCurrent && (
                               <Badge variant="gold" style={{ marginLeft: '8px', fontSize: '10px', padding: '2px 6px' }}>
                                 Tu Sesión
@@ -184,6 +192,12 @@ export default function StaffPage() {
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          <Button variant="secondary" onClick={() => setEditingProfile({
+                            id: acc.id, email: acc.email, firstName: acc.firstName || '',
+                            lastName: acc.lastName || '', phone: acc.phone || '',
+                          })} style={{ fontSize: '12px', padding: '5px 10px', minHeight: '32px' }}>
+                            Editar
+                          </Button>
                           <Button
                             variant="secondary"
                             onClick={() => {
@@ -226,6 +240,33 @@ export default function StaffPage() {
       )}
 
       {/* Modal Modificar Rol */}
+      {editingProfile && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="staff-edit-title">
+          <form className="modal-content" style={{ maxWidth: '480px', padding: '28px' }} onSubmit={handleUpdateProfile}>
+            <h3 id="staff-edit-title">Editar colaborador</h3>
+            {[
+              ['firstName', 'Nombres', 'text'],
+              ['lastName', 'Apellidos', 'text'],
+              ['phone', 'Teléfono', 'tel'],
+              ['email', 'Correo institucional', 'email'],
+            ].map(([field, label, type]) => (
+              <div className="form-group" key={field}>
+                <label className="form-label" htmlFor={`staff-edit-${field}`}>{label}</label>
+                <input id={`staff-edit-${field}`} className="form-input" type={type}
+                  maxLength={field === 'email' ? 150 : field === 'phone' ? 30 : 120}
+                  required={field === 'email'} value={editingProfile[field]}
+                  onChange={(event) => setEditingProfile({ ...editingProfile, [field]: event.target.value })} />
+              </div>
+            ))}
+            <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Al cambiar el correo se cerrarán las sesiones de este colaborador.</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <Button type="button" variant="secondary" onClick={() => setEditingProfile(null)} disabled={actionSubmitting}>Cancelar</Button>
+              <Button type="submit" variant="primary" disabled={actionSubmitting}>Guardar cambios</Button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {editingRoleAccount && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content" style={{ maxWidth: '440px', padding: '28px' }}>
@@ -248,6 +289,7 @@ export default function StaffPage() {
               >
                 <option value="ADMIN">ADMIN (Control Total del Sistema)</option>
                 <option value="RECEPCION">RECEPCION (Atención y Cobros)</option>
+                <option value="AUDITOR">AUDITOR (Reportes e Incidencias)</option>
               </select>
             </div>
 

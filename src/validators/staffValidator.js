@@ -5,6 +5,7 @@
 export const STAFF_ROLES = [
   { value: 'ADMIN', label: 'Administrador (Control Total)' },
   { value: 'RECEPCION', label: 'Recepción (Miembros y Consulta)' },
+  { value: 'AUDITOR', label: 'Auditoría (Reportes e Incidencias)' },
 ];
 
 /**
@@ -24,12 +25,12 @@ export function validateStaffCreation(email, password, role) {
     errors.push('Debe ingresar un correo electrónico válido.');
   }
 
-  if (!password || password.length < 6) {
-    errors.push('La contraseña debe tener al menos 6 caracteres.');
+  if (!password || password.length < 8) {
+    errors.push('La contraseña debe tener al menos 8 caracteres.');
   }
 
-  if (!role || (role !== 'ADMIN' && role !== 'RECEPCION')) {
-    errors.push('Debe seleccionar un rol operativo válido (ADMIN o RECEPCION).');
+  if (!role || !STAFF_ROLES.some((item) => item.value === role)) {
+    errors.push('Debe seleccionar un rol de personal válido.');
   }
 
   return errors;

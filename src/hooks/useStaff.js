@@ -3,7 +3,7 @@
 // ==============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
-import { fetchStaffAccounts, modifyStaffRole, inactivateStaffAccount } from '../services/staffService';
+import { fetchStaffAccounts, modifyStaffRole, modifyStaffProfile, inactivateStaffAccount } from '../services/staffService';
 
 export function useStaff(token, isAdmin) {
   const [accounts, setAccounts] = useState([]);
@@ -18,7 +18,7 @@ export function useStaff(token, isAdmin) {
     setError(null);
     try {
       const data = await fetchStaffAccounts(token);
-      setAccounts(data);
+      setAccounts(data.filter((account) => account.roles?.some((role) => ['ADMIN', 'RECEPCION', 'AUDITOR'].includes(role))));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -61,6 +61,22 @@ export function useStaff(token, isAdmin) {
     }
   };
 
+  const updateProfile = async (accountId, profile) => {
+    setActionSubmitting(true);
+    setError(null);
+    try {
+      await modifyStaffProfile(accountId, profile, token);
+      setSuccessToast('Datos del colaborador actualizados.');
+      await loadAccounts();
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
+
   return {
     accounts,
     loading,
@@ -71,6 +87,7 @@ export function useStaff(token, isAdmin) {
     actionSubmitting,
     loadAccounts,
     updateRole,
+    updateProfile,
     inactivateAccount,
   };
 }
