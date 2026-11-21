@@ -24,6 +24,7 @@ export function validatePromotion(data, reference) {
   if (!Number.isFinite(Number(reference)) || Number(reference)<=0) errors.supplementId='Selecciona un suplemento con precio vigente antes de continuar.';
   if (!validDate(data.startDate)) errors.startDate='Selecciona una fecha de inicio válida.';
   if (!validDate(data.endDate) || data.endDate<=data.startDate) errors.endDate='El fin debe ser una fecha válida posterior al inicio.';
+  if (!/^(?:0|[1-9]\d{0,3})$/.test(String(data.priority ?? 0)) || Number(data.priority)>1000) errors.priority='La prioridad debe ser un entero de 0 a 1000.';
   return errors;
 }
 
