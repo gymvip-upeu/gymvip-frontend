@@ -46,3 +46,20 @@ test('network failure propagates as uncertain without inventing an HTTP rejectio
   const api = await apiWith(async () => { throw new TypeError('Failed to fetch'); });
   await assert.rejects(api.sellMembership(body, 'same-sale-key', 'token'), error => error.status === undefined);
 });
+
+test('CulqiLink creation and status use the staff token and never send a provider secret', async () => {
+  const calls = [];
+  const api = await apiWith(async (...args) => {
+    calls.push(args);
+    return { ok: true, json: async () => ({ id: 'link-op', status: 'PENDING' }) };
+  });
+  const request = { clientId: 'client', planId: 'plan', operation: 'RENEW' };
+  await api.createMembershipPaymentLink(request, 'staff-token');
+  await api.getMembershipPaymentLink('link-op', 'staff-token');
+  assert.equal(calls[0][0], '/api/v1/memberships/payment-links');
+  assert.equal(calls[0][1].method, 'POST');
+  assert.equal(calls[0][1].body, JSON.stringify(request));
+  assert.equal(calls[1][0], '/api/v1/memberships/payment-links/link-op');
+  assert.equal(calls[0][2], 'staff-token');
+  assert.equal(calls[1][2], 'staff-token');
+});
