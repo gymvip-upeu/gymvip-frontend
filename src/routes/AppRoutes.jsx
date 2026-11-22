@@ -36,9 +36,11 @@ const ReminderConfigPage = lazy(() => import('../pages/ReminderConfigPage'));
 const FaqPage = lazy(() => import('../pages/FaqPage'));
 const FacilitiesPage = lazy(() => import('../pages/FacilitiesPage'));
 const CommunicationsPage = lazy(() => import('../pages/CommunicationsPage'));
+const ReportsPage = lazy(() => import('../pages/ReportsPage'));
 
 export function AppRoutes() {
   const { user, isLocked, isAdmin, isRecepcion } = useAuth();
+  const auditorOnly = user?.roles?.includes('AUDITOR') && !isAdmin() && !isRecepcion();
 
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -52,6 +54,13 @@ export function AppRoutes() {
   useEffect(() => {
     addSentryBreadcrumb('navigation', `Navegación a vista: ${currentView}`, { view: currentView });
   }, [currentView]);
+
+  useEffect(() => {
+    if (auditorOnly && currentView !== 'reports') {
+      setCurrentView('reports');
+      window.history.replaceState({ view: 'reports' }, '', '/reportes');
+    }
+  }, [auditorOnly, currentView]);
 
   useEffect(() => {
     const deniedReminder = currentView === 'reminders' && !isAdmin();
@@ -69,6 +78,7 @@ export function AppRoutes() {
 
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId) => {
+    if (auditorOnly && viewId !== 'reports') return;
     // Guarda de permisos para rutas administrativas
     if (viewId === 'staff' && !isAdmin()) {
       setAccessError('Acceso Denegado (403): La gestión de personal está reservada exclusivamente para Administradores.');
@@ -90,7 +100,7 @@ export function AppRoutes() {
       window.history.pushState({ view: viewId }, '', targetPath);
     }
     setCurrentView(viewId);
-  }, [isAdmin, isRecepcion]);
+  }, [isAdmin, isRecepcion, auditorOnly]);
 
   // Manejo de eventos popstate (botones Atrás / Adelante del navegador)
   useEffect(() => {
@@ -166,6 +176,10 @@ export function AppRoutes() {
     );
   }
 
+  if (auditorOnly) {
+    return <AdminLayout currentView="reports" onNavigate={handleNavigate}><SentryErrorBoundary section="Reportes"><Suspense fallback={<p>Cargando reportes…</p>}><ReportsPage /></Suspense></SentryErrorBoundary></AdminLayout>;
+  }
+
   return (
     <>
       <AdminLayout currentView={currentView} onNavigate={handleNavigate}>
@@ -187,6 +201,7 @@ export function AppRoutes() {
             {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
             {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
             {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
+            {currentView === 'reports' && isAdmin() && <ReportsPage />}
           </Suspense>
         </SentryErrorBoundary>
       </AdminLayout>

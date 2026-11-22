@@ -9,6 +9,7 @@ import { Header } from './Header';
 
 export function AdminLayout({ currentView, onNavigate, children }) {
   const { user, logout, isAdmin, isRecepcion } = useAuth();
+  const auditorOnly = user?.roles?.includes('AUDITOR') && !isAdmin() && !isRecepcion();
 
   // Preferencia de plegado persistida en localStorage
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -39,7 +40,9 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMobileOpen]);
 
-  const navItems = [
+  const navItems = auditorOnly ? [
+    { id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Reportes y métricas' },
+  ] : [
     { id: 'home', label: 'Inicio', iconName: 'home', title: 'Panel de Control Principal' },
     { id: 'clients', label: 'Miembros', iconName: 'users', title: 'Directorio y Gestión de Miembros' },
     ...(isAdmin() || isRecepcion() ? [
@@ -51,9 +54,10 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       { id: 'supplementOrders', label: 'Pedidos Suplementos', iconName: 'package', title: 'Bandeja de Pagos, Preparación y Retiro QR' },
     ] : []),
     { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Gestión de Promociones y Descuentos' },
+    ...(isAdmin() ? [{ id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Reportes y métricas' }] : []),
   ];
 
-  const settingsItem = { id: 'settings', label: 'Configuración', iconName: 'settings' };
+  const settingsItem = auditorOnly ? null : { id: 'settings', label: 'Configuración', iconName: 'settings' };
 
   const communicationItems = isAdmin() || isRecepcion() ? [
     ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell' }] : []),
@@ -79,6 +83,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     communications: 'Comunicaciones',
     staff: 'Gestión de Personal y Roles',
     settings: 'Configuración Operativa del Sistema',
+    reports: 'Reportes y Métricas',
   };
 
   const currentItem = {

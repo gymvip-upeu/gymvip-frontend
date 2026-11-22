@@ -30,6 +30,7 @@ export const PATH_VIEW_MAP = {
   '/comunicaciones': 'communications',
   '/personal': 'staff',
   '/configuracion': 'settings',
+  '/reportes': 'reports',
 };
 
 /**
@@ -53,6 +54,7 @@ export const VIEW_PATH_MAP = {
   communications: '/comunicaciones',
   staff: '/personal',
   settings: '/configuracion',
+  reports: '/reportes',
 };
 
 /**
