@@ -41,7 +41,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
   }, [isMobileOpen]);
 
   const navItems = auditorOnly ? [
-    { id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Reportes y métricas' },
+    { id: 'reports', label: 'Reportes', iconName: 'calendar', title: 'Reportes y métricas' },
+    { id: 'incidents', label: 'Incidencias', iconName: 'alert-triangle', title: 'Gestión de incidencias' },
   ] : [
     { id: 'home', label: 'Inicio', iconName: 'home', title: 'Panel de Control Principal' },
     { id: 'clients', label: 'Miembros', iconName: 'users', title: 'Directorio y Gestión de Miembros' },
@@ -54,7 +55,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       { id: 'supplementOrders', label: 'Pedidos Suplementos', iconName: 'package', title: 'Bandeja de Pagos, Preparación y Retiro QR' },
     ] : []),
     { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Gestión de Promociones y Descuentos' },
-    ...(isAdmin() ? [{ id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Reportes y métricas' }] : []),
+    ...(isAdmin() ? [{ id: 'reports', label: 'Reportes', iconName: 'calendar', title: 'Reportes y métricas' }] : []),
+    ...(isAdmin() ? [{ id: 'incidents', label: 'Incidencias', iconName: 'alert-triangle', title: 'Gestión de incidencias' }] : []),
   ];
 
   const settingsItem = auditorOnly ? null : { id: 'settings', label: 'Configuración', iconName: 'settings' };
@@ -84,6 +86,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     staff: 'Gestión de Personal y Roles',
     settings: 'Configuración Operativa del Sistema',
     reports: 'Reportes y Métricas',
+    incidents: 'Incidencias Operativas',
   };
 
   const currentItem = {
