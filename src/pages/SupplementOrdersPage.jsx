@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   listAdminOrdersApi,
   getAdminOrderApi,
+  getAdminOrderPaymentLinkApi,
   approveOrderPaymentApi,
   rejectOrderPaymentApi,
   markOrderReadyForPickupApi,
@@ -32,6 +33,7 @@ export default function SupplementOrdersPage() {
 
   // Modal / Detalle de Pedido
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [digitalLink, setDigitalLink] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   // Formularios de acción
@@ -68,9 +70,14 @@ export default function SupplementOrdersPage() {
   const handleSelectOrder = async (orderId) => {
     setDetailLoading(true);
     setError('');
+    setDigitalLink(null);
     try {
       const detail = await getAdminOrderApi(orderId, token);
       setSelectedOrder(detail);
+      if (detail.paymentMethod === 'TARJETA_PASARELA') {
+        try { setDigitalLink(await getAdminOrderPaymentLinkApi(orderId, token)); }
+        catch (linkError) { if (linkError.status !== 404) setError(linkError.message); }
+      }
       setApproveAmount(detail.totalPen != null ? String(detail.totalPen) : '');
       setApproveNotes('');
       setRejectReason('');
@@ -527,6 +534,23 @@ export default function SupplementOrdersPage() {
                     <p style={{ margin: '0.2rem 0' }}><strong>Teléfono:</strong> {selectedOrder.clientPhone || 'No registrado'}</p>
                     <p style={{ margin: '0.2rem 0' }}><strong>Total:</strong> <span style={{ color: '#D4AF37', fontWeight: 600 }}>{formatCurrencyPen(selectedOrder.totalPen)}</span></p>
                     <p style={{ margin: '0.2rem 0' }}><strong>Método:</strong> {selectedOrder.paymentMethod}</p>
+                    {selectedOrder.paymentMethod === 'TARJETA_PASARELA' && (
+                      <div role="status" style={{ margin: '0.7rem 0', padding: '0.9rem', border: '1px solid #D4AF37', borderRadius: '8px', background: '#2A2416', color: '#F5DE9B' }}>
+                        <strong>Cobro digital CulqiLink</strong>
+                        <p style={{ margin: '0.4rem 0' }}>Estado del enlace: {digitalLink?.status || 'sin enlace disponible'}</p>
+                        {digitalLink?.expiresAt && <p style={{ margin: '0.4rem 0' }}>Vence: {new Date(digitalLink.expiresAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</p>}
+                        <p style={{ margin: '0.4rem 0 0' }}>
+                          {selectedOrder.paymentStatus === 'VERIFICADO'
+                            ? 'Cargo confirmado por Culqi. Continúe con la preparación y entrega del pedido.'
+                              : digitalLink?.status === 'REVIEW'
+                                ? 'Se detectó un cargo tardío o inconsistente: requiere revisión. No entregue productos hasta resolver la conciliación.'
+                                : digitalLink?.status === 'EXPIRED'
+                                  ? 'El enlace venció sin pago verificado. El pedido no puede prepararse ni entregarse.'
+                              : 'Esperando conciliación automática con Culqi. No confirme este pago manualmente ni entregue el pedido.'}
+                        </p>
+                        <Button variant="secondary" onClick={() => handleSelectOrder(selectedOrder.id)} disabled={detailLoading}>Actualizar estado Culqi</Button>
+                      </div>
+                    )}
                     <p style={{ margin: '0.2rem 0' }}><strong>Referencia de Pago:</strong> {selectedOrder.paymentReference || 'Pendiente'}</p>
                     {selectedOrder.paymentEvidenceUrl && (
                       <p style={{ margin: '0.4rem 0' }}>

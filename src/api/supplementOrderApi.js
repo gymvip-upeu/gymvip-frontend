@@ -23,6 +23,17 @@ export async function getAdminOrderApi(orderId, token = null) {
   return response.json();
 }
 
+export async function getAdminOrderPaymentLinkApi(orderId, token = null) {
+  const response = await httpClient(`/api/v1/admin/orders/${orderId}/payment-link`, {}, token);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const error = new Error(body.message || 'No se pudo consultar el enlace de pago.');
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
 export async function approveOrderPaymentApi(orderId, approvalData, token = null) {
   const response = await httpClient(`/api/v1/admin/orders/${orderId}/approve-payment`, {
     method: 'POST',

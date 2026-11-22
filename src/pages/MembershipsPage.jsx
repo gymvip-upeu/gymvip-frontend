@@ -17,7 +17,7 @@ import {
   persistPending,
   isDefinitiveRejection,
 } from '../services/membershipService';
-import { createMembershipPaymentLink, getMembershipPaymentLink } from '../api/membershipApi';
+import { createMembershipPaymentLink, getMembershipPaymentLink, getMembershipPaymentConfig } from '../api/membershipApi';
 import { Button } from '../components/common/Button';
 import { Alert } from '../components/common/Alert';
 import { Badge } from '../components/common/Badge';
@@ -68,6 +68,7 @@ export default function MembershipsPage({ onNavigate }) {
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState(null);
   const [paymentLink, setPaymentLink] = useState(null);
+  const [culqiEnabled, setCulqiEnabled] = useState(false);
   const [copiedReceipt, setCopiedReceipt] = useState(false);
   const [pending, setPending] = useState(() => {
     try {
@@ -78,6 +79,13 @@ export default function MembershipsPage({ onNavigate }) {
   });
   const submitting = useRef(false);
   const searchSequence = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    getMembershipPaymentConfig(token).then(config => { if (active) setCulqiEnabled(config.culqiEnabled === true); })
+      .catch(() => { if (active) setCulqiEnabled(false); });
+    return () => { active = false; };
+  }, [token]);
 
   useEffect(() => {
     let active = true;
@@ -636,8 +644,9 @@ export default function MembershipsPage({ onNavigate }) {
                   <div className="card" style={{ marginTop: '18px', padding: '20px', border: '1px solid var(--color-gold)' }}>
                     <h3 style={{ marginTop: 0 }}>Cobro en línea con CulqiLink</h3>
                     <p>Genera un enlace de importe fijo para compartir con el socio. La membresía se activará al confirmar el pago en el servidor.</p>
+                    {!culqiEnabled && <p role="status">Pago en línea pendiente de configuración de prueba en el backend. El cobro presencial sigue disponible.</p>}
                     {!paymentLink ? (
-                      <Button variant="secondary" disabled={busy || !!pending} onClick={createOnlineLink}>
+                      <Button variant="secondary" disabled={busy || !!pending || !culqiEnabled} onClick={createOnlineLink}>
                         {busy ? 'Generando…' : 'Generar enlace de pago'}
                       </Button>
                     ) : (
