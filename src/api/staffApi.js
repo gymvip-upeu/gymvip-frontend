@@ -2,7 +2,7 @@
 // GYM VIP — API de Personal y Roles (HU-04)
 // ==============================================================================
 
-import { httpClient } from './httpClient';
+import { httpClient } from './httpClient.js';
 
 export async function listAccountsApi(token = null) {
   const response = await httpClient('/api/v1/accounts', {}, token);

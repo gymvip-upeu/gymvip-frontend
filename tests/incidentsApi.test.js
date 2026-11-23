@@ -22,3 +22,10 @@ test('incident operations use dedicated endpoints and bearer token', async () =>
     assert.equal(calls[2].options.headers.Authorization, 'Bearer test-token');
   } finally { globalThis.fetch = original; }
 });
+
+test('incidencias: un conflicto al cerrar conserva el motivo del servidor', async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, status: 409, json: async () => ({ message: 'La incidencia ya fue cerrada' }) });
+  try { await assert.rejects(closeIncidentApi('incident-1', 'Resuelto', 'token'), /ya fue cerrada/); }
+  finally { globalThis.fetch = original; }
+});

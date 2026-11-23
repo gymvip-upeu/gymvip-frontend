@@ -2,7 +2,7 @@
 // GYM VIP — API de Socios y Clientes (HU-01)
 // ==============================================================================
 
-import { httpClient } from './httpClient';
+import { httpClient } from './httpClient.js';
 
 export async function searchClientsApi(query = '', page = 0, size = 20, token = null) {
   const queryParam = query ? `query=${encodeURIComponent(query)}&` : '';

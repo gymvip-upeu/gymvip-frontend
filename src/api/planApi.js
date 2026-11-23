@@ -2,7 +2,7 @@
 // GYM VIP — API de Catálogo de Planes (HU-06)
 // ==============================================================================
 
-import { httpClient } from './httpClient';
+import { httpClient } from './httpClient.js';
 
 export async function listPlansApi(status = null, token = null) {
   const query = status && status !== 'ALL' ? `?status=${encodeURIComponent(status)}` : '';

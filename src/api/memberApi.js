@@ -1,4 +1,4 @@
-import { httpClient } from './httpClient';
+import { httpClient } from './httpClient.js';
 async function request(path, token, method = 'GET', body) {
   const response = await httpClient(path, { method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }, token);
   let value; try { value = await response.json(); } catch { throw new Error('Respuesta incompleta. Recarga antes de repetir la operación.'); }

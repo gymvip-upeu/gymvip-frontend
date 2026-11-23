@@ -48,6 +48,19 @@ test('Routing: VIEW_PATH_MAP contiene correspondencia estricta para cada vista o
   }
 });
 
+test('Routing: todos los módulos del menú tienen una ruta canónica que abre su vista', () => {
+  const modules = [
+    'home', 'clients', 'plans', 'supplements', 'supplementOrders', 'promotions',
+    'facilities', 'coverage', 'verification', 'attendance', 'memberships',
+    'reminders', 'faq', 'communications', 'staff', 'settings', 'reports', 'incidents',
+  ];
+  for (const module of modules) {
+    const path = VIEW_PATH_MAP[module];
+    assert.ok(path, `Falta ruta para ${module}`);
+    assert.equal(resolveViewFromPath(path), module, `La ruta ${path} debe abrir ${module}`);
+  }
+});
+
 test('Notifications: clave de persistencia en localStorage aísla vistas leídas por usuario', () => {
   const getKey = (email) => (email ? `gymvip_seen_alerts_${email}` : 'gymvip_seen_alerts_default');
   assert.equal(getKey('admin@vipcenterfit.pe'), 'gymvip_seen_alerts_admin@vipcenterfit.pe');

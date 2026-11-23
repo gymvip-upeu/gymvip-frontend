@@ -97,6 +97,13 @@ test('exportAttendanceCsvApi: envía parámetros from/to y startDate/endDate al 
   }
 });
 
+test('Agenda: muestra el rechazo del backend en lugar de tratarlo como lista vacía', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, status: 500, json: async () => ({ message: 'Fallo al consultar asistencias' }) });
+  try { await assert.rejects(getAttendanceAgendaApi({ status: 'TODOS' }, 'token'), /Fallo al consultar asistencias/); }
+  finally { globalThis.fetch = originalFetch; }
+});
+
 test('Lógica de backoff de sondeo de feed: calcula retrasos exponenciales progresivos (4s -> 8s -> 16s) y detención a los 3 fallos', () => {
   const computeBackoff = (errors) => {
     if (errors >= 3) return null; // Pausa
