@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { REPORT_METRICS, getReportApi, exportReportApi } from '../api/reportsApi.js';
-import { Button } from '../components/common/Button.jsx';
-import { Alert } from '../components/common/Alert.jsx';
-import './ReportsPage.css';
+import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, FormGroup, LinearProgress, Paper, Stack, TextField, Typography } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import { operationalTheme } from './operationalTheme.js';
 
 function limaToday() {
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' })
-    .formatToParts(new Date());
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
   const p = Object.fromEntries(parts.map(item => [item.type, item.value]));
   return `${p.year}-${p.month}-${p.day}`;
 }
@@ -36,7 +35,7 @@ export default function ReportsPage() {
   }, [from, to, selected, token, revision]);
 
   function toggle(key) {
-    setSelected(current => current.includes(key) ? current.filter(value => value !== key) : REPORT_METRICS.map(([value]) => value).filter(value => current.includes(value) || value === key));
+    setSelected(current => current.includes(key) ? current.filter(value => value !== key) : [...current, key]);
   }
 
   async function download(format) {
@@ -57,18 +56,40 @@ export default function ReportsPage() {
   const visible = REPORT_METRICS.filter(([key]) => selected.includes(key));
   const max = Math.max(1, ...visible.map(([key]) => Number(snapshot?.metrics?.[key] || 0)));
 
-  return <section className="reports-page">
-    <div className="reports-heading"><div><span>OPERACIÓN · ANÁLISIS</span><h1>Reportes</h1><p>Selecciona las métricas que se mostrarán y exportarán. Fechas en America/Lima.</p></div><Button variant="secondary" onClick={() => setRevision(n => n + 1)}>Actualizar</Button></div>
-    <div className="reports-controls"><label>Desde<input type="date" value={from} onChange={event => setFrom(event.target.value)} /></label><label>Hasta<input type="date" value={to} onChange={event => setTo(event.target.value)} /></label></div>
-    <fieldset className="reports-metrics"><legend>Métricas incluidas</legend>{REPORT_METRICS.map(([key, label]) => <label key={key}><input type="checkbox" checked={selected.includes(key)} onChange={() => toggle(key)} />{label}</label>)}</fieldset>
-    <div className="reports-actions"><Button disabled={!selected.length || loading || !!error} onClick={() => download('xlsx')}>Exportar XLSX</Button><Button variant="secondary" disabled={!selected.length || loading || !!error} onClick={() => download('pdf')}>Exportar PDF</Button></div>
-    {error && <Alert variant="danger" message={error} />}
-    {loading && <p role="status">Calculando métricas…</p>}
-    {!loading && snapshot && <>
-      <div className="reports-chart" role="img" aria-label="Gráfica de las métricas seleccionadas">
-        {visible.map(([key, label]) => <div className="reports-bar-row" key={key}><span>{label}</span><div className="reports-bar-track"><div style={{ width: `${Math.max(2, Number(snapshot.metrics[key] || 0) / max * 100)}%` }} /></div><strong>{snapshot.metrics[key] ?? 0}</strong></div>)}
-      </div>
-      {selected.includes('memberRegistrations') && <div className="reports-breakdown"><div><h2>Altas por día</h2>{Object.entries(snapshot.memberRegistrationsByDay || {}).map(([day, count]) => <p key={day}>{day}: {count}</p>)}</div><div><h2>Altas por mes</h2>{Object.entries(snapshot.memberRegistrationsByMonth || {}).map(([month, count]) => <p key={month}>{month}: {count}</p>)}</div></div>}
-    </>}
-  </section>;
+  return <ThemeProvider theme={operationalTheme}>
+    <Box component="section" sx={{ maxWidth: 1120, mx: 'auto', p: 2 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' }, mb: 3 }}>
+        <Box><Typography variant="overline" color="primary">OPERACIÓN · ANÁLISIS</Typography><Typography variant="h4" component="h1">Reportes</Typography><Typography color="text.secondary">Selecciona las métricas que se mostrarán y exportarán. Fechas en America/Lima.</Typography></Box>
+        <Button variant="outlined" onClick={() => setRevision(n => n + 1)}>Actualizar</Button>
+      </Stack>
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={2}>
+          <TextField label="Desde" type="date" value={from} onChange={event => setFrom(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ '& input': { colorScheme: 'dark' } }} />
+          <TextField label="Hasta" type="date" value={to} onChange={event => setTo(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ '& input': { colorScheme: 'dark' } }} />
+        </Stack>
+        <Typography variant="h6">Métricas incluidas</Typography>
+        <FormGroup sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))' }}>
+          {REPORT_METRICS.map(([key, label]) => <FormControlLabel key={key} control={<Checkbox checked={selected.includes(key)} onChange={() => toggle(key)} />} label={label} />)}
+        </FormGroup>
+      </Paper>
+      <Stack direction="row" spacing={1} mb={2}>
+        <Button disabled={!selected.length || loading || !!error} onClick={() => download('xlsx')}>Exportar XLSX</Button>
+        <Button variant="outlined" disabled={!selected.length || loading || !!error} onClick={() => download('pdf')}>Exportar PDF</Button>
+      </Stack>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {loading && <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }} role="status"><CircularProgress size={20} /><Typography>Calculando métricas…</Typography></Stack>}
+      {!loading && snapshot && <Paper sx={{ p: 2 }}>
+        <Typography variant="h6" gutterBottom>Resultados</Typography>
+        <Stack spacing={2}>
+          {visible.map(([key, label]) => <Box key={key} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 50px', sm: 'minmax(160px, 220px) 1fr 90px' }, gap: 1, alignItems: 'center' }}>
+            <Typography>{label}</Typography><LinearProgress variant="determinate" value={Number(snapshot.metrics[key] || 0) / max * 100} sx={{ height: 14, borderRadius: 1 }} /><Typography align="right" fontWeight={700}>{snapshot.metrics[key] ?? 0}</Typography>
+          </Box>)}
+        </Stack>
+        {selected.includes('memberRegistrations') && <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} mt={3}>
+          <Box><Typography variant="h6">Altas por día</Typography>{Object.entries(snapshot.memberRegistrationsByDay || {}).map(([day, count]) => <Typography key={day}>{day}: {count}</Typography>)}</Box>
+          <Box><Typography variant="h6">Altas por mes</Typography>{Object.entries(snapshot.memberRegistrationsByMonth || {}).map(([month, count]) => <Typography key={month}>{month}: {count}</Typography>)}</Box>
+        </Stack>}
+      </Paper>}
+    </Box>
+  </ThemeProvider>;
 }

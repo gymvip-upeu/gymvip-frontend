@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { listIncidentsApi, createIncidentApi, closeIncidentApi } from '../api/incidentsApi.js';
-import { Button } from '../components/common/Button.jsx';
-import { Alert } from '../components/common/Alert.jsx';
-import './IncidentsPage.css';
+import { Alert, Box, Button, Chip, CircularProgress, FormControl, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import { operationalTheme } from './operationalTheme.js';
 
 function limaTime(raw) {
   if (!raw) return '—';
@@ -20,13 +20,16 @@ export default function IncidentsPage() {
   const [reason, setReason] = useState({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     let active = true;
     setError('');
+    setLoading(true);
     listIncidentsApi(status, token).then(data => { if (active) setItems(data); })
-      .catch(err => { if (active) setError(err.message); });
+      .catch(err => { if (active) { setError(err.message); setItems([]); } })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [status, token, revision]);
 
@@ -50,21 +53,35 @@ export default function IncidentsPage() {
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   }
 
-  return <section className="incidents-page">
-    <header><span>CONTROL Y AUDITORÍA</span><h1>Incidencias</h1><p>Registra situaciones operativas y conserva el motivo y responsable del cierre.</p></header>
-    <form className="incident-create" onSubmit={create}>
-      <h2>Nueva incidencia</h2>
-      <label>Título<input value={title} maxLength={160} onChange={event => setTitle(event.target.value)} required /></label>
-      <label>Descripción<textarea value={description} maxLength={2000} onChange={event => setDescription(event.target.value)} required /></label>
-      <Button type="submit" disabled={busy}>Registrar incidencia</Button>
-    </form>
-    <div className="incident-filter"><label>Estado <select value={status} onChange={event => setStatus(event.target.value)}><option value="ABIERTA">Abiertas</option><option value="CERRADA">Cerradas</option></select></label><Button variant="secondary" onClick={() => setRevision(n => n + 1)}>Actualizar</Button></div>
-    {error && <Alert variant="danger" message={error} />}
-    <div className="incident-list">{items.length === 0 && <p>Sin incidencias para este estado.</p>}{items.map(item => <article key={item.id}>
-      <div className="incident-top"><h2>{item.title}</h2><strong>{item.status}</strong></div>
-      <p>{item.description}</p><small>Registrada por {item.reportedBy} · {limaTime(item.createdAtUtc)}</small>
-      {item.status === 'ABIERTA' ? <div className="incident-close"><label>Motivo de cierre<textarea value={reason[item.id] || ''} maxLength={1000} onChange={event => setReason(current => ({ ...current, [item.id]: event.target.value }))} /></label><Button disabled={busy || !reason[item.id]?.trim()} onClick={() => close(item.id)}>Cerrar con motivo</Button></div>
-        : <p className="incident-closed">Cerrada por {item.closedBy} · {limaTime(item.closedAtUtc)}<br />Motivo: {item.closeReason}</p>}
-    </article>)}</div>
-  </section>;
+  return <ThemeProvider theme={operationalTheme}>
+    <Box component="section" sx={{ maxWidth: 1050, mx: 'auto', p: 2 }}>
+      <Typography variant="overline" color="primary">CONTROL Y AUDITORÍA</Typography>
+      <Typography variant="h4" component="h1" gutterBottom>Incidencias</Typography>
+      <Typography color="text.secondary" mb={3}>Registra situaciones operativas y conserva el motivo y responsable del cierre.</Typography>
+      <Paper component="form" onSubmit={create} sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h6" mb={2}>Nueva incidencia</Typography>
+        <Stack spacing={2}>
+          <TextField label="Título" value={title} onChange={event => setTitle(event.target.value)} slotProps={{ htmlInput: { maxLength: 160 } }} required fullWidth />
+          <TextField label="Descripción" value={description} onChange={event => setDescription(event.target.value)} slotProps={{ htmlInput: { maxLength: 2000 } }} required multiline minRows={3} fullWidth />
+          <Button type="submit" disabled={busy} sx={{ alignSelf: 'flex-start' }}>Registrar incidencia</Button>
+        </Stack>
+      </Paper>
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
+        <FormControl size="small" sx={{ minWidth: 170 }}><InputLabel id="incident-status-label">Estado</InputLabel><Select labelId="incident-status-label" label="Estado" value={status} onChange={event => setStatus(event.target.value)}><MenuItem value="ABIERTA">Abiertas</MenuItem><MenuItem value="CERRADA">Cerradas</MenuItem></Select></FormControl>
+        <Button variant="outlined" onClick={() => setRevision(n => n + 1)}>Actualizar</Button>
+      </Stack>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {loading && <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }} role="status"><CircularProgress size={20} /><Typography>Consultando incidencias…</Typography></Stack>}
+      {!loading && !error && items.length === 0 && <Typography color="text.secondary">Sin incidencias para este estado.</Typography>}
+      <Stack spacing={2}>{items.map(item => <Paper component="article" key={item.id} sx={{ p: 2 }}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}><Typography variant="h6">{item.title}</Typography><Chip label={item.status} color={item.status === 'ABIERTA' ? 'warning' : 'success'} size="small" /></Stack>
+        <Typography my={1}>{item.description}</Typography>
+        <Typography variant="caption" color="text.secondary">Registrada por {item.reportedBy} · {limaTime(item.createdAtUtc)}</Typography>
+        {item.status === 'ABIERTA' ? <Stack spacing={1} mt={2}>
+          <TextField label="Motivo de cierre" value={reason[item.id] || ''} onChange={event => setReason(current => ({ ...current, [item.id]: event.target.value }))} slotProps={{ htmlInput: { maxLength: 1000 } }} multiline minRows={2} fullWidth />
+          <Button disabled={busy || !reason[item.id]?.trim()} onClick={() => close(item.id)} sx={{ alignSelf: 'flex-start' }}>Cerrar con motivo</Button>
+        </Stack> : <Typography mt={2} color="text.secondary">Cerrada por {item.closedBy} · {limaTime(item.closedAtUtc)}<br />Motivo: {item.closeReason}</Typography>}
+      </Paper>)}</Stack>
+    </Box>
+  </ThemeProvider>;
 }

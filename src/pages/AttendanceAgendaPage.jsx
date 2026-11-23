@@ -8,9 +8,9 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { getAttendanceAgendaApi, exportAttendanceCsvApi } from '../api/attendanceApi.js';
 import ReceptionTerminalModal from '../components/modals/ReceptionTerminalModal.jsx';
 import OperationsNav from '../components/common/OperationsNav.jsx';
-import { Button } from '../components/common/Button.jsx';
-import { Alert } from '../components/common/Alert.jsx';
-import { Icon } from '../components/common/Icons.jsx';
+import { Alert, Box, Button, Chip, CircularProgress, FormControl, InputLabel, MenuItem, Pagination, Paper, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import { operationalTheme } from './operationalTheme.js';
 
 function formatLimaTime(utcString) {
   if (!utcString) return '-';
@@ -69,7 +69,7 @@ export default function AttendanceAgendaPage({ onNavigate }) {
         agendaAbortControllerRef.current.abort();
       }
     };
-  }, [startDate, endDate, method, status]);
+  }, [startDate, endDate, method, status, token]);
 
   async function loadAgenda(targetPage = 0) {
     if (agendaAbortControllerRef.current) {
@@ -94,13 +94,15 @@ export default function AttendanceAgendaPage({ onNavigate }) {
         token,
         controller.signal
       );
-      setAgendaData(data);
-      setPage(targetPage);
+      if (agendaAbortControllerRef.current === controller) {
+        setAgendaData(data);
+        setPage(targetPage);
+      }
     } catch (err) {
       if (err.name === 'AbortError') return;
-      setError(err.message || 'Error al consultar la agenda de asistencias.');
+      if (agendaAbortControllerRef.current === controller) setError(err.message || 'Error al consultar la agenda de asistencias.');
     } finally {
-      setLoading(false);
+      if (agendaAbortControllerRef.current === controller) setLoading(false);
     }
   }
 
@@ -118,6 +120,7 @@ export default function AttendanceAgendaPage({ onNavigate }) {
           startDate,
           endDate,
           query: searchQuery,
+          method,
           status,
         },
         token
@@ -143,350 +146,74 @@ export default function AttendanceAgendaPage({ onNavigate }) {
   const totalRecorded = items.filter((i) => i.status === 'ATTENDANCE_RECORDED' || i.status === 'APROBADO').length;
   const qrInvertedCount = items.filter((i) => i.checkInMethod === 'QR_INVERTIDO').length;
 
-  return (
-    <section className="page-section" style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
+  return <ThemeProvider theme={operationalTheme}>
+    <Box component="section" sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
       <OperationsNav currentPath="/asistencias" onNavigate={onNavigate} />
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' }, mt: 2, mb: 3 }}>
+        <Box>
+          <Typography variant="h4" component="h1">Agenda y Control de Asistencias</Typography>
+          <Typography color="text.secondary">Registro histórico, trazabilidad de accesos por terminal y flujo QR invertido.</Typography>
+        </Box>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          {user?.roles?.some(role => role.toUpperCase() === 'ADMIN') && <Button variant="outlined" onClick={handleExportCsv} disabled={exporting || loading}>{exporting ? 'Generando CSV…' : 'Exportar CSV'}</Button>}
+          <Button onClick={() => setTerminalModalOpen(true)}>Terminal Mostrador (QR)</Button>
+        </Stack>
+      </Stack>
 
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-          marginTop: '20px',
-          marginBottom: '24px',
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--color-text-primary)' }}>
-            Agenda y Control de Asistencias
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--color-text-muted)' }}>
-            Registro histórico, trazabilidad de accesos por terminal y flujo QR invertido.
-          </p>
-        </div>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 2, mb: 3 }}>
+        {[
+          ['Registros en página', items.length, `${agendaData.totalElements} total en periodo`, 'text.primary'],
+          ['Ingresos aprobados', totalRecorded, 'Asistencias efectivas', 'success.main'],
+          ['Vía QR invertido', qrInvertedCount, 'Escaneados desde App Móvil', 'primary.main'],
+        ].map(([label, value, detail, color]) => <Paper key={label} sx={{ p: 2 }}>
+          <Typography variant="overline" color="text.secondary">{label}</Typography>
+          <Typography variant="h4" fontWeight={800} color={color}>{value}</Typography>
+          <Typography variant="caption" color="text.secondary">{detail}</Typography>
+        </Paper>)}
+      </Box>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Button
-            variant="secondary"
-            onClick={handleExportCsv}
-            disabled={exporting || loading}
-            title="Descargar reporte en formato CSV sanitizado"
-          >
-            <Icon name="download" size={15} />
-            <span>{exporting ? 'Generando CSV...' : 'Exportar CSV'}</span>
-          </Button>
+      <Paper component="form" onSubmit={handleSearchSubmit} sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 2, mb: 2 }}>
+          <TextField label="Desde" type="date" value={startDate} onChange={event => setStartDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ '& input': { colorScheme: 'dark' } }} fullWidth />
+          <TextField label="Hasta" type="date" value={endDate} onChange={event => setEndDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ '& input': { colorScheme: 'dark' } }} fullWidth />
+          <FormControl fullWidth><InputLabel id="attendance-method-label">Método de ingreso</InputLabel><Select labelId="attendance-method-label" label="Método de ingreso" value={method} onChange={event => setMethod(event.target.value)}>
+            <MenuItem value="TODOS">Todos los métodos</MenuItem><MenuItem value="QR_INVERTIDO">QR invertido (app móvil)</MenuItem><MenuItem value="QR_SOCIO">QR de socio</MenuItem><MenuItem value="MANUAL_MOSTRADOR">Manual en mostrador</MenuItem>
+          </Select></FormControl>
+          <FormControl fullWidth><InputLabel id="attendance-status-label">Estado</InputLabel><Select labelId="attendance-status-label" label="Estado" value={status} onChange={event => setStatus(event.target.value)}>
+            <MenuItem value="TODOS">Todos los estados</MenuItem><MenuItem value="ATTENDANCE_RECORDED">Ingreso aprobado</MenuItem><MenuItem value="ALREADY_REGISTERED">Ya asistió hoy</MenuItem><MenuItem value="COVERAGE_EXPIRED">Membresía vencida</MenuItem><MenuItem value="RECHAZADO">Rechazo general</MenuItem>
+          </Select></FormControl>
+        </Box>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          <TextField label="Buscar por nombre, DNI o código" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} fullWidth />
+          <Button type="submit" disabled={loading}>Buscar</Button>
+          <Button variant="outlined" type="button" onClick={() => { setStartDate(getTodayString()); setEndDate(getTodayString()); setSearchQuery(''); setMethod('TODOS'); setStatus('TODOS'); }}>Limpiar</Button>
+        </Stack>
+      </Paper>
 
-          <Button
-            variant="primary"
-            onClick={() => setTerminalModalOpen(true)}
-            title="Abrir pantalla de recepción con código QR giratorio"
-          >
-            <Icon name="qr-code" size={15} />
-            <span>Terminal Mostrador (QR)</span>
-          </Button>
-        </div>
-      </div>
-
-      {error && (
-        <div style={{ marginBottom: '16px' }}>
-          <Alert type="danger" message={error} />
-        </div>
-      )}
-
-      {/* Tarjetas KPI */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
-        <div className="card" style={{ padding: '16px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
-            Total Registros (Página)
-          </span>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-text-primary)', marginTop: '4px' }}>
-            {items.length}
-          </div>
-          <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
-            {agendaData.totalElements} total en periodo
-          </span>
-        </div>
-
-        <div className="card" style={{ padding: '16px' }}>
-          <span style={{ fontSize: '12px', color: '#2ECC71', textTransform: 'uppercase' }}>
-            Ingresos Aprobados
-          </span>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#2ECC71', marginTop: '4px' }}>
-            {totalRecorded}
-          </div>
-          <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
-            Asistencias efectivas
-          </span>
-        </div>
-
-        <div className="card" style={{ padding: '16px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--color-gold)', textTransform: 'uppercase' }}>
-            Vía QR Invertido
-          </span>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-gold)', marginTop: '4px' }}>
-            {qrInvertedCount}
-          </div>
-          <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
-            Escaneados desde App Móvil
-          </span>
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="card" style={{ padding: '18px', marginBottom: '24px' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px' }}>
-                DESDE (FECHA)
-              </label>
-              <input
-                type="date"
-                className="input-field"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', fontSize: '13px' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px' }}>
-                HASTA (FECHA)
-              </label>
-              <input
-                type="date"
-                className="input-field"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', fontSize: '13px' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px' }}>
-                MÉTODO DE INGRESO
-              </label>
-              <select
-                className="input-field"
-                value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', fontSize: '13px' }}
-              >
-                <option value="TODOS">Todos los métodos</option>
-                <option value="QR_INVERTIDO">QR Invertido (App Móvil)</option>
-                <option value="QR_SOCIO">QR de Socio (Lector USB)</option>
-                <option value="MANUAL_MOSTRADOR">Manual en Mostrador</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px' }}>
-                ESTADO
-              </label>
-              <select
-                className="input-field"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', fontSize: '13px' }}
-              >
-                <option value="TODOS">Todos los estados</option>
-                <option value="ATTENDANCE_RECORDED">Ingreso Aprobado</option>
-                <option value="ALREADY_REGISTERED">Ya asistió hoy</option>
-                <option value="COVERAGE_EXPIRED">Membresía Vencida</option>
-                <option value="RECHAZADO">Rechazo General</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Buscar por nombre, DNI o código de socio (MAR-...)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ flex: 1, padding: '9px 12px', fontSize: '13px' }}
-            />
-            <Button variant="primary" type="submit" disabled={loading}>
-              <Icon name="search" size={15} />
-              <span>Buscar</span>
-            </Button>
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => {
-                setStartDate(getTodayString());
-                setEndDate(getTodayString());
-                setSearchQuery('');
-                setMethod('TODOS');
-                setStatus('TODOS');
-              }}
-            >
-              <span>Limpiar</span>
-            </Button>
-          </div>
-        </form>
-      </div>
-
-      {/* Tabla de Asistencias */}
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
-            Registros Encontrados
-          </h3>
-          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-            Página {agendaData.currentPage + 1} de {agendaData.totalPages || 1}
-          </span>
-        </div>
-
-        {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            Consultando agenda de asistencias...
-          </div>
-        ) : items.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            No se encontraron asistencias para el periodo y filtros seleccionados.
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table" style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)', textAlign: 'left' }}>
-                  <th style={{ padding: '10px 14px', color: 'var(--color-text-secondary)' }}>Fecha</th>
-                  <th style={{ padding: '10px 14px', color: 'var(--color-text-secondary)' }}>Hora (Lima)</th>
-                  <th style={{ padding: '10px 14px', color: 'var(--color-text-secondary)' }}>Socio</th>
-                  <th style={{ padding: '10px 14px', color: 'var(--color-text-secondary)' }}>DNI / Doc</th>
-                  <th style={{ padding: '10px 14px', color: 'var(--color-text-secondary)' }}>Método</th>
-                  <th style={{ padding: '10px 14px', color: 'var(--color-text-secondary)' }}>Terminal / Operador</th>
-                  <th style={{ padding: '10px 14px', color: 'var(--color-text-secondary)' }}>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                    <td style={{ padding: '12px 14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                      {item.attendanceDate}
-                    </td>
-                    <td style={{ padding: '12px 14px', color: 'var(--color-text-secondary)' }}>
-                      {formatLimaTime(item.checkedAtUtc)}
-                    </td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{item.memberName}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--color-gold)', fontFamily: 'monospace' }}>{item.memberCode}</div>
-                    </td>
-                    <td style={{ padding: '12px 14px', color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>
-                      {item.documentNumber || '-'}
-                    </td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontWeight: 600,
-                          backgroundColor:
-                            item.checkInMethod === 'QR_INVERTIDO'
-                              ? 'rgba(212, 175, 55, 0.15)'
-                              : 'rgba(255, 255, 255, 0.08)',
-                          color:
-                            item.checkInMethod === 'QR_INVERTIDO'
-                              ? 'var(--color-gold)'
-                              : 'var(--color-text-secondary)',
-                        }}
-                      >
-                        {item.checkInMethod === 'QR_INVERTIDO'
-                          ? 'QR Pantalla (Móvil)'
-                          : item.checkInMethod === 'QR_SOCIO'
-                          ? 'QR Socio'
-                          : 'Manual'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 14px', fontSize: '12px' }}>
-                      <div style={{ color: 'var(--color-text-primary)' }}>{item.terminalName || 'Recepción'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>Op: {item.recordedBy || 'Sistema'}</div>
-                    </td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontWeight: 700,
-                          backgroundColor:
-                            item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
-                              ? 'rgba(46, 204, 113, 0.2)'
-                              : item.status === 'ALREADY_REGISTERED'
-                              ? 'rgba(212, 175, 55, 0.2)'
-                              : 'rgba(231, 76, 60, 0.2)',
-                          color:
-                            item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
-                              ? '#2ECC71'
-                              : item.status === 'ALREADY_REGISTERED'
-                              ? '#D4AF37'
-                              : '#E74C3C',
-                        }}
-                      >
-                        {item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO'
-                          ? 'APROBADO'
-                          : item.status === 'ALREADY_REGISTERED'
-                          ? 'YA ASISTIÓ'
-                          : 'RECHAZADO'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Paginación */}
-        {agendaData.totalPages > 1 && (
-          <div
-            style={{
-              padding: '12px 20px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '8px',
-            }}
-          >
-            <Button
-              variant="secondary"
-              disabled={page <= 0 || loading}
-              onClick={() => loadAgenda(page - 1)}
-            >
-              <span>Anterior</span>
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={page >= agendaData.totalPages - 1 || loading}
-              onClick={() => loadAgenda(page + 1)}
-            >
-              <span>Siguiente</span>
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Modal de Terminal Mostrador */}
-      <ReceptionTerminalModal
-        isOpen={terminalModalOpen}
-        onClose={() => setTerminalModalOpen(false)}
-        token={token}
-        user={user}
-        onNavigateAgenda={() => setTerminalModalOpen(false)}
-      />
-    </section>
-  );
+      <Paper>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+          <Typography variant="h6">Registros encontrados</Typography>
+          <Typography variant="body2" color="text.secondary">Página {agendaData.currentPage + 1} de {agendaData.totalPages || 1}</Typography>
+        </Stack>
+        {loading ? <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center', p: 5 }} role="status"><CircularProgress size={20} /><Typography>Consultando agenda…</Typography></Stack>
+          : items.length === 0 ? <Typography color="text.secondary" p={5} align="center">No se encontraron asistencias para los filtros seleccionados.</Typography>
+          : <TableContainer><Table size="small" aria-label="Registros de asistencia"><TableHead><TableRow>
+              {['Fecha', 'Hora (Lima)', 'Socio', 'DNI / Doc', 'Método', 'Terminal / Operador', 'Estado'].map(label => <TableCell key={label}>{label}</TableCell>)}
+            </TableRow></TableHead><TableBody>{items.map(item => {
+              const approved = item.status === 'ATTENDANCE_RECORDED' || item.status === 'APROBADO';
+              const methodLabel = item.checkInMethod === 'QR_INVERTIDO' ? 'QR pantalla (móvil)' : item.checkInMethod === 'QR_SOCIO' ? 'QR socio' : item.checkInMethod === 'INTENTO_FALLIDO' ? 'Intento fallido' : 'Manual';
+              return <TableRow key={item.id} hover>
+                <TableCell>{item.attendanceDate}</TableCell><TableCell>{formatLimaTime(item.checkedAtUtc)}</TableCell>
+                <TableCell><Typography fontWeight={700}>{item.memberName}</Typography><Typography variant="caption" color="primary">{item.memberCode}</Typography></TableCell>
+                <TableCell>{item.documentNumber || '—'}</TableCell><TableCell><Chip size="small" color={item.checkInMethod === 'QR_INVERTIDO' ? 'warning' : 'default'} label={methodLabel} /></TableCell>
+                <TableCell><Typography variant="body2">{item.terminalName || 'Recepción'}</Typography><Typography variant="caption" color="text.secondary">Op: {item.recordedBy || 'Sistema'}</Typography></TableCell>
+                <TableCell><Chip size="small" color={approved ? 'success' : item.status === 'ALREADY_REGISTERED' ? 'warning' : 'error'} label={approved ? 'APROBADO' : item.status === 'ALREADY_REGISTERED' ? 'YA ASISTIÓ' : 'RECHAZADO'} /></TableCell>
+              </TableRow>;
+            })}</TableBody></Table></TableContainer>}
+        {agendaData.totalPages > 1 && <Stack sx={{ alignItems: 'center', p: 2 }}><Pagination count={agendaData.totalPages} page={page + 1} onChange={(_, value) => loadAgenda(value - 1)} disabled={loading} color="primary" /></Stack>}
+      </Paper>
+      <ReceptionTerminalModal isOpen={terminalModalOpen} onClose={() => setTerminalModalOpen(false)} token={token} user={user} onNavigateAgenda={() => setTerminalModalOpen(false)} />
+    </Box>
+  </ThemeProvider>;
 }
