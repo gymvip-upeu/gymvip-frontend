@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   listAdminOrdersApi,
   getAdminOrderApi,
+  getAdminOrderPaymentLinkApi,
   approveOrderPaymentApi,
   rejectOrderPaymentApi,
   markOrderReadyForPickupApi,
@@ -23,7 +24,7 @@ export default function SupplementOrdersPage() {
   const { token, isAdmin, isRecepcion } = useAuth();
 
   // Estados de interfaz y filtrado
-  const [activeTab, setActiveTab] = useState('PAGADO_POR_VERIFICAR'); // 'PAGADO_POR_VERIFICAR' | 'CONFIRMADO_PREPARACION' | 'LISTO_PARA_RETIRO' | 'TODOS' | 'SCANNER'
+  const [activeTab, setActiveTab] = useState('PENDIENTE_PAGO');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -32,6 +33,7 @@ export default function SupplementOrdersPage() {
 
   // Modal / Detalle de Pedido
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [digitalLink, setDigitalLink] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   // Formularios de acción
@@ -68,9 +70,14 @@ export default function SupplementOrdersPage() {
   const handleSelectOrder = async (orderId) => {
     setDetailLoading(true);
     setError('');
+    setDigitalLink(null);
     try {
       const detail = await getAdminOrderApi(orderId, token);
       setSelectedOrder(detail);
+      if (detail.paymentMethod === 'TARJETA_PASARELA') {
+        try { setDigitalLink(await getAdminOrderPaymentLinkApi(orderId, token)); }
+        catch (linkError) { if (linkError.status !== 404) setError(linkError.message); }
+      }
       setApproveAmount(detail.totalPen != null ? String(detail.totalPen) : '');
       setApproveNotes('');
       setRejectReason('');
@@ -233,6 +240,12 @@ export default function SupplementOrdersPage() {
 
       {/* Selector de Bandejas */}
       <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #374151', paddingBottom: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => { setActiveTab('PENDIENTE_PAGO'); setSelectedOrder(null); }}
+          className={`btn btn-sm ${activeTab === 'PENDIENTE_PAGO' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          Efectivo pendiente
+        </button>
         <button
           onClick={() => { setActiveTab('PAGADO_POR_VERIFICAR'); setSelectedOrder(null); }}
           style={{
@@ -521,6 +534,23 @@ export default function SupplementOrdersPage() {
                     <p style={{ margin: '0.2rem 0' }}><strong>Teléfono:</strong> {selectedOrder.clientPhone || 'No registrado'}</p>
                     <p style={{ margin: '0.2rem 0' }}><strong>Total:</strong> <span style={{ color: '#D4AF37', fontWeight: 600 }}>{formatCurrencyPen(selectedOrder.totalPen)}</span></p>
                     <p style={{ margin: '0.2rem 0' }}><strong>Método:</strong> {selectedOrder.paymentMethod}</p>
+                    {selectedOrder.paymentMethod === 'TARJETA_PASARELA' && (
+                      <div role="status" style={{ margin: '0.7rem 0', padding: '0.9rem', border: '1px solid #D4AF37', borderRadius: '8px', background: '#2A2416', color: '#F5DE9B' }}>
+                        <strong>Cobro digital CulqiLink</strong>
+                        <p style={{ margin: '0.4rem 0' }}>Estado del enlace: {digitalLink?.status || 'sin enlace disponible'}</p>
+                        {digitalLink?.expiresAt && <p style={{ margin: '0.4rem 0' }}>Vence: {new Date(digitalLink.expiresAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</p>}
+                        <p style={{ margin: '0.4rem 0 0' }}>
+                          {selectedOrder.paymentStatus === 'VERIFICADO'
+                            ? 'Cargo confirmado por Culqi. Continúe con la preparación y entrega del pedido.'
+                              : digitalLink?.status === 'REVIEW'
+                                ? 'Se detectó un cargo tardío o inconsistente: requiere revisión. No entregue productos hasta resolver la conciliación.'
+                                : digitalLink?.status === 'EXPIRED'
+                                  ? 'El enlace venció sin pago verificado. El pedido no puede prepararse ni entregarse.'
+                              : 'Esperando conciliación automática con Culqi. No confirme este pago manualmente ni entregue el pedido.'}
+                        </p>
+                        <Button variant="secondary" onClick={() => handleSelectOrder(selectedOrder.id)} disabled={detailLoading}>Actualizar estado Culqi</Button>
+                      </div>
+                    )}
                     <p style={{ margin: '0.2rem 0' }}><strong>Referencia de Pago:</strong> {selectedOrder.paymentReference || 'Pendiente'}</p>
                     {selectedOrder.paymentEvidenceUrl && (
                       <p style={{ margin: '0.4rem 0' }}>
@@ -544,9 +574,12 @@ export default function SupplementOrdersPage() {
                   </ul>
 
                   {/* Acciones de Flujo */}
-                  {selectedOrder.orderStatus === 'PAGADO_POR_VERIFICAR' && isAdmin() && (
+                  {((selectedOrder.orderStatus === 'PENDIENTE_PAGO' && selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' && (isAdmin() || isRecepcion())) ||
+                    (selectedOrder.orderStatus === 'PAGADO_POR_VERIFICAR' && isAdmin())) && (
                     <div style={{ background: '#1F2937', padding: '1rem', borderRadius: '6px', marginBottom: '1rem' }}>
-                      <h4 style={{ color: '#D4AF37', margin: '0 0 0.5rem 0' }}>Validación de Comprobante</h4>
+                      <h4 style={{ color: '#D4AF37', margin: '0 0 0.5rem 0' }}>
+                        {selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' ? 'Registrar cobro en efectivo' : 'Validación de comprobante'}
+                      </h4>
                       <form onSubmit={handleApprovePayment}>
                         <div style={{ marginBottom: '0.75rem' }}>
                           <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.8rem' }}>Monto Verificado en Caja (S/):</label>
@@ -571,12 +604,12 @@ export default function SupplementOrdersPage() {
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <Button type="submit" disabled={actionLoading}>
-                            Aprobar Pago
+                            {selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' ? 'Confirmar efectivo recibido' : 'Aprobar pago'}
                           </Button>
                         </div>
                       </form>
 
-                      <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '0.75rem' }}>
+                      {isAdmin() && <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '0.75rem' }}>
                         <input
                           type="text"
                           value={rejectReason}
@@ -587,7 +620,7 @@ export default function SupplementOrdersPage() {
                         <Button variant="danger" onClick={handleRejectPayment} disabled={actionLoading || !rejectReason.trim()}>
                           Rechazar Pago
                         </Button>
-                      </div>
+                      </div>}
                     </div>
                   )}
 

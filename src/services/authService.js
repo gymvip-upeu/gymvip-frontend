@@ -9,6 +9,7 @@ export const ROLES = {
   ADMIN: 'ADMIN',
   RECEPCION: 'RECEPCION',
   CLIENTE: 'CLIENTE',
+  AUDITOR: 'AUDITOR',
 };
 
 export async function authenticate(email, password) {

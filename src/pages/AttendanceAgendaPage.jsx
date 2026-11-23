@@ -15,8 +15,9 @@ import { Icon } from '../components/common/Icons.jsx';
 function formatLimaTime(utcString) {
   if (!utcString) return '-';
   try {
-    const iso = utcString.endsWith('Z') ? utcString : `${utcString}Z`;
+    const iso = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(utcString) ? utcString : `${utcString}Z`;
     const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '-';
     return d.toLocaleTimeString('es-PE', {
       timeZone: 'America/Lima',
       hour: '2-digit',
@@ -30,11 +31,11 @@ function formatLimaTime(utcString) {
 }
 
 function getTodayString() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
 }
 
 export default function AttendanceAgendaPage({ onNavigate }) {

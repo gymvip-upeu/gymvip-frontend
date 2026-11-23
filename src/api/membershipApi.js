@@ -20,6 +20,11 @@ export const getMembershipHistory = (clientId, token) => request(`/clients/${cli
 export const quoteMembership = (body, token) => request('/quote', token, {
   method: 'POST', body: JSON.stringify(body),
 });
+export const createMembershipPaymentLink = (body, token) => request('/payment-links', token, {
+  method: 'POST', body: JSON.stringify(body),
+});
+export const getMembershipPaymentLink = (id, token) => request(`/payment-links/${id}`, token);
+export const getMembershipPaymentConfig = token => request('/payment-links/config', token);
 export async function sellMembership(body, key, token) {
   const sale = await request('/sales', token, {
     method: 'POST', headers: { 'Idempotency-Key': key }, body: JSON.stringify(body),

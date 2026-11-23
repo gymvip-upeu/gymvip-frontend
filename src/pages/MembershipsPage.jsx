@@ -17,6 +17,7 @@ import {
   persistPending,
   isDefinitiveRejection,
 } from '../services/membershipService';
+import { createMembershipPaymentLink, getMembershipPaymentLink, getMembershipPaymentConfig } from '../api/membershipApi';
 import { Button } from '../components/common/Button';
 import { Alert } from '../components/common/Alert';
 import { Badge } from '../components/common/Badge';
@@ -41,6 +42,7 @@ const methodLabel = (value) =>
     PLIN: 'Plin',
     TRANSFERENCIA: 'Transferencia Bancaria',
     POS: 'Tarjeta (POS Presencial)',
+    CULQI: 'CulqiLink',
   }[value] || value);
 
 export default function MembershipsPage({ onNavigate }) {
@@ -65,6 +67,8 @@ export default function MembershipsPage({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState(null);
+  const [paymentLink, setPaymentLink] = useState(null);
+  const [culqiEnabled, setCulqiEnabled] = useState(false);
   const [copiedReceipt, setCopiedReceipt] = useState(false);
   const [pending, setPending] = useState(() => {
     try {
@@ -75,6 +79,13 @@ export default function MembershipsPage({ onNavigate }) {
   });
   const submitting = useRef(false);
   const searchSequence = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    getMembershipPaymentConfig(token).then(config => { if (active) setCulqiEnabled(config.culqiEnabled === true); })
+      .catch(() => { if (active) setCulqiEnabled(false); });
+    return () => { active = false; };
+  }, [token]);
 
   useEffect(() => {
     let active = true;
@@ -118,6 +129,34 @@ export default function MembershipsPage({ onNavigate }) {
     setQuote(null);
     setAccepted(false);
     setReceipt(null);
+    setPaymentLink(null);
+  }
+
+  async function createOnlineLink() {
+    if (!quote || !client || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const link = await createMembershipPaymentLink({ clientId: client.id, planId, operation }, token);
+      setPaymentLink(link);
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  }
+
+  async function refreshOnlineLink() {
+    if (!paymentLink || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const link = await getMembershipPaymentLink(paymentLink.id, token);
+      setPaymentLink(link);
+      if (link.status === 'PAID') {
+        window.dispatchEvent(new Event('gymvip-membership-changed'));
+        setHistory(await getMembershipHistory(client.id, token));
+        setQuote(null);
+      }
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
   }
 
   async function search(e) {
@@ -590,6 +629,7 @@ export default function MembershipsPage({ onNavigate }) {
                         onClick={pay}
                         disabled={
                           locked ||
+                          !!paymentLink ||
                           !accepted ||
                           !method ||
                           (method !== 'EFECTIVO' && !reference.trim())
@@ -600,6 +640,26 @@ export default function MembershipsPage({ onNavigate }) {
                         <span>{busy ? 'Registrando transacción en caja…' : `Confirmar y Emitir Cobro de ${formatCurrencyPen(quote.pricePen)}`}</span>
                       </Button>
                     </fieldset>
+                  </div>
+                  <div className="card" style={{ marginTop: '18px', padding: '20px', border: '1px solid var(--color-gold)' }}>
+                    <h3 style={{ marginTop: 0 }}>Cobro en línea con CulqiLink</h3>
+                    <p>Genera un enlace de importe fijo para compartir con el socio. La membresía se activará al confirmar el pago en el servidor.</p>
+                    {!culqiEnabled && <p role="status">Pago en línea pendiente de configuración de prueba en el backend. El cobro presencial sigue disponible.</p>}
+                    {!paymentLink ? (
+                      <Button variant="secondary" disabled={busy || !!pending || !culqiEnabled} onClick={createOnlineLink}>
+                        {busy ? 'Generando…' : 'Generar enlace de pago'}
+                      </Button>
+                    ) : (
+                      <div role="status">
+                        <p><strong>Estado:</strong> {paymentLink.status} · <strong>Vence:</strong> {new Date(paymentLink.expiresAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</p>
+                        {paymentLink.status === 'PENDING' && <>
+                          <input className="form-input" aria-label="Enlace CulqiLink" readOnly value={paymentLink.url || ''} onFocus={e => e.target.select()} />
+                          <Button variant="secondary" onClick={() => navigator.clipboard.writeText(paymentLink.url)}>Copiar enlace</Button>
+                        </>}
+                        <Button variant="secondary" disabled={busy} onClick={refreshOnlineLink}>Actualizar estado</Button>
+                        {paymentLink.status === 'REVIEW' && <p>El enlace venció o el pago requiere conciliación con Culqi. No emita otro cobro hasta resolverlo.</p>}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

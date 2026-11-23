@@ -16,6 +16,8 @@ async function request(path, token, options = {}) {
 }
 
 export const getFacilitiesApi = (token, signal) => request('/api/v1/facilities', token, { signal });
+export const getFacilitiesArchiveApi = (token, signal) => request('/api/v1/facilities/archive', token, { signal });
+export const restoreFacilityApi = (id, token) => request(`/api/v1/facilities/${encodeURIComponent(id)}/restore`, token, { method: 'PATCH' });
 
 export const createFacilityApi = (data, token) => request('/api/v1/facilities', token, {
   method: 'POST',

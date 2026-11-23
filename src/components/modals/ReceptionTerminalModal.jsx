@@ -86,16 +86,14 @@ export default function ReceptionTerminalModal({
         }
 
         // Seleccionar terminal principal o primera activa
-        let activeTerm = terminals.find((t) => t.status === 'ACTIVO') || terminals[0];
+        let activeTerm = terminals.find((t) => t.status === 'ACTIVA')
+          || terminals.find((t) => t.status === 'INACTIVA');
+        if (!activeTerm) throw new Error('No hay una terminal de asistencia disponible.');
 
         // Si no está activa o tiene operador distinto, activarla para este usuario
         const opName = user?.name || user?.email || 'Recepcionista';
-        if (activeTerm.status !== 'ACTIVO' || activeTerm.currentOperator !== opName) {
-          try {
-            activeTerm = await activateTerminalApi(activeTerm.id, opName, token);
-          } catch {
-            // Continuar con la terminal seleccionada
-          }
+        if (activeTerm.status !== 'ACTIVA' || activeTerm.currentOperator !== opName) {
+          activeTerm = await activateTerminalApi(activeTerm.id, opName, token);
         }
 
         if (!isSubscribed) return;
@@ -272,11 +270,11 @@ export default function ReceptionTerminalModal({
                 borderRadius: '6px',
                 fontSize: '11px',
                 fontWeight: 700,
-                backgroundColor: terminal?.status === 'ACTIVO' ? 'rgba(46, 204, 113, 0.2)' : 'rgba(231, 76, 60, 0.2)',
-                color: terminal?.status === 'ACTIVO' ? '#2ECC71' : '#E74C3C',
+                backgroundColor: terminal?.status === 'ACTIVA' ? 'rgba(46, 204, 113, 0.2)' : 'rgba(231, 76, 60, 0.2)',
+                color: terminal?.status === 'ACTIVA' ? '#2ECC71' : '#E74C3C',
               }}
             >
-              {terminal?.status === 'ACTIVO' ? '● TERMINAL ACTIVA' : 'INACTIVA'}
+              {terminal?.status === 'ACTIVA' ? '● TERMINAL ACTIVA' : 'INACTIVA'}
             </span>
             <button
               onClick={onClose}

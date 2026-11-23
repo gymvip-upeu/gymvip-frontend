@@ -1,0 +1,11 @@
+.incidents-page { max-width: 1050px; margin: 0 auto; color: var(--color-text-primary); }
+.incidents-page header span { color: var(--color-gold); font-size: .75rem; letter-spacing: .12em; }
+.incident-create, .incident-list article { border: 1px solid #444e5c; background: #171b24; border-radius: .65rem; padding: 1.2rem; margin: 1rem 0; }
+.incident-create label, .incident-close label { display: flex; flex-direction: column; gap: .4rem; margin: .8rem 0; }
+.incident-create input, .incident-create textarea, .incident-close textarea, .incident-filter select { background: #10151d; color: #fff; border: 1px solid #697485; border-radius: .4rem; padding: .65rem; }
+.incident-create textarea, .incident-close textarea { min-height: 85px; resize: vertical; }
+.incident-filter, .incident-top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.incident-filter { margin-top: 1.5rem; }
+.incident-list small { color: #aeb9c6; }
+.incident-close { border-top: 1px solid #444e5c; margin-top: 1rem; }
+.incident-closed { color: #d4af37; }

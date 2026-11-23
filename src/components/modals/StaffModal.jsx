@@ -12,6 +12,9 @@ export default function StaffModal({ token, onClose, onSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('RECEPCION');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -26,6 +29,9 @@ export default function StaffModal({ token, onClose, onSuccess }) {
         email,
         password,
         role,
+        firstName,
+        lastName,
+        phone,
       };
 
       const result = await createStaffAccount(payload, token);
@@ -68,6 +74,18 @@ export default function StaffModal({ token, onClose, onSuccess }) {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
+            <label className="form-label" htmlFor="staff-first-name">Nombres</label>
+            <input id="staff-first-name" className="form-input" maxLength={120} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="staff-last-name">Apellidos</label>
+            <input id="staff-last-name" className="form-input" maxLength={120} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="staff-phone">Teléfono</label>
+            <input id="staff-phone" className="form-input" type="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <div className="form-group">
             <label className="form-label" htmlFor="staff-email">
               Correo Institucional *
             </label>
@@ -93,7 +111,7 @@ export default function StaffModal({ token, onClose, onSuccess }) {
               className="form-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
               required
             />
           </div>

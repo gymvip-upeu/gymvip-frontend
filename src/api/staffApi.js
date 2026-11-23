@@ -43,6 +43,18 @@ export async function updateAccountRoleApi(id, role, token = null) {
   return response.json();
 }
 
+export async function updateStaffProfileApi(id, profile, token = null) {
+  const response = await httpClient(`/api/v1/accounts/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(profile),
+  }, token);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Error al guardar los datos del colaborador.');
+  }
+  return response.json();
+}
+
 /**
  * Inactiva una cuenta de personal mediante el endpoint PATCH /api/v1/accounts/{id}/status.
  * @param {string} id UUID de la cuenta

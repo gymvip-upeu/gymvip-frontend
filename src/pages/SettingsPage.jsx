@@ -16,11 +16,12 @@ import {
   getReminderCutsApi,
   evaluateRemindersNowApi,
 } from '../api/reminderApi';
+import { httpClient } from '../api/httpClient';
 import ChannelStatusPanel from '../components/common/ChannelStatusPanel';
 import { triggerSentryTestVerification } from '../config/sentry';
 
 export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
-  const { token, isAdmin } = useAuth();
+  const { token, isAdmin, logout } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // Estados de datos reales de recordatorios
@@ -32,6 +33,8 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
   const [cuts, setCuts] = useState([]);
   const [sentryTestMessage, setSentryTestMessage] = useState(null);
   const [cutsError, setCutsError] = useState('');
+  const [sessionError, setSessionError] = useState('');
+  const [revokingSessions, setRevokingSessions] = useState(false);
 
   // Cargar configuración de recordatorios desde el backend
   const loadReminderConfig = useCallback(async () => {
@@ -71,6 +74,21 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
       setConfigError(err.message || 'Error al ejecutar el corte manual de recordatorios.');
     } finally {
       setEvaluating(false);
+    }
+  };
+
+  const handleRevokeAllSessions = async () => {
+    if (!window.confirm('Se cerrarán todas las sesiones de esta cuenta, incluida la actual. ¿Continuar?')) return;
+    setRevokingSessions(true);
+    setSessionError('');
+    try {
+      const response = await httpClient('/api/v1/auth/revoke-all-sessions', { method: 'POST' }, token);
+      if (!response.ok) throw new Error(`No se pudieron cerrar las sesiones (HTTP ${response.status}).`);
+      await logout();
+    } catch (error) {
+      setSessionError(error.message || 'No se pudieron cerrar las sesiones.');
+    } finally {
+      setRevokingSessions(false);
     }
   };
 
@@ -131,8 +149,26 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
               <Badge variant="info" style={{ fontSize: '10px', marginLeft: '4px' }}>OBS</Badge>
             </button>
           )}
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'security' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveTab('security')}
+          >
+            Seguridad de la cuenta
+          </button>
         </div>
       </div>
+
+      {activeTab === 'security' && (
+        <section className="settings-card" style={{ padding: '24px' }}>
+          <h2>Dispositivos y sesiones</h2>
+          <p>Si perdiste tu teléfono, cierra todas las sesiones de esta cuenta. También se desactivarán sus dispositivos de notificación registrados.</p>
+          {sessionError && <Alert variant="danger" message={sessionError} onClose={() => setSessionError('')} />}
+          <Button onClick={handleRevokeAllSessions} disabled={revokingSessions}>
+            {revokingSessions ? 'Cerrando sesiones…' : 'Cerrar todas las sesiones'}
+          </Button>
+        </section>
+      )}
 
       {/* PESTAÑA 1: REGLAS Y RECORDATORIOS */}
       {activeTab === 'rules' && (
