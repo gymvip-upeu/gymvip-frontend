@@ -87,7 +87,8 @@ export async function getAttendanceAgendaApi(params = {}, token = null, signal =
   }
   if (params.query) qs.set('query', params.query);
   if (params.status) qs.set('status', params.status);
-  if (params.checkInMethod) qs.set('checkInMethod', params.checkInMethod);
+  const method = params.method || params.checkInMethod;
+  if (method) qs.set('method', method);
   if (params.terminalId) qs.set('terminalId', params.terminalId);
   if (params.page !== undefined) qs.set('page', params.page);
   if (params.size !== undefined) qs.set('size', params.size);
@@ -118,6 +119,8 @@ export async function exportAttendanceCsvApi(params = {}, token = null) {
   }
   if (params.query) qs.set('query', params.query);
   if (params.status) qs.set('status', params.status);
+  const method = params.method || params.checkInMethod;
+  if (method) qs.set('method', method);
 
   const response = await httpClient(`/api/v1/attendance/agenda/export?${qs.toString()}`, {}, token);
   if (!response.ok) {

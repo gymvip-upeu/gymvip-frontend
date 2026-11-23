@@ -26,9 +26,15 @@ export default function LoginModal() {
     } catch (err) {
       if (err?.status === 429 || err?.message?.includes('429') || err?.message?.toLowerCase().includes('demasiados')) {
         setError('Demasiados intentos fallidos. Su acceso ha sido bloqueado temporalmente por seguridad (15 minutos).');
-      } else {
+      } else if (err?.status === 401) {
         // Mensaje neutro y seguro anti-enumeración: no revela si el correo existe o no
         setError('Credenciales de acceso incorrectas o cuenta inhabilitada.');
+      } else if (err?.status) {
+        setError(`El servidor rechazó el acceso (HTTP ${err.status}). Intente nuevamente en unos momentos.`);
+      } else if (err?.message?.includes('obligatorio') || err?.message?.includes('formato válido')) {
+        setError(err.message);
+      } else {
+        setError('No se pudo conectar con el servidor. Revise su conexión e intente nuevamente.');
       }
     }
   };

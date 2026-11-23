@@ -53,6 +53,7 @@ test('getAttendanceAgendaApi: envía tanto startDate/endDate como from/to para c
       startDate: '2026-11-18',
       endDate: '2026-11-18',
       status: 'TODOS',
+      method: 'QR_INVERTIDO',
       page: 0,
       size: 20,
     }, 'mock-token');
@@ -62,6 +63,7 @@ test('getAttendanceAgendaApi: envía tanto startDate/endDate como from/to para c
     assert.ok(capturedUrl.includes('to=2026-11-18'), 'Debe incluir parámetro to');
     assert.ok(capturedUrl.includes('endDate=2026-11-18'), 'Debe incluir parámetro endDate');
     assert.ok(capturedUrl.includes('status=TODOS'), 'Debe incluir parámetro status');
+    assert.ok(capturedUrl.includes('method=QR_INVERTIDO'), 'Debe enviar el filtro con el nombre esperado por Spring');
   } finally {
     globalThis.fetch = originalFetch;
   }

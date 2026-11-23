@@ -34,9 +34,14 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/api': {
-          target: 'http://127.0.0.1:8081',
+          target: process.env.GYMVIP_PROXY_TARGET || 'https://gymvip-backend.onrender.com',
           changeOrigin: true,
           secure: false,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.removeHeader('origin');
+            });
+          },
         },
       },
     },
