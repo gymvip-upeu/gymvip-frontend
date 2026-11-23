@@ -35,6 +35,18 @@
 .catalog-presentation { font-size:11px;line-height:1.6;color:#929386;margin:0 0 10px; }
 .catalog-price { display:block;color:#c8a34f;font-size:25px;font-weight:650;letter-spacing:-.4px;line-height:1.35; }
 .catalog-card-actions { display:flex;gap:9px;margin-top:auto;padding-top:25px;flex-wrap:wrap; }
+.catalog-store-card { padding:0;overflow:hidden; }
+.catalog-store-card>.catalog-card-category,.catalog-store-card>h2,.catalog-store-card>.catalog-muted,.catalog-store-card>.catalog-presentation,.catalog-store-card>.catalog-offer-name,.catalog-store-card>.catalog-store-prices,.catalog-store-card>.catalog-card-actions { margin-left:18px;margin-right:18px; }
+.catalog-store-card>.catalog-card-category { margin-top:16px; }
+.catalog-store-card>.catalog-card-actions { margin-bottom:18px; }
+.catalog-store-image { height:210px;position:relative;background:var(--surface-subtle,#191a1c); }
+.catalog-store-image>.catalog-image { width:100%;height:100%;border-radius:0; }
+.catalog-store-image>.catalog-image img { object-fit:contain; }
+.catalog-store-status { position:absolute;right:10px;bottom:10px;display:flex;gap:6px;align-items:center; }
+.catalog-discount-badge { position:absolute;left:0;top:0;padding:7px 11px;border-radius:0 0 10px 0;background:#e60032;color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px; }
+.catalog-offer-name { color:#d1b15f;font-size:11px;font-weight:650;line-height:1.5; }
+.catalog-store-prices { display:flex;align-items:baseline;gap:10px;margin-top:4px; }
+.catalog-store-prices>span { color:#8f8d84;font-size:12px;text-decoration:line-through; }
 .catalog-empty { border:1px dashed #35352e;border-radius:12px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;text-align:center;color:#a4a496;font-size:12px;gap:12px; }
 .catalog-empty h2 { color:#e2e0d7;font-size:18px;margin:0; }.catalog-empty p { max-width:460px;font-size:12px;line-height:1.7;margin:0; }.catalog-empty-icon { color:#a28c57;font-size:30px; }
 .catalog-pagination { display:flex;align-items:center;justify-content:space-between;gap:14px;margin:22px 0;color:#9b9b8e;font-size:11px; }

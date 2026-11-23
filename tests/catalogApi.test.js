@@ -26,6 +26,23 @@ test('catalog accepts real empty pages and encodes filters without losing false 
   const q=new URLSearchParams(path.split('?')[1]);
   assert.equal(q.get('query'),'Marca & sabor');assert.equal(q.get('published'),'false');assert.equal(q.get('page'),'0');
 });
+test('commercial catalog uses the mobile endpoint and joins every page without duplicates',async()=>{
+  const calls=[];
+  const row=id=>({id,name:`Producto ${id}`,pricePen:150,availability:'DISPONIBLE',offer:id==='a'?{id:'offer-a',pricePen:120}:null});
+  const api=await apiWith(async url=>{
+    calls.push(url);
+    const page=new URLSearchParams(url.split('?')[1]).get('page');
+    return response(page==='0'?[row('a'),row('b')]:[row('b')]);
+  });
+  const products=await api.listCatalogProducts('token',2);
+  assert.deepEqual(products.map(item=>item.id),['a','b']);
+  assert.match(calls[0],/\/api\/v1\/catalog\/products\?page=0&size=2$/);
+  assert.match(calls[1],/\/api\/v1\/catalog\/products\?page=1&size=2$/);
+});
+test('commercial catalog rejects malformed mobile products',async()=>{
+  const api=await apiWith(async()=>response([{id:'incomplete'}]));
+  await assert.rejects(api.listCatalogProducts('token'),/catálogo comercial incompleto/);
+});
 test('details reject a response for another product or promotion',async()=>{
   const api=await apiWith(async()=>response(product));
   await assert.rejects(api.getSupplement('other','token'),/otro registro/);
