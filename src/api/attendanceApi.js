@@ -99,7 +99,12 @@ export async function getAttendanceAgendaApi(params = {}, token = null, signal =
     const errJson = await response.json().catch(() => ({}));
     throw new Error(errJson.message || 'Error al consultar la agenda de asistencia.');
   }
-  return response.json();
+  const data = await response.json();
+  return {
+    ...data,
+    items: data.content ?? data.items ?? [],
+    currentPage: data.page ?? data.currentPage ?? 0,
+  };
 }
 
 /**

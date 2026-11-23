@@ -44,12 +44,12 @@ test('getAttendanceAgendaApi: envía tanto startDate/endDate como from/to para c
     capturedUrl = url;
     return {
       ok: true,
-      json: async () => ({ items: [], totalElements: 0, totalPages: 0, currentPage: 0 }),
+      json: async () => ({ content: [{ id: 'attendance-1' }], totalElements: 1, totalPages: 1, page: 0 }),
     };
   };
 
   try {
-    await getAttendanceAgendaApi({
+    const agenda = await getAttendanceAgendaApi({
       startDate: '2026-11-18',
       endDate: '2026-11-18',
       status: 'TODOS',
@@ -64,6 +64,8 @@ test('getAttendanceAgendaApi: envía tanto startDate/endDate como from/to para c
     assert.ok(capturedUrl.includes('endDate=2026-11-18'), 'Debe incluir parámetro endDate');
     assert.ok(capturedUrl.includes('status=TODOS'), 'Debe incluir parámetro status');
     assert.ok(capturedUrl.includes('method=QR_INVERTIDO'), 'Debe enviar el filtro con el nombre esperado por Spring');
+    assert.equal(agenda.items[0].id, 'attendance-1', 'Debe adaptar content del backend a items de la vista');
+    assert.equal(agenda.currentPage, 0, 'Debe adaptar page del backend a currentPage de la vista');
   } finally {
     globalThis.fetch = originalFetch;
   }
