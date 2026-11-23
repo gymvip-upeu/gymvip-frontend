@@ -15,6 +15,9 @@ async function request(path, token, options = {}) {
 const queryString = values => new URLSearchParams(Object.entries(values).filter(([,v]) => v !== '' && v != null)).toString();
 const isSupplement = item => !!item && typeof item.id === 'string' && Number.isInteger(item.version) && Array.isArray(item.images) && typeof item.name === 'string';
 const isPromotion = item => !!item && typeof item.id === 'string' && Number.isInteger(item.version) && isSupplement(item.supplement) && ['VIGENTE','PROGRAMADA','FINALIZADA','CANCELADA'].includes(item.state);
+const isStoreProduct = item => !!item && typeof item.id === 'string' && typeof item.name === 'string' &&
+  Number.isFinite(Number(item.pricePen)) && typeof item.availability === 'string' &&
+  (!item.offer || (typeof item.offer.id === 'string' && Number.isFinite(Number(item.offer.pricePen))));
 function confirmedItem(item, valid, id) {
   if (!valid(item) || (id && item.id !== id)) throw new Error('El servidor devolvió datos incompletos o de otro registro. Recarga antes de continuar.');
   return item;
@@ -24,6 +27,19 @@ function confirmedPage(data, valid) {
   return data;
 }
 export const listSupplements = async (filters, token) => confirmedPage(await request(`/supplements?${queryString(filters)}`, token), isSupplement);
+export async function listCatalogProducts(token, pageSize = 60) {
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 60) throw new Error('El tamaño de página del catálogo no es válido.');
+  const products = new Map();
+  for (let page = 0; page < 100; page += 1) {
+    const rows = await request(`/products?page=${page}&size=${pageSize}`, token);
+    if (!Array.isArray(rows) || !rows.every(isStoreProduct)) {
+      throw new Error('El servidor devolvió un catálogo comercial incompleto. Reintenta la consulta.');
+    }
+    rows.forEach(item => products.set(item.id, item));
+    if (rows.length < pageSize) return [...products.values()];
+  }
+  throw new Error('El catálogo excede el límite de páginas permitido.');
+}
 export const getSupplement = async (id, token) => confirmedItem(await request(`/supplements/${id}`, token), isSupplement, id);
 function confirmedHistory(rows) {
   if (!Array.isArray(rows)) throw new Error('No se pudo confirmar el historial. Reintenta la consulta.');
