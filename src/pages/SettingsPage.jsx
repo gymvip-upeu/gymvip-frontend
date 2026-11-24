@@ -11,6 +11,7 @@ import { Alert } from '../components/common/Alert';
 import { Icon } from '../components/common/Icons';
 import { LoadingState } from '../components/feedback/LoadingState';
 import StaffPage from './StaffPage';
+import DataImportPage from './DataImportPage';
 import {
   getReminderConfigApi,
   getReminderCutsApi,
@@ -176,6 +177,19 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
             >
               <Icon name="shield-check" size={15} />
               <span>Personal y Roles</span>
+              <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>ADMIN</Badge>
+            </button>
+          )}
+
+          {isAdmin() && (
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === 'import' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setActiveTab('import')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
+            >
+              <Icon name="download" size={15} />
+              <span>Importación y Migración</span>
               <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>ADMIN</Badge>
             </button>
           )}
@@ -392,6 +406,11 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
       {/* PESTAÑA 3: PERSONAL Y ROLES (ADMIN) */}
       {activeTab === 'staff' && isAdmin() && (
         <StaffPage />
+      )}
+
+      {/* PESTAÑA DE IMPORTACIÓN Y MIGRACIÓN MASIVA (ADMIN) */}
+      {activeTab === 'import' && isAdmin() && (
+        <DataImportPage onNavigate={onNavigate} />
       )}
 
       {/* PESTAÑA 4: MONITOREO Y DIAGNÓSTICO SENTRY (ADMIN) */}
