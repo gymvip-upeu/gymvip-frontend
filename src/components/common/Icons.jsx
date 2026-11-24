@@ -259,6 +259,38 @@ export function Icon({ name, size = 18, color = 'currentColor', className = '', 
           <polyline points="9 18 15 12 9 6" />
         </svg>
       );
+    case 'chevron-down':
+      return (
+        <svg {...iconProps}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      );
+    case 'bar-chart':
+      return (
+        <svg {...iconProps}>
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      );
+    case 'download':
+      return (
+        <svg {...iconProps}>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      );
+    case 'file-text':
+      return (
+        <svg {...iconProps}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      );
     default:
       return (
         <svg {...iconProps}>
