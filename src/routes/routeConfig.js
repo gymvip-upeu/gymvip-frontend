@@ -30,6 +30,8 @@ export const PATH_VIEW_MAP = {
   '/comunicaciones': 'communications',
   '/personal': 'staff',
   '/configuracion': 'settings',
+  '/configuracion/importar-datos': 'dataImport',
+  '/importar-datos': 'dataImport',
   '/reportes': 'reports',
   '/incidencias': 'incidents',
 };
@@ -55,6 +57,7 @@ export const VIEW_PATH_MAP = {
   communications: '/comunicaciones',
   staff: '/personal',
   settings: '/configuracion',
+  dataImport: '/configuracion/importar-datos',
   reports: '/reportes',
   incidents: '/incidencias',
 };

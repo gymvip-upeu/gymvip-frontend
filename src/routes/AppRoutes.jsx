@@ -38,6 +38,7 @@ const FacilitiesPage = lazy(() => import('../pages/FacilitiesPage'));
 const CommunicationsPage = lazy(() => import('../pages/CommunicationsPage'));
 const ReportsPage = lazy(() => import('../pages/ReportsPage'));
 const IncidentsPage = lazy(() => import('../pages/IncidentsPage'));
+const DataImportPage = lazy(() => import('../pages/DataImportPage'));
 
 export function AppRoutes() {
   const { user, isLocked, isAdmin, isRecepcion } = useAuth();
@@ -83,6 +84,10 @@ export function AppRoutes() {
     // Guarda de permisos para rutas administrativas
     if (viewId === 'staff' && !isAdmin()) {
       setAccessError('Acceso Denegado (403): La gestión de personal está reservada exclusivamente para Administradores.');
+      return;
+    }
+    if (viewId === 'dataImport' && !isAdmin()) {
+      setAccessError('Acceso Denegado (403): La importación y migración masiva de datos está reservada para Administradores.');
       return;
     }
     if (viewId === 'reminders' && !isAdmin()) {
@@ -204,6 +209,7 @@ export function AppRoutes() {
             {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
             {currentView === 'reports' && isAdmin() && <ReportsPage />}
             {currentView === 'incidents' && isAdmin() && <IncidentsPage />}
+            {currentView === 'dataImport' && (isAdmin() ? <DataImportPage onNavigate={handleNavigate} /> : null)}
           </Suspense>
         </SentryErrorBoundary>
       </AdminLayout>

@@ -613,6 +613,98 @@ button {
   text-overflow: ellipsis;
 }
 
+/* Sidebar Reorganizado por Dominios Funcionales */
+.sidebar-group-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted, #94A3B8);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-group-btn:hover {
+  color: var(--color-gold);
+  background-color: rgba(212, 175, 55, 0.05);
+}
+
+.sidebar-group-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-group-chevron {
+  display: inline-flex;
+  transition: transform var(--transition-fast);
+}
+
+.sidebar-group-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.sidebar-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+.sidebar-sub-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 12px 0 24px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-sub-item:hover:not(:disabled) {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-gold);
+  transform: translateX(2px);
+}
+
+.sidebar-sub-item.active {
+  background-color: var(--color-gold-subtle);
+  color: var(--color-gold);
+  border-color: var(--color-gold-border);
+  font-weight: 600;
+}
+
+.app-sidebar.collapsed .sidebar-group-btn {
+  padding: 6px 0;
+  justify-content: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 6px;
+}
+
+.app-sidebar.collapsed .sidebar-sub-item {
+  justify-content: center;
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  margin: 2px auto;
+}
+
 .sidebar-bottom {
   padding: 14px;
   border-top: 1px solid var(--color-border);

@@ -1,8 +1,9 @@
 // ==============================================================================
-// GYM VIP — Plantilla: Sidebar Colapsable y Drawer Móvil Luxury Dark & Gold
+// GYM VIP — Plantilla: Sidebar Reorganizado por Dominios Funcionales
+// Estilo Luxury Dark & Gold con Secciones Colapsables, Modo Compacto y Drawer Móvil
 // ==============================================================================
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '../components/common/Badge';
 import { Icon } from '../components/common/Icons';
 
@@ -13,30 +14,69 @@ export function Sidebar({
   onCloseMobile,
   currentView,
   onNavigate,
-  navItems,
-  communicationItems = [],
-  settingsItem,
+  navigationGroups = [],
+  directItems = [],
   user,
   onLogout,
 }) {
-  const renderNavItem = (item) => {
+  // Estado de grupos expandidos persistido en localStorage
+  const [expandedGroups, setExpandedGroups] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gymvip_sidebar_expanded_groups');
+      return saved ? JSON.parse(saved) : { members: true, operations: true, sales: true };
+    } catch {
+      return { members: true, operations: true, sales: true };
+    }
+  });
+
+  // Expansión automática del grupo que contiene la vista activa
+  useEffect(() => {
+    if (!currentView) return;
+    for (const group of navigationGroups) {
+      if (group.items && group.items.some((it) => it.id === currentView)) {
+        setExpandedGroups((prev) => {
+          if (prev[group.id]) return prev;
+          const next = { ...prev, [group.id]: true };
+          try {
+            localStorage.setItem('gymvip_sidebar_expanded_groups', JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+        break;
+      }
+    }
+  }, [currentView, navigationGroups]);
+
+  const toggleGroup = (groupId) => {
+    setExpandedGroups((prev) => {
+      const next = { ...prev, [groupId]: !prev[groupId] };
+      try {
+        localStorage.setItem('gymvip_sidebar_expanded_groups', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const renderSingleItem = (item, isSubItem = false) => {
     const isOpGroup = item.id === 'operations' && ['operations', 'memberships', 'coverage', 'verification'].includes(currentView);
     const isActive = currentView === item.id || isOpGroup;
+    const itemClass = isSubItem ? 'sidebar-sub-item' : 'sidebar-nav-item';
+
     return (
       <button
         key={item.id}
         type="button"
-        className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-        onClick={() => onNavigate(item.id === 'operations' ? 'memberships' : item.id)}
+        className={`${itemClass} ${isActive ? 'active' : ''}`}
+        onClick={() => onNavigate(item.id)}
         aria-current={isActive ? 'page' : undefined}
         aria-label={item.unavailable ? `${item.label} (próximamente)` : item.label}
         disabled={item.unavailable}
-        title={item.unavailable ? 'Próximamente' : isCollapsed ? item.label : undefined}
+        title={item.unavailable ? 'Próximamente' : isCollapsed ? (item.title || item.label) : undefined}
       >
         <span className="nav-icon">
           <Icon
             name={item.iconName || 'home'}
-            size={19}
+            size={isSubItem ? 16 : 18}
             color={isActive ? 'var(--color-gold)' : 'var(--color-text-secondary)'}
           />
         </span>
@@ -60,8 +100,9 @@ export function Sidebar({
       <aside
         id="app-sidebar"
         className={`app-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
-        aria-label="Menú principal de navegación"
+        aria-label="Menú principal de navegación por dominios"
       >
+        {/* Cabecera / Marca */}
         <div className="sidebar-top">
           <div className="sidebar-brand">
             {!isCollapsed && (
@@ -72,7 +113,7 @@ export function Sidebar({
             )}
           </div>
 
-          {/* Botón solo icono para alternar plegado */}
+          {/* Botón para alternar plegado */}
           <button
             type="button"
             className="sidebar-toggle-btn"
@@ -97,16 +138,50 @@ export function Sidebar({
           </button>
         </div>
 
-        {/* Lista de Navegación */}
+        {/* Lista de Navegación por Grupos */}
         <nav className="sidebar-nav">
-          {navItems.map(renderNavItem)}
-          {communicationItems.length > 0 && (
-            <div className="sidebar-nav-group" role="group" aria-label="Comunicaciones">
-              {!isCollapsed && <div className="sidebar-nav-group-title">Comunicaciones</div>}
-              {communicationItems.map(renderNavItem)}
-            </div>
-          )}
-          {settingsItem && renderNavItem(settingsItem)}
+          {/* Elementos Directos (ej. Dashboard) */}
+          {directItems.map((item) => renderSingleItem(item, false))}
+
+          {/* Grupos Funcionales Colapsables */}
+          {navigationGroups.map((group) => {
+            const isExpanded = !!expandedGroups[group.id];
+            const hasActiveChild = group.items.some((it) => it.id === currentView);
+
+            return (
+              <div key={group.id} className="sidebar-nav-group-container">
+                {/* Cabecera del Grupo */}
+                {!isCollapsed ? (
+                  <button
+                    type="button"
+                    className={`sidebar-group-btn ${hasActiveChild ? 'has-active' : ''}`}
+                    onClick={() => toggleGroup(group.id)}
+                    aria-expanded={isExpanded}
+                    aria-label={`Grupo ${group.label}`}
+                  >
+                    <span className="sidebar-group-left">
+                      <Icon name={group.iconName || 'tag'} size={14} color={hasActiveChild ? 'var(--color-gold)' : 'currentColor'} />
+                      <span>{group.label}</span>
+                    </span>
+                    <span className={`sidebar-group-chevron ${isExpanded ? '' : 'collapsed'}`}>
+                      <Icon name="chevron-down" size={13} />
+                    </span>
+                  </button>
+                ) : (
+                  <div className="sidebar-group-btn" title={group.label} style={{ cursor: 'default' }}>
+                    <Icon name={group.iconName || 'tag'} size={15} color={hasActiveChild ? 'var(--color-gold)' : 'var(--color-text-muted)'} />
+                  </div>
+                )}
+
+                {/* Sub-elementos del Grupo */}
+                {(isExpanded || isCollapsed) && (
+                  <div className="sidebar-group-items" role="group" aria-label={group.label}>
+                    {group.items.map((subItem) => renderSingleItem(subItem, !isCollapsed))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Zona Inferior: Información del Usuario y Logout */}
