@@ -3,7 +3,7 @@
 // ==============================================================================
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { authenticate, signOut, isAdminUser, isRecepcionUser } from '../services/authService';
+import { authenticate, signOut, isAdminUser, isGerenteUser, isRecepcionUser, isAuditorUser, isBusinessExecutive } from '../services/authService';
 import { registerUnauthorizedHandler } from '../api/httpClient';
 import { setSentryUser, clearSentryUser, addSentryBreadcrumb } from '../config/sentry';
 
@@ -189,7 +189,10 @@ export function AuthProvider({ children }) {
     unlockSession,
     switchAccount,
     isAdmin: () => isAdminUser(user),
+    isGerente: () => isGerenteUser(user),
     isRecepcion: () => isRecepcionUser(user),
+    isAuditor: () => isAuditorUser(user),
+    isBusinessExecutive: () => isBusinessExecutive(user),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

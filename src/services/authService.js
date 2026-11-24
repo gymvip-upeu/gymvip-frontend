@@ -6,7 +6,8 @@ import { loginApi, logoutApi, getCurrentUserApi } from '../api/authApi';
 import { validateLogin } from '../validators/authValidator';
 
 export const ROLES = {
-  ADMIN: 'ADMIN',
+  ADMIN: 'ADMIN',       // Soporte Técnico / Administrador de Sistemas TI
+  GERENTE: 'GERENTE',   // Gerente General / Dirección Ejecutiva de Negocio
   RECEPCION: 'RECEPCION',
   CLIENTE: 'CLIENTE',
   AUDITOR: 'AUDITOR',
@@ -37,6 +38,18 @@ export function isAdminUser(user) {
   return hasRole(user, ROLES.ADMIN);
 }
 
+export function isGerenteUser(user) {
+  return hasRole(user, ROLES.GERENTE);
+}
+
 export function isRecepcionUser(user) {
   return hasRole(user, ROLES.RECEPCION);
+}
+
+export function isAuditorUser(user) {
+  return hasRole(user, ROLES.AUDITOR);
+}
+
+export function isBusinessExecutive(user) {
+  return isGerenteUser(user) || isAdminUser(user);
 }

@@ -39,10 +39,15 @@ const CommunicationsPage = lazy(() => import('../pages/CommunicationsPage'));
 const ReportsPage = lazy(() => import('../pages/ReportsPage'));
 const IncidentsPage = lazy(() => import('../pages/IncidentsPage'));
 const DataImportPage = lazy(() => import('../pages/DataImportPage'));
+const Error401Page = lazy(() => import('../pages/Error401Page'));
+const Error403Page = lazy(() => import('../pages/Error403Page'));
+const Error404Page = lazy(() => import('../pages/Error404Page'));
+const Error500Page = lazy(() => import('../pages/Error500Page'));
 
 export function AppRoutes() {
-  const { user, isLocked, isAdmin, isRecepcion } = useAuth();
-  const auditorOnly = user?.roles?.includes('AUDITOR') && !isAdmin() && !isRecepcion();
+  const { user, isLocked, isAdmin, isGerente, isRecepcion } = useAuth();
+  const isExecutive = isAdmin() || (isGerente && isGerente());
+  const auditorOnly = user?.roles?.includes('AUDITOR') && !isExecutive && !isRecepcion();
 
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -65,37 +70,41 @@ export function AppRoutes() {
   }, [auditorOnly, currentView]);
 
   useEffect(() => {
-    const deniedReminder = currentView === 'reminders' && !isAdmin();
-    const deniedFaq = currentView === 'faq' && !isAdmin() && !isRecepcion();
+    const deniedReminder = currentView === 'reminders' && !isExecutive;
+    const deniedFaq = currentView === 'faq' && !isExecutive && !isRecepcion();
     if (user && (deniedReminder || deniedFaq)) {
       const msg = deniedReminder
-        ? 'Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.'
-        : 'Acceso Denegado (403): Respuestas frecuentes requiere rol Administrador o Recepción.';
+        ? 'Acceso Denegado (403): La configuración de recordatorios está reservada para Gerentes y Administradores.'
+        : 'Acceso Denegado (403): Respuestas frecuentes requiere rol Gerente, Administrador o Recepción.';
       setAccessError(msg);
       addSentryBreadcrumb('auth', 'Acceso denegado (403)', { view: currentView, reason: msg }, 'warning');
       setCurrentView('home');
       window.history.replaceState({ view: 'home' }, '', '/inicio');
     }
-  }, [user, isAdmin, isRecepcion, currentView]);
+  }, [user, isExecutive, isRecepcion, currentView]);
 
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId) => {
     if (auditorOnly && !['reports', 'incidents'].includes(viewId)) return;
     // Guarda de permisos para rutas administrativas
-    if (viewId === 'staff' && !isAdmin()) {
-      setAccessError('Acceso Denegado (403): La gestión de personal está reservada exclusivamente para Administradores.');
+    if (viewId === 'staff' && !isExecutive) {
+      setAccessError('Acceso Denegado (403): La gestión de personal está reservada para Gerentes y Administradores.');
       return;
     }
     if (viewId === 'dataImport' && !isAdmin()) {
-      setAccessError('Acceso Denegado (403): La importación y migración masiva de datos está reservada para Administradores.');
+      setAccessError('Acceso Denegado (403): La importación masiva y ETL está reservada exclusivamente para el Administrador de Sistemas TI.');
       return;
     }
-    if (viewId === 'reminders' && !isAdmin()) {
-      setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Administradores.');
+    if (viewId === 'reminders' && !isExecutive) {
+      setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Gerentes y Administradores.');
       return;
     }
-    if (['settings', 'communications', 'faq'].includes(viewId) && !isAdmin() && !isRecepcion()) {
-      setAccessError('Acceso Denegado (403): La sección solicitada requiere rol Administrador o Recepción.');
+    if (['settings', 'communications', 'faq'].includes(viewId) && !isExecutive && !isRecepcion()) {
+      setAccessError('Acceso Denegado (403): La sección solicitada requiere rol Gerente, Administrador o Recepción.');
+      return;
+    }
+    if (['reports', 'incidents'].includes(viewId) && !isExecutive && !auditorOnly) {
+      setAccessError('Acceso Denegado (403): Reportes e incidencias requieren rol Gerente, Administrador o Auditor.');
       return;
     }
 
@@ -106,7 +115,7 @@ export function AppRoutes() {
       window.history.pushState({ view: viewId }, '', targetPath);
     }
     setCurrentView(viewId);
-  }, [isAdmin, isRecepcion, auditorOnly]);
+  }, [isExecutive, isAdmin, isRecepcion, auditorOnly]);
 
   // Manejo de eventos popstate (botones Atrás / Adelante del navegador)
   useEffect(() => {
@@ -115,7 +124,7 @@ export function AppRoutes() {
 
       // Guarda de permisos para sub-ruta de importación masiva (HU-06)
       if (path.includes('/importar') && !isAdmin()) {
-        setAccessError('Acceso Denegado (403): La importación masiva de miembros está reservada exclusivamente para Administradores.');
+        setAccessError('Acceso Denegado (403): La importación masiva de miembros está reservada exclusivamente para Administradores de Sistemas TI.');
         setCurrentView('clients');
         window.history.replaceState({ view: 'clients' }, '', '/miembros');
         return;
@@ -123,14 +132,20 @@ export function AppRoutes() {
 
       const nextView = resolveViewFromPath(window.location.pathname);
 
-      if ((nextView === 'staff' || nextView === 'settings' || nextView === 'reminders') && !isAdmin()) {
-        setAccessError('Acceso Denegado (403): No dispone de privilegios de Administrador para ver esta página.');
+      if ((nextView === 'staff' || nextView === 'reminders') && !isExecutive) {
+        setAccessError('Acceso Denegado (403): Requiere privilegios de Gerente o Administrador.');
         setCurrentView('home');
         window.history.replaceState({ view: 'home' }, '', '/inicio');
         return;
       }
-      if (['communications', 'faq'].includes(nextView) && !isAdmin() && !isRecepcion()) {
-        setAccessError('Acceso Denegado (403): La sección de comunicaciones requiere rol Administrador o Recepción.');
+      if (nextView === 'dataImport' && !isAdmin()) {
+        setAccessError('Acceso Denegado (403): La importación masiva está reservada para Administradores de Sistemas TI.');
+        setCurrentView('home');
+        window.history.replaceState({ view: 'home' }, '', '/inicio');
+        return;
+      }
+      if (['communications', 'faq', 'settings'].includes(nextView) && !isExecutive && !isRecepcion()) {
+        setAccessError('Acceso Denegado (403): La sección requiere rol Gerente, Administrador o Recepción.');
         setCurrentView('home');
         window.history.replaceState({ view: 'home' }, '', '/inicio');
         return;
@@ -143,13 +158,13 @@ export function AppRoutes() {
     // Validación en carga directa inicial para /miembros/importar
     const initialPath = (window.location.pathname || '').toLowerCase();
     if (initialPath.includes('/importar') && !isAdmin()) {
-      setAccessError('Acceso Denegado (403): La importación masiva de miembros está reservada exclusivamente para Administradores.');
+      setAccessError('Acceso Denegado (403): La importación masiva de miembros está reservada exclusivamente para Administradores de Sistemas TI.');
       window.history.replaceState({ view: 'clients' }, '', '/miembros');
     }
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isAdmin, isRecepcion]);
+  }, [isExecutive, isAdmin, isRecepcion]);
 
   // Normalización de URL raíz a /inicio en primera carga
   useEffect(() => {
@@ -193,23 +208,27 @@ export function AppRoutes() {
           <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: '#D4AF37' }}>Cargando sección...</div>}>
             {currentView === 'home' && <HomePage onNavigate={handleNavigate} />}
             {currentView === 'clients' && <ClientsPage />}
-            {currentView === 'coverage' && (isAdmin() || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
-            {currentView === 'verification' && (isAdmin() || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
-            {currentView === 'attendance' && (isAdmin() || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
+            {currentView === 'coverage' && (isExecutive || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
+            {currentView === 'verification' && (isExecutive || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
+            {currentView === 'attendance' && (isExecutive || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
             {currentView === 'plans' && <PlansPage />}
             {currentView === 'supplements' && <SupplementsPage />}
-            {currentView === 'supplementOrders' && (isAdmin() || isRecepcion()) && <SupplementOrdersPage />}
+            {currentView === 'supplementOrders' && (isExecutive || isRecepcion()) && <SupplementOrdersPage />}
             {currentView === 'promotions' && <PromotionsPage />}
-            {currentView === 'memberships' && (isAdmin() || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
-            {currentView === 'reminders' && (isAdmin() ? <ReminderConfigPage /> : null)}
-            {currentView === 'faq' && (isAdmin() || isRecepcion()) && <FaqPage />}
-            {currentView === 'facilities' && (isAdmin() || isRecepcion()) && <FacilitiesPage />}
-            {currentView === 'communications' && (isAdmin() || isRecepcion() ? <CommunicationsPage /> : null)}
-            {currentView === 'staff' && (isAdmin() ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : null)}
-            {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
-            {currentView === 'reports' && isAdmin() && <ReportsPage />}
-            {currentView === 'incidents' && isAdmin() && <IncidentsPage />}
-            {currentView === 'dataImport' && (isAdmin() ? <DataImportPage onNavigate={handleNavigate} /> : null)}
+            {currentView === 'memberships' && (isExecutive || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
+            {currentView === 'reminders' && (isExecutive ? <ReminderConfigPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'faq' && (isExecutive || isRecepcion() ? <FaqPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'facilities' && (isExecutive || isRecepcion() ? <FacilitiesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'communications' && (isExecutive || isRecepcion() ? <CommunicationsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'staff' && (isExecutive ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'settings' && ((isExecutive || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'reports' && (isExecutive || auditorOnly ? <ReportsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'incidents' && (isExecutive || auditorOnly ? <IncidentsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'dataImport' && (isAdmin() ? <DataImportPage onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN (Soporte TI)']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'notFound' && <Error404Page requestedPath={typeof window !== 'undefined' ? window.location.pathname : ''} onNavigate={handleNavigate} />}
+            {currentView === 'forbidden' && <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />}
+            {currentView === 'unauthorized' && <Error401Page onLoginClick={() => window.location.reload()} onGoHome={() => handleNavigate('home')} />}
+            {currentView === 'serverError' && <Error500Page onRetry={() => window.location.reload()} onGoHome={() => handleNavigate('home')} />}
           </Suspense>
         </SentryErrorBoundary>
       </AdminLayout>

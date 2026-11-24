@@ -3,9 +3,10 @@
 // ==============================================================================
 
 export const STAFF_ROLES = [
-  { value: 'ADMIN', label: 'Administrador (Control Total)' },
-  { value: 'RECEPCION', label: 'Recepción (Miembros y Consulta)' },
-  { value: 'AUDITOR', label: 'Auditoría (Reportes e Incidencias)' },
+  { value: 'GERENTE', label: 'Gerente General (Finanzas, Catálogo y Dirección)' },
+  { value: 'ADMIN', label: 'Soporte TI / Administrador de Sistemas (ETL, Logs y Mantenimiento)' },
+  { value: 'RECEPCION', label: 'Recepción (Check-in, Registro de Miembros y Cobros)' },
+  { value: 'AUDITOR', label: 'Auditoría (Solo Lectura de Reportes e Incidencias)' },
 ];
 
 /**

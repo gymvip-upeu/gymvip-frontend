@@ -287,9 +287,10 @@ export default function StaffPage() {
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
               >
-                <option value="ADMIN">ADMIN (Control Total del Sistema)</option>
-                <option value="RECEPCION">RECEPCION (Atención y Cobros)</option>
-                <option value="AUDITOR">AUDITOR (Reportes e Incidencias)</option>
+                <option value="GERENTE">GERENTE (Director General / Comercial y Finanzas)</option>
+                <option value="ADMIN">ADMIN / TI (Soporte Técnico, ETL y Mantenimiento)</option>
+                <option value="RECEPCION">RECEPCION (Atención y Cobros Mostrador)</option>
+                <option value="AUDITOR">AUDITOR (Solo Lectura de Reportes e Incidencias)</option>
               </select>
             </div>
 

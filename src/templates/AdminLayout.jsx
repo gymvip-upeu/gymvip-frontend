@@ -10,8 +10,9 @@ import { Header } from './Header';
 import { CommandPalette } from '../components/common/CommandPalette';
 
 export function AdminLayout({ currentView, onNavigate, children }) {
-  const { user, logout, isAdmin, isRecepcion } = useAuth();
-  const auditorOnly = user?.roles?.includes('AUDITOR') && !isAdmin() && !isRecepcion();
+  const { user, logout, isAdmin, isGerente, isRecepcion } = useAuth();
+  const isExecutive = isAdmin() || (isGerente && isGerente());
+  const auditorOnly = user?.roles?.includes('AUDITOR') && !isExecutive && !isRecepcion();
 
   // Preferencia de plegado persistida en localStorage
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -94,7 +95,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         { id: 'plans', label: 'Planes y Tarifas', iconName: 'tag', title: 'Catálogo Tarifario Oficial' },
         { id: 'supplements', label: 'Suplementos y Stock', iconName: 'package', title: 'Kardex y Catálogo de Suplementos' },
         { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Descuentos y Promociones Activas' },
-        ...(isAdmin() || isRecepcion() ? [
+        ...(isExecutive || isRecepcion() ? [
           { id: 'supplementOrders', label: 'Pedidos y Despacho QR', iconName: 'package', title: 'Bandeja de Pedidos y Retiro QR' },
         ] : []),
       ],
@@ -104,12 +105,12 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       label: 'COMUNICACIONES',
       iconName: 'message-circle',
       items: [
-        ...(isAdmin() ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell', title: 'Reglas de Corte y Avisos Automáticos' }] : []),
+        ...(isExecutive ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell', title: 'Reglas de Corte y Avisos Automáticos' }] : []),
         { id: 'faq', label: 'Respuestas Frecuentes', iconName: 'message-circle', title: 'Catálogo de FAQs Institucionales' },
         { id: 'communications', label: 'Historial de Envíos', iconName: 'send', title: 'Trazabilidad de WhatsApp y Email' },
       ],
     },
-    ...(isAdmin() ? [
+    ...(isExecutive ? [
       {
         id: 'analytics',
         label: 'ANÁLISIS Y CONTROL',
@@ -120,15 +121,15 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         ],
       },
     ] : []),
-    ...(isAdmin() || isRecepcion() ? [
+    ...(isExecutive || isRecepcion() ? [
       {
         id: 'administration',
         label: 'ADMINISTRACIÓN',
         iconName: 'settings',
         items: [
-          ...(isAdmin() ? [{ id: 'staff', label: 'Usuarios y Personal', iconName: 'user', title: 'Gestión de Personal y Roles' }] : []),
+          ...(isExecutive ? [{ id: 'staff', label: 'Usuarios y Personal', iconName: 'user', title: 'Gestión de Personal y Roles' }] : []),
           { id: 'settings', label: 'Configuración General', iconName: 'settings', title: 'Ajustes Operativos del Sistema' },
-          ...(isAdmin() ? [{ id: 'dataImport', label: 'Importación Masiva', iconName: 'download', title: 'Centro de Importación y Migración' }] : []),
+          ...(isAdmin() ? [{ id: 'dataImport', label: 'Importación Masiva (TI)', iconName: 'download', title: 'Centro de Importación y Migración (TI)' }] : []),
         ],
       },
     ] : []),

@@ -34,6 +34,10 @@ export const PATH_VIEW_MAP = {
   '/importar-datos': 'dataImport',
   '/reportes': 'reports',
   '/incidencias': 'incidents',
+  '/401': 'unauthorized',
+  '/403': 'forbidden',
+  '/404': 'notFound',
+  '/500': 'serverError',
 };
 
 /**
@@ -60,6 +64,10 @@ export const VIEW_PATH_MAP = {
   dataImport: '/configuracion/importar-datos',
   reports: '/reportes',
   incidents: '/incidencias',
+  unauthorized: '/401',
+  forbidden: '/403',
+  notFound: '/404',
+  serverError: '/500',
 };
 
 /**
