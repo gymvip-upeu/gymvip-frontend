@@ -5,6 +5,7 @@
 import React from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { SentryErrorBoundary } from './components/common/SentryErrorBoundary';
 
@@ -13,7 +14,9 @@ export default function App() {
     <SentryErrorBoundary section="Sistema Central GYM VIP">
       <AuthProvider>
         <ThemeProvider>
-          <AppRoutes />
+          <NotificationProvider>
+            <AppRoutes />
+          </NotificationProvider>
         </ThemeProvider>
       </AuthProvider>
     </SentryErrorBoundary>

@@ -16,6 +16,7 @@ import { Icon } from '../components/common/Icons';
 import { Alert } from '../components/common/Alert';
 import { LoadingState, EmptyState } from '../components/feedback/LoadingState';
 import { AnalyticsChartCard } from '../components/common/AnalyticsChartCard';
+import { GoldSkeleton } from '../components/common/GoldSkeleton';
 import ClientManageModal from '../components/modals/ClientManageModal';
 import athleteImg from '../assets/hero-athlete.jpg';
 
@@ -283,7 +284,7 @@ export default function HomePage({ onNavigate }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', margin: '6px 0 4px 0' }}>
               <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-gold)' }}>
-                {loading ? '...' : metrics.totalClients}
+                {loading ? <GoldSkeleton width="75px" height="34px" /> : metrics.totalClients}
               </div>
               <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>en base de datos</span>
             </div>
@@ -329,7 +330,7 @@ export default function HomePage({ onNavigate }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', margin: '6px 0 4px 0' }}>
               <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-gold)' }}>
-                {loading ? '...' : metrics.activePlans}
+                {loading ? <GoldSkeleton width="55px" height="34px" /> : metrics.activePlans}
               </div>
               <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>tarifas activas</span>
             </div>
@@ -368,7 +369,7 @@ export default function HomePage({ onNavigate }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', margin: '6px 0 4px 0' }}>
               <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-warning)' }}>
-                {loading ? '...' : metrics.totalAlerts}
+                {loading ? <GoldSkeleton width="55px" height="34px" /> : metrics.totalAlerts}
               </div>
               <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>socios en riesgo</span>
             </div>

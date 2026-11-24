@@ -14,6 +14,7 @@ export function Header({
   subtitle = 'VIP CENTER FIT · LUXURY FITNESS',
   onOpenMobileMenu,
   onNavigate,
+  onOpenCommandPalette,
 }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
@@ -47,8 +48,44 @@ export function Header({
           </div>
         </div>
 
-        {/* Acciones de Esquina Superior Derecha: Notificaciones y Apariencia (Popovers Anclados) */}
+        {/* Acciones de Esquina Superior Derecha: Búsqueda, Notificaciones y Apariencia */}
         <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+          {/* Botón de Búsqueda Rápida / Command Palette (Ctrl + K) */}
+          {onOpenCommandPalette && (
+            <button
+              type="button"
+              className="header-search-btn"
+              onClick={onOpenCommandPalette}
+              aria-label="Buscar en VIP Center Fit (Ctrl+K)"
+              title="Búsqueda rápida y comandos (Ctrl+K)"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 12px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(212, 175, 55, 0.35)',
+                borderRadius: '8px',
+                color: '#CBD5E1',
+                cursor: 'pointer',
+                fontSize: '12px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Icon name="search" size={14} />
+              <span className="search-placeholder-text">Buscar...</span>
+              <kbd style={{
+                background: 'rgba(212, 175, 55, 0.15)',
+                color: '#D4AF37',
+                padding: '1px 5px',
+                borderRadius: '4px',
+                fontSize: '10px',
+                fontWeight: 700,
+                border: '1px solid rgba(212, 175, 55, 0.3)'
+              }}>Ctrl K</kbd>
+            </button>
+          )}
+
           <button
             type="button"
             className="header-icon-btn"
