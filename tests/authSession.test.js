@@ -82,3 +82,15 @@ test('network failure during unlock propagates without inventing valid state', a
   );
 });
 
+test('current profile uses the authenticated token and returns account data', async () => {
+  const api = await authApiWith(async (endpoint, options, token) => {
+    assert.equal(endpoint, '/api/v1/auth/me');
+    assert.deepEqual(options, {});
+    assert.equal(token, 'profile-token');
+    return { ok: true, json: async () => ({ id: 'account-1', email: 'recepcion@vipcenterfit.pe', roles: ['RECEPCION'], status: 'ACTIVO' }) };
+  });
+  const profile = await api.getCurrentUserApi('profile-token');
+  assert.equal(profile.id, 'account-1');
+  assert.deepEqual(profile.roles, ['RECEPCION']);
+});
+

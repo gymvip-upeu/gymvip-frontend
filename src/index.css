@@ -633,6 +633,24 @@ button {
   overflow: hidden;
 }
 
+.user-profile-trigger {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-profile-trigger:hover,
+.user-profile-trigger:focus-visible {
+  border-color: var(--color-gold);
+  background: rgba(212, 175, 55, 0.08);
+  outline: none;
+}
+
 .user-email {
   font-size: 12px;
   font-weight: 600;
@@ -801,6 +819,81 @@ button {
   background-repeat: no-repeat;
   overflow-y: auto;
 }
+
+.login-page-wrapper {
+  gap: clamp(28px, 6vw, 96px);
+  justify-content: center;
+  padding: clamp(24px, 5vw, 64px);
+}
+
+.login-promo-panel {
+  position: relative;
+  z-index: 2;
+  width: min(520px, 42vw);
+  color: var(--color-text-primary);
+  padding: 12px 0;
+}
+
+.login-promo-kicker {
+  color: var(--color-gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+}
+
+.login-promo-panel h2 {
+  margin: 0;
+  font-size: clamp(42px, 5vw, 72px);
+  line-height: .98;
+  letter-spacing: -2px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.login-promo-panel h2 span { color: var(--color-gold); }
+
+.login-promo-lead {
+  max-width: 390px;
+  margin: 22px 0 28px;
+  color: #e0ddd4;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.login-promo-benefits {
+  display: grid;
+  gap: 12px;
+  max-width: 390px;
+}
+
+.login-promo-benefits div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,.17);
+  color: #f4f1e9;
+  font-size: 14px;
+}
+
+.login-promo-benefits strong { color: var(--color-gold); font-size: 12px; letter-spacing: 1px; }
+
+.login-promo-plan {
+  display: grid;
+  gap: 5px;
+  width: fit-content;
+  margin-top: 30px;
+  padding: 16px 20px;
+  border: 1px solid rgba(212,175,55,.65);
+  border-left: 4px solid var(--color-gold);
+  border-radius: 4px 12px 12px 4px;
+  background: rgba(12,14,19,.62);
+}
+
+.login-promo-plan span { color: var(--color-gold); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; }
+.login-promo-plan strong { font-size: 16px; color: #fff8e7; }
+.login-promo-plan small { color: #c7c2b6; font-size: 12px; }
 
 .login-backdrop-overlay {
   position: absolute;
@@ -1093,6 +1186,23 @@ button {
 
 /* Responsive para Pantalla de Acceso y Lock Screen en Móviles */
 @media (max-width: 768px) {
+  .login-page-wrapper {
+    display: block;
+    padding: 20px 14px;
+  }
+
+  .login-promo-panel {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto 18px;
+    padding: 8px 4px;
+  }
+
+  .login-promo-panel h2 { font-size: 38px; }
+  .login-promo-lead { margin: 14px 0 18px; font-size: 14px; }
+  .login-promo-benefits { display: none; }
+  .login-promo-plan { margin-top: 14px; padding: 12px 14px; }
+
   .login-centered-card {
     padding: 28px 20px;
     max-width: 100%;

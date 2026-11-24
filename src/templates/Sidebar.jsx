@@ -17,6 +17,7 @@ export function Sidebar({
   communicationItems = [],
   settingsItem,
   user,
+  onOpenProfile,
   onLogout,
 }) {
   const renderNavItem = (item) => {
@@ -112,8 +113,8 @@ export function Sidebar({
         {/* Zona Inferior: Información del Usuario y Logout */}
         <div className="sidebar-bottom">
           {!isCollapsed && (
-            <div className="user-info-box">
-              <span className="session-label">SESIÓN ADMINISTRATIVA</span>
+            <button type="button" className="user-info-box user-profile-trigger" onClick={onOpenProfile} aria-label="Abrir mi perfil">
+              <span className="session-label">MI SESIÓN · VER PERFIL</span>
               <span className="user-email" title={user?.email}>
                 {user?.email}
               </span>
@@ -122,7 +123,7 @@ export function Sidebar({
                   {user?.roles?.[0] || 'COLABORADOR'}
                 </Badge>
               </div>
-            </div>
+            </button>
           )}
 
           <button

@@ -38,6 +38,7 @@ const FacilitiesPage = lazy(() => import('../pages/FacilitiesPage'));
 const CommunicationsPage = lazy(() => import('../pages/CommunicationsPage'));
 const ReportsPage = lazy(() => import('../pages/ReportsPage'));
 const IncidentsPage = lazy(() => import('../pages/IncidentsPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 
 export function AppRoutes() {
   const { user, isLocked, isAdmin, isRecepcion } = useAuth();
@@ -57,7 +58,7 @@ export function AppRoutes() {
   }, [currentView]);
 
   useEffect(() => {
-    if (auditorOnly && !['reports', 'incidents'].includes(currentView)) {
+    if (auditorOnly && !['reports', 'incidents', 'profile'].includes(currentView)) {
       setCurrentView('reports');
       window.history.replaceState({ view: 'reports' }, '', '/reportes');
     }
@@ -79,7 +80,7 @@ export function AppRoutes() {
 
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId) => {
-    if (auditorOnly && !['reports', 'incidents'].includes(viewId)) return;
+    if (auditorOnly && !['reports', 'incidents', 'profile'].includes(viewId)) return;
     // Guarda de permisos para rutas administrativas
     if (viewId === 'staff' && !isAdmin()) {
       setAccessError('Acceso Denegado (403): La gestión de personal está reservada exclusivamente para Administradores.');
@@ -178,7 +179,7 @@ export function AppRoutes() {
   }
 
   if (auditorOnly) {
-    return <AdminLayout currentView={currentView} onNavigate={handleNavigate}><SentryErrorBoundary section="Auditoría"><Suspense fallback={<p>Cargando auditoría…</p>}>{currentView === 'incidents' ? <IncidentsPage /> : <ReportsPage />}</Suspense></SentryErrorBoundary></AdminLayout>;
+    return <AdminLayout currentView={currentView} onNavigate={handleNavigate}><SentryErrorBoundary section="Auditoría"><Suspense fallback={<p>Cargando auditoría…</p>}>{currentView === 'profile' ? <ProfilePage /> : currentView === 'incidents' ? <IncidentsPage /> : <ReportsPage />}</Suspense></SentryErrorBoundary></AdminLayout>;
   }
 
   return (
@@ -204,6 +205,7 @@ export function AppRoutes() {
             {currentView === 'settings' && ((isAdmin() || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : null)}
             {currentView === 'reports' && isAdmin() && <ReportsPage />}
             {currentView === 'incidents' && isAdmin() && <IncidentsPage />}
+            {currentView === 'profile' && <ProfilePage />}
           </Suspense>
         </SentryErrorBoundary>
       </AdminLayout>

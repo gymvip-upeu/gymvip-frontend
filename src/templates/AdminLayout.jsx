@@ -87,6 +87,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     settings: 'Configuración Operativa del Sistema',
     reports: 'Reportes y Métricas',
     incidents: 'Incidencias Operativas',
+    profile: 'Mi Perfil',
   };
 
   const currentItem = {
@@ -114,6 +115,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         communicationItems={communicationItems}
         settingsItem={settingsItem}
         user={user}
+        onOpenProfile={() => handleNavigate('profile')}
         onLogout={logout}
       />
 

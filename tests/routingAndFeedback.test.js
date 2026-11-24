@@ -21,6 +21,7 @@ test('Routing: resuelve correctamente las rutas visibles del frontend a sus vist
   assert.equal(resolveViewFromPath('/comunicaciones'), 'communications');
   assert.equal(resolveViewFromPath('/personal'), 'staff');
   assert.equal(resolveViewFromPath('/configuracion'), 'settings');
+  assert.equal(resolveViewFromPath('/perfil'), 'profile');
 });
 
 test('Routing: rutas con mayúsculas y trailing slashes se normalizan de forma tolerante', () => {
@@ -39,7 +40,7 @@ test('Routing: rutas desconocidas o nulas resuelven de forma segura a home', () 
 });
 
 test('Routing: VIEW_PATH_MAP contiene correspondencia estricta para cada vista operativa', () => {
-  const views = ['home', 'clients', 'plans', 'coverage', 'verification', 'memberships', 'reminders', 'communications', 'staff', 'settings'];
+  const views = ['home', 'clients', 'plans', 'coverage', 'verification', 'memberships', 'reminders', 'communications', 'staff', 'settings', 'profile'];
   for (const v of views) {
     assert.ok(VIEW_PATH_MAP[v], `Debe existir ruta asignada para vista: ${v}`);
     assert.ok(VIEW_PATH_MAP[v].startsWith('/'), `La ruta de ${v} debe comenzar con /`);
@@ -52,7 +53,7 @@ test('Routing: todos los módulos del menú tienen una ruta canónica que abre s
   const modules = [
     'home', 'clients', 'plans', 'supplements', 'supplementOrders', 'promotions',
     'facilities', 'coverage', 'verification', 'attendance', 'memberships',
-    'reminders', 'faq', 'communications', 'staff', 'settings', 'reports', 'incidents',
+    'reminders', 'faq', 'communications', 'staff', 'settings', 'profile', 'reports', 'incidents',
   ];
   for (const module of modules) {
     const path = VIEW_PATH_MAP[module];
