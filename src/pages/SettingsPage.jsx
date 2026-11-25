@@ -11,6 +11,7 @@ import { Alert } from '../components/common/Alert';
 import { Icon } from '../components/common/Icons';
 import { LoadingState } from '../components/feedback/LoadingState';
 import { VipTabBar } from '../components/common/VipTabBar';
+import ChannelStatusPanel from '../components/common/ChannelStatusPanel';
 import StaffPage from './StaffPage';
 import DataImportPage from './DataImportPage';
 import {
@@ -261,6 +262,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
       {/* PESTAÑA 2: MICROSERVICIO DE COMUNICACIONES */}
       {activeTab === 'comms' && (
         <div style={{ display: 'grid', gap: '24px' }}>
+          <ChannelStatusPanel />
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

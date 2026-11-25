@@ -9,6 +9,7 @@ import {
   updateReminderConfigApi,
   evaluateRemindersNowApi,
   getReminderCutsApi,
+  getReminderScheduleApi,
 } from '../api/reminderApi';
 import ReminderHistory from '../components/common/ReminderHistory';
 import { Icon } from '../components/common/Icons';
@@ -39,8 +40,9 @@ export default function ReminderConfigPage() {
   // Preview Mode: 'anticipado' | 'vencido'
   const [previewMode, setPreviewMode] = useState('anticipado');
 
-  // Historial de Cortes
+  // Historial de Cortes y Programación Automática
   const [cuts, setCuts] = useState([]);
+  const [scheduleInfo, setScheduleInfo] = useState(null);
   const [_loadingCuts, _setLoadingCuts] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -57,8 +59,12 @@ export default function ReminderConfigPage() {
       setChannels(chs);
       setDefaultChannel(chs[0] || 'WHATSAPP');
 
-      const cutsData = await getReminderCutsApi(token).catch(() => []);
+      const [cutsData, scheduleData] = await Promise.all([
+        getReminderCutsApi(token).catch(() => []),
+        getReminderScheduleApi(token).catch(() => null),
+      ]);
       setCuts(cutsData || []);
+      setScheduleInfo(scheduleData);
     } catch (err) {
       setError(err.message || 'Error al cargar la configuración de recordatorios.');
     } finally {
@@ -166,7 +172,10 @@ export default function ReminderConfigPage() {
             <form onSubmit={handleSave} className="reminders-card">
               <header>
                 <h2>Reglas de Notificación de Membresías</h2>
-                <span style={{ fontSize: 11, color: '#888' }}>Zona horaria: America/Lima</span>
+                <span style={{ fontSize: 11, color: '#888' }}>
+                  Zona horaria: America/Lima
+                  {scheduleInfo ? (scheduleInfo.enabled ? ` · Corte diario ${scheduleInfo.dailyTime}` : ' · Corte automático desactivado') : ''}
+                </span>
               </header>
 
               {/* Master Switch */}
