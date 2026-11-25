@@ -17,7 +17,7 @@ import { Badge } from '../components/common/Badge';
 import { Icon } from '../components/common/Icons';
 
 export default function DataImportPage({ onNavigate }) {
-  const { token, isAdmin } = useAuth();
+  const { token } = useAuth();
 
   // Vista activa: 'wizard' | 'history'
   const [activeTab, setActiveTab] = useState('wizard');

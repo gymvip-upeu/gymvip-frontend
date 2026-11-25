@@ -21,7 +21,7 @@ import { Icon } from './Icons';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function CommandPalette({ isOpen, onClose, onNavigate }) {
-  const { isAdmin, isRecepcion, user } = useAuth();
+  const { isAdmin, isRecepcion } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);

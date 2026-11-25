@@ -15,18 +15,15 @@ import {
   exportReportApi,
 } from '../api/reportsApi';
 import { AnalyticsChartCard } from '../components/common/AnalyticsChartCard';
-import { ChartActions } from '../components/common/ChartActions';
 import { Icon } from '../components/common/Icons';
 import { Alert } from '../components/common/Alert';
 import { Badge } from '../components/common/Badge';
-import { Button } from '../components/common/Button';
 
 import { BarChart } from '@mui/x-charts/BarChart';
-import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 
 export default function ReportsPage() {
-  const { token, user, isAdmin } = useAuth();
+  const { token } = useAuth();
 
   // Preset de fecha y rangos
   const [selectedPreset, setSelectedPreset] = useState('this_month');
