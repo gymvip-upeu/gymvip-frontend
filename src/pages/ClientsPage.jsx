@@ -23,7 +23,7 @@ import MemberProfilePage from './MemberProfilePage';
 import { dateLabel, stateLabel } from '../components/members/memberUtils';
 
 export default function ClientsPage() {
-  const { token, isAdmin } = useAuth();
+  const { token, isAdmin, isBusinessExecutive } = useAuth();
   const {
     clients,
     page,
@@ -410,7 +410,7 @@ export default function ClientsPage() {
                             <Icon name="edit" size={16} color="var(--color-text-secondary)" />
                           </button>
 
-                          {isAdmin() && (
+                          {isBusinessExecutive() && (
                             <button
                               type="button"
                               className={`btn-action-icon ${isInactive ? 'activate' : 'deactivate'}`}

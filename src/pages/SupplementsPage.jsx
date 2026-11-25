@@ -11,7 +11,7 @@ import { categories,categoryLabel,availabilityLabel,presentationLabel,updatedLab
 import { formatCurrencyPen } from '../utils/formatters';
 
 export default function SupplementsPage() {
-  const {token,isAdmin}=useAuth();
+  const {token,isBusinessExecutive}=useAuth();const isAdmin=isBusinessExecutive;
   const [draft,setDraft]=useState({query:'',category:'',availability:'',published:''}),[filters,setFilters]=useState(draft),[page,setPage]=useState(0),[result,setResult]=useState(null),[storeProducts,setStoreProducts]=useState(new Map()),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState(''),[reload,setReload]=useState(0);
   const [view,setView]=useState({kind:'list'}),[detail,setDetail]=useState(null),[stateItem,setStateItem]=useState(null),[selectedPhoto,setSelectedPhoto]=useState(0);
   useEffect(()=>{if(view.kind!=='list')return;let active=true;setLoading(true);setError('');setResult(null);Promise.all([listSupplements({...filters,page,size:12},token),listCatalogProducts(token)]).then(([value,products])=>{if(!active)return;setResult(value);setStoreProducts(new Map(products.map(item=>[item.id,item])));}).catch(e=>active&&setError(e.message)).finally(()=>active&&setLoading(false));return()=>{active=false;};},[token,filters,page,reload,view.kind]);

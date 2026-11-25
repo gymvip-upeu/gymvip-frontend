@@ -18,7 +18,8 @@ const AVAILABLE_ANTICIPATION_DAYS = [3, 5, 7, 15];
 const AVAILABLE_POST_EXPIRY_DAYS = [1, 2, 3, 4, 5];
 
 export default function ReminderConfigPage() {
-  const { token, isAdmin } = useAuth();
+  const { token, isBusinessExecutive } = useAuth();
+  const isAdmin = isBusinessExecutive;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -232,7 +233,7 @@ export default function ReminderConfigPage() {
               <div className="form-group-reminders">
                 <label className="section-title">Canales de Emisión (Multicanal)</label>
                 <div className="days-chips-group">
-                  {['WHATSAPP', 'EMAIL', 'APP'].map((channel) => {
+                  {['WHATSAPP', 'APP'].map((channel) => {
                     const isSelected = channels.includes(channel);
                     return (
                       <label key={channel} className={`day-chip ${isSelected ? 'active' : ''}`}>
@@ -252,7 +253,7 @@ export default function ReminderConfigPage() {
                           }}
                           disabled={!isAdmin()}
                         />
-                        <span>{channel === 'WHATSAPP' ? 'WhatsApp Cloud' : channel === 'EMAIL' ? 'Correo Electrónico' : 'App Móvil (Avisos)'}</span>
+                        <span>{channel === 'WHATSAPP' ? 'WhatsApp Cloud' : 'App Móvil (Avisos)'}</span>
                       </label>
                     );
                   })}

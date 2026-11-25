@@ -59,8 +59,8 @@ function DispatchTable({ rows, empty, canRetry, open }) {
 }
 
 export default function CommunicationsPage() {
-  const { token, isAdmin } = useAuth();
-  const admin = isAdmin();
+  const { token, isBusinessExecutive } = useAuth();
+  const admin = isBusinessExecutive();
   const [type, setType] = useState(MESSAGE_TYPES[0]);
   const [history, setHistory] = useState(initialHistory);
   const [refresh, setRefresh] = useState(0);

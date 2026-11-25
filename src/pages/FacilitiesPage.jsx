@@ -10,7 +10,8 @@ import { Icon } from '../components/common/Icons';
 import { Alert } from '../components/common/Alert';
 
 export default function FacilitiesPage() {
-  const { token, isAdmin } = useAuth();
+  const { token, isBusinessExecutive } = useAuth();
+  const isExecutive = isBusinessExecutive();
 
   const [facilities, setFacilities] = useState([]);
   const [showArchive, setShowArchive] = useState(false);
@@ -153,7 +154,7 @@ export default function FacilitiesPage() {
           <h1 style={{ fontSize: '24px', margin: '4px 0 0 0', color: 'var(--color-text-primary)' }}>Áreas e Instalaciones VIP</h1>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          {isAdmin() && (
+          {isExecutive && (
             <button type="button" className="btn btn-secondary" onClick={() => setShowArchive((value) => !value)}>
               {showArchive ? 'Ver instalaciones activas' : 'Ver archivo'}
             </button>
@@ -166,7 +167,7 @@ export default function FacilitiesPage() {
           >
             <Icon name="refresh" size={16} /> Actualizar
           </button>
-          {isAdmin() && (
+          {isExecutive && (
             <button
               type="button"
               className="btn btn-primary"

@@ -420,7 +420,7 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
           <div className="form-group" style={{ marginTop: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label className="form-label" htmlFor="client-email">
-                Correo Electrónico (Opcional)
+                {createAccess ? 'Correo electrónico del miembro *' : 'Correo electrónico (opcional)'}
               </label>
               <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
                 Requerido para acceso a la app móvil

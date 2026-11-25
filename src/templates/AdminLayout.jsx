@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { CommandPalette } from '../components/common/CommandPalette';
 
 export function AdminLayout({ currentView, onNavigate, children }) {
   const { user, logout, isAdmin, isGerente, isRecepcion } = useAuth();
@@ -26,29 +25,22 @@ export function AdminLayout({ currentView, onNavigate, children }) {
   // Estado drawer en móviles
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Estado del Command Palette (Ctrl + K)
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-
   useEffect(() => {
     try {
       localStorage.setItem('gymvip_sidebar_collapsed', String(isCollapsed));
     } catch {}
   }, [isCollapsed]);
 
-  // Atajo global Ctrl + K y Escape
+  // Cierre accesible del drawer en móviles con Escape
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-      } else if (e.key === 'Escape') {
-        if (isMobileOpen) setIsMobileOpen(false);
-        if (isCommandPaletteOpen) setIsCommandPaletteOpen(false);
+      if (e.key === 'Escape' && isMobileOpen) {
+        setIsMobileOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMobileOpen, isCommandPaletteOpen]);
+  }, [isMobileOpen]);
 
   // Elementos directos en la raíz de navegación
   const directItems = [
@@ -150,6 +142,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     staff: 'Gestión de Personal y Roles',
     settings: 'Configuración Operativa del Sistema',
     dataImport: 'Centro de Importación y Migración Masiva de Datos',
+    profile: 'Mi Perfil Personal y Seguridad',
     reports: 'Reportes Personalizables y Métricas',
     incidents: 'Incidencias Operativas y Auditoría',
   };
@@ -178,6 +171,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         navigationGroups={navigationGroups}
         directItems={directItems}
         user={user}
+        onOpenProfile={() => handleNavigate('profile')}
         onLogout={logout}
       />
 
@@ -187,19 +181,12 @@ export function AdminLayout({ currentView, onNavigate, children }) {
           subtitle="VIP CENTER FIT · LUXURY FITNESS"
           onOpenMobileMenu={() => setIsMobileOpen(true)}
           onNavigate={handleNavigate}
-          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         />
 
         <main className="app-content-body" tabIndex="-1">
           {children}
         </main>
       </div>
-
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        onNavigate={handleNavigate}
-      />
     </div>
   );
 }

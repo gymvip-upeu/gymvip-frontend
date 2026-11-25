@@ -14,7 +14,8 @@ import { LoadingState, EmptyState } from '../components/feedback/LoadingState';
 import PlanModal from '../components/modals/PlanModal';
 
 export default function PlansPage() {
-  const { token, isAdmin } = useAuth();
+  const { token, isBusinessExecutive } = useAuth();
+  const isExecutive = isBusinessExecutive();
   const {
     plans,
     filterStatus,
@@ -85,7 +86,7 @@ export default function PlansPage() {
           </p>
         </div>
 
-        {isAdmin() ? (
+        {isExecutive ? (
           <Button
             variant="primary"
             onClick={handleCreateNew}
@@ -159,7 +160,7 @@ export default function PlansPage() {
         <div className="card">
           <EmptyState
             title={query ? 'No se encontraron planes' : 'No hay planes en esta vista'}
-            subtitle={query ? 'Pruebe con otro término de búsqueda o cambie el filtro de estado.' : (isAdmin() ? 'Comience creando el primer plan de membresía.' : 'No se encontraron planes disponibles.')}
+            subtitle={query ? 'Pruebe con otro término de búsqueda o cambie el filtro de estado.' : (isExecutive ? 'Comience creando el primer plan de membresía.' : 'No se encontraron planes disponibles.')}
           />
         </div>
       ) : (
@@ -242,7 +243,7 @@ export default function PlansPage() {
                   )}
                 </div>
 
-                {isAdmin() && (
+                {isExecutive && (
                   <div style={{ display: 'flex', gap: '10px', paddingTop: '18px', borderTop: '1px solid var(--color-border)', marginTop: '16px' }}>
                     <Button
                       variant="secondary"

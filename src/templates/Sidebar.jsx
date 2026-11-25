@@ -17,6 +17,7 @@ export function Sidebar({
   navigationGroups = [],
   directItems = [],
   user,
+  onOpenProfile,
   onLogout,
 }) {
   // Estado de grupos expandidos persistido en localStorage
@@ -187,17 +188,23 @@ export function Sidebar({
         {/* Zona Inferior: Información del Usuario y Logout */}
         <div className="sidebar-bottom">
           {!isCollapsed && (
-            <div className="user-info-box">
-              <span className="session-label">SESIÓN ADMINISTRATIVA</span>
+            <button
+              type="button"
+              className="user-info-box user-profile-trigger"
+              onClick={onOpenProfile}
+              aria-label="Abrir mi perfil personal"
+              title="Ver y editar mi perfil"
+            >
+              <span className="session-label">MI SESIÓN · VER PERFIL</span>
               <span className="user-email" title={user?.email}>
                 {user?.email}
               </span>
               <div style={{ marginTop: '4px' }}>
-                <Badge variant={user?.roles?.[0] === 'ADMIN' ? 'gold' : 'neutral'} style={{ fontSize: '10px' }}>
+                <Badge variant={['ADMIN', 'GERENTE'].includes(user?.roles?.[0]) ? 'gold' : 'neutral'} style={{ fontSize: '10px' }}>
                   {user?.roles?.[0] || 'COLABORADOR'}
                 </Badge>
               </div>
-            </div>
+            </button>
           )}
 
           <button

@@ -1,6 +1,6 @@
 // ==============================================================================
-// GYM VIP — Gestión Administrativa de Pedidos de Suplementos y Retiro en Mostrador
-// Bandejas: Pagos por Verificar, Por Preparar, Retiro en Mostrador / QR, Historial
+// GYM VIP — Gestión Administrativa de Pedidos de Suplementos y Retiro QR
+// Tokenized Dark & Gold + Light Mode compatible; Escáner QR separado de colas
 // ==============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -14,59 +14,70 @@ import {
   markOrderReadyForPickupApi,
   inspectPickupTokenApi,
   deliverOrderByTokenApi,
-  cleanupExpiredReservationsApi
+  cleanupExpiredReservationsApi,
 } from '../api/supplementOrderApi';
 import { Alert } from '../components/common/Alert';
 import { Button } from '../components/common/Button';
+import { Icon } from '../components/common/Icons';
+import { VipTabBar } from '../components/common/VipTabBar';
 import { formatCurrencyPen } from '../utils/formatters';
 
-export default function SupplementOrdersPage() {
-  const { token, isAdmin, isRecepcion } = useAuth();
+const QUEUE_TABS = [
+  { id: 'PENDIENTE_PAGO', label: 'Efectivo pendiente', icon: 'clock' },
+  { id: 'PAGADO_POR_VERIFICAR', label: 'Pagos por Verificar', icon: 'credit-card' },
+  { id: 'CONFIRMADO_PREPARACION', label: 'Por Preparar', icon: 'package' },
+  { id: 'LISTO_PARA_RETIRO', label: 'Listos para Retiro', icon: 'tag' },
+  { id: 'TODOS', label: 'Historial Completo', icon: 'bar-chart' },
+];
 
-  // Estados de interfaz y filtrado
+export default function SupplementOrdersPage() {
+  const { token, isBusinessExecutive, isRecepcion } = useAuth();
+  const isExecutive = isBusinessExecutive();
+
   const [activeTab, setActiveTab] = useState('PENDIENTE_PAGO');
+  const [scannerMode, setScannerMode] = useState(false);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
 
-  // Modal / Detalle de Pedido
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [digitalLink, setDigitalLink] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Formularios de acción
   const [approveAmount, setApproveAmount] = useState('');
   const [approveNotes, setApproveNotes] = useState('');
   const [rejectReason, setRejectReason] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
 
-  // Escáner / Retiro en Mostrador
   const [inputToken, setInputToken] = useState('');
   const [scannedTicket, setScannedTicket] = useState(null);
   const [deliveryNotes, setDeliveryNotes] = useState('');
 
-  // Carga de lista según bandeja activa
   const loadOrders = useCallback(async () => {
-    if (activeTab === 'SCANNER') return;
+    if (!token || scannerMode) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      const data = await listAdminOrdersApi(activeTab, token);
-      setOrders(Array.isArray(data) ? data : []);
+      const statusParam = activeTab === 'TODOS' ? undefined : activeTab;
+      const res = await listAdminOrdersApi({ status: statusParam, page: 0, size: 30 }, token);
+      const list = Array.isArray(res?.content) ? res.content : Array.isArray(res) ? res : [];
+      setOrders(list);
     } catch (err) {
-      setError(err.message || 'Error al cargar pedidos.');
+      setError(err.message || 'No se pudo cargar la bandeja de pedidos.');
     } finally {
       setLoading(false);
     }
-  }, [activeTab, token]);
+  }, [token, activeTab, scannerMode, reloadKey]);
 
   useEffect(() => {
     loadOrders();
-  }, [loadOrders, reloadKey]);
+  }, [loadOrders]);
 
-  // Selección de pedido para ver detalle
   const handleSelectOrder = async (orderId) => {
     setDetailLoading(true);
     setError('');
@@ -74,93 +85,87 @@ export default function SupplementOrdersPage() {
     try {
       const detail = await getAdminOrderApi(orderId, token);
       setSelectedOrder(detail);
-      if (detail.paymentMethod === 'TARJETA_PASARELA') {
-        try { setDigitalLink(await getAdminOrderPaymentLinkApi(orderId, token)); }
-        catch (linkError) { if (linkError.status !== 404) setError(linkError.message); }
-      }
-      setApproveAmount(detail.totalPen != null ? String(detail.totalPen) : '');
+      setApproveAmount(detail.totalPen ? String(detail.totalPen) : '');
       setApproveNotes('');
       setRejectReason('');
+      if (detail.paymentMethod === 'TARJETA_PASARELA') {
+        try {
+          setDigitalLink(await getAdminOrderPaymentLinkApi(orderId, token));
+        } catch {
+          setDigitalLink(null);
+        }
+      }
     } catch (err) {
-      setError(err.message || 'Error al cargar detalle del pedido.');
+      setError(err.message || 'Error al cargar el detalle del pedido.');
     } finally {
       setDetailLoading(false);
     }
   };
 
-  // Aprobación de pago (Solo ADMIN)
   const handleApprovePayment = async (e) => {
     e.preventDefault();
     if (!selectedOrder) return;
     setActionLoading(true);
     setError('');
     try {
-      const numAmount = parseFloat(approveAmount);
-      if (isNaN(numAmount) || numAmount <= 0) {
-        throw new Error('Ingrese un monto verificado válido en soles (PEN).');
-      }
-      const updated = await approveOrderPaymentApi(selectedOrder.id, {
-        verifiedAmountPen: numAmount,
-        notes: approveNotes.trim(),
-      }, token);
-      setNotice(`Pago verificado para el pedido ${updated.orderNumber}. Pedido enviado a preparación.`);
-      setSelectedOrder(updated);
+      const cashCounter = selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR';
+      await approveOrderPaymentApi(
+        selectedOrder.id,
+        {
+          verifiedAmountPen: parseFloat(approveAmount),
+          notes: approveNotes.trim() || (cashCounter ? 'Cobro en efectivo confirmado en caja.' : 'Pago verificado por administración.'),
+        },
+        token
+      );
+      setNotice(
+        cashCounter
+          ? `Cobro en efectivo confirmado para ${selectedOrder.orderNumber}.`
+          : `Pago aprobado para el pedido ${selectedOrder.orderNumber}. Pasa a preparación.`
+      );
+      setSelectedOrder(null);
       setReloadKey((k) => k + 1);
     } catch (err) {
-      setError(err.message || 'Error al verificar pago.');
+      setError(err.message || 'No se pudo aprobar el pago.');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Rechazo de pago (Solo ADMIN)
-  const handleRejectPayment = async (e) => {
-    e.preventDefault();
-    if (!selectedOrder) return;
-    if (!rejectReason.trim()) {
-      setError('Debe especificar un motivo de rechazo claro.');
-      return;
-    }
+  const handleRejectPayment = async () => {
+    if (!selectedOrder || !rejectReason.trim()) return;
     setActionLoading(true);
     setError('');
     try {
-      const updated = await rejectOrderPaymentApi(selectedOrder.id, {
-        reason: rejectReason.trim(),
-      }, token);
-      setNotice(`Comprobante rechazado para el pedido ${updated.orderNumber}. Stock liberado.`);
-      setSelectedOrder(updated);
+      await rejectOrderPaymentApi(selectedOrder.id, { reason: rejectReason.trim() }, token);
+      setNotice(`Pago rechazado en pedido ${selectedOrder.orderNumber}. Reservas liberadas.`);
+      setSelectedOrder(null);
       setReloadKey((k) => k + 1);
     } catch (err) {
-      setError(err.message || 'Error al rechazar pago.');
+      setError(err.message || 'No se pudo rechazar el pago.');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Marcar como Listo para Retiro (ADMIN y RECEPCION)
   const handleMarkReady = async () => {
     if (!selectedOrder) return;
     setActionLoading(true);
     setError('');
     try {
       const updated = await markOrderReadyForPickupApi(selectedOrder.id, token);
-      setNotice(`El pedido ${updated.orderNumber} está listo para entrega. Ticket QR generado.`);
+      setNotice(`Pedido ${updated.orderNumber} listo para retiro. Ticket QR disponible para el socio.`);
       setSelectedOrder(updated);
       setReloadKey((k) => k + 1);
     } catch (err) {
-      setError(err.message || 'Error al marcar listo para retiro.');
+      setError(err.message || 'No se pudo marcar como listo para retiro.');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Inspección manual o por QR en mostrador
   const handleInspectToken = async (e) => {
-    if (e) e.preventDefault();
-    if (!inputToken.trim()) {
-      setError('Ingrese o escanee el token de retiro del cliente.');
-      return;
-    }
+    e.preventDefault();
+    if (!inputToken.trim()) return;
     setActionLoading(true);
     setError('');
     setScannedTicket(null);
@@ -168,13 +173,12 @@ export default function SupplementOrdersPage() {
       const ticket = await inspectPickupTokenApi(inputToken.trim(), token);
       setScannedTicket(ticket);
     } catch (err) {
-      setError(err.message || 'Ticket no válido o no encontrado.');
+      setError(err.message || 'Código QR o token de retiro inválido / no encontrado.');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Confirmar Entrega Física (ADMIN y RECEPCION)
   const handleConfirmDelivery = async () => {
     if (!scannedTicket) return;
     if (scannedTicket.isConsumed) {
@@ -184,9 +188,11 @@ export default function SupplementOrdersPage() {
     setActionLoading(true);
     setError('');
     try {
-      const delivered = await deliverOrderByTokenApi(scannedTicket.pickupToken, {
-        verificationNotes: deliveryNotes.trim() || 'Entrega física en mostrador confirmada.',
-      }, token);
+      const delivered = await deliverOrderByTokenApi(
+        scannedTicket.pickupToken,
+        { verificationNotes: deliveryNotes.trim() || 'Entrega física en mostrador confirmada.' },
+        token
+      );
       setNotice(`¡Entrega exitosa! Pedido ${delivered.orderNumber} entregado al socio.`);
       setScannedTicket(null);
       setInputToken('');
@@ -199,7 +205,6 @@ export default function SupplementOrdersPage() {
     }
   };
 
-  // Mantenimiento de reservas expiradas
   const handleCleanupExpired = async () => {
     setActionLoading(true);
     try {
@@ -215,22 +220,39 @@ export default function SupplementOrdersPage() {
 
   return (
     <section className="catalog-page" style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
-      <div className="catalog-page-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+      <div
+        className="catalog-page-heading"
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap', marginBottom: '1.25rem' }}
+      >
         <div>
-          <div className="catalog-eyebrow" style={{ color: '#D4AF37', fontWeight: 600, letterSpacing: '1px' }}>
+          <div style={{ color: 'var(--color-gold)', fontWeight: 700, fontSize: '12px', letterSpacing: '1px' }}>
             VIP CENTER FIT / PEDIDOS Y RETIROS
           </div>
-          <h1 style={{ margin: '0.25rem 0', color: '#F3F4F6' }}>Bandeja de Pedidos de Suplementos</h1>
-          <p style={{ color: '#9CA3AF', margin: 0 }}>
+          <h1 style={{ margin: '0.25rem 0', color: 'var(--color-text-primary)' }}>Bandeja de Pedidos de Suplementos</h1>
+          <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
             Verificación de pagos Yape/Plin/Transferencia, preparación de pedidos y entrega segura con Ticket QR.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+
+        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+          <Button
+            variant={scannerMode ? 'primary' : 'secondary'}
+            onClick={() => {
+              setScannerMode((prev) => !prev);
+              setSelectedOrder(null);
+              setError('');
+            }}
+          >
+            <Icon name="check-circle" size={15} />
+            <span>{scannerMode ? 'Volver a Bandejas' : 'Mostrador / Lector QR'}</span>
+          </Button>
           <Button variant="secondary" onClick={handleCleanupExpired} disabled={actionLoading}>
-            ⏱ Liberar Reservas Expiradas
+            <Icon name="clock" size={15} />
+            <span>Liberar Expiradas</span>
           </Button>
           <Button variant="secondary" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
-            ↻ Actualizar
+            <Icon name="refresh" size={15} />
+            <span>Actualizar</span>
           </Button>
         </div>
       </div>
@@ -238,114 +260,40 @@ export default function SupplementOrdersPage() {
       {notice && <Alert variant="success" message={notice} onClose={() => setNotice('')} />}
       {error && <Alert variant="danger" message={error} onClose={() => setError('')} />}
 
-      {/* Selector de Bandejas */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #374151', paddingBottom: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => { setActiveTab('PENDIENTE_PAGO'); setSelectedOrder(null); }}
-          className={`btn btn-sm ${activeTab === 'PENDIENTE_PAGO' ? 'btn-primary' : 'btn-secondary'}`}
-        >
-          Efectivo pendiente
-        </button>
-        <button
-          onClick={() => { setActiveTab('PAGADO_POR_VERIFICAR'); setSelectedOrder(null); }}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            border: 'none',
-            background: activeTab === 'PAGADO_POR_VERIFICAR' ? '#D4AF37' : '#1F2937',
-            color: activeTab === 'PAGADO_POR_VERIFICAR' ? '#111827' : '#E5E7EB',
-            fontWeight: 600,
-            cursor: 'pointer'
+      {!scannerMode && (
+        <VipTabBar
+          tabs={QUEUE_TABS}
+          activeTab={activeTab}
+          onChange={(nextTab) => {
+            setActiveTab(nextTab);
+            setSelectedOrder(null);
           }}
-        >
-          💳 Pagos por Verificar
-        </button>
-        <button
-          onClick={() => { setActiveTab('CONFIRMADO_PREPARACION'); setSelectedOrder(null); }}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            border: 'none',
-            background: activeTab === 'CONFIRMADO_PREPARACION' ? '#D4AF37' : '#1F2937',
-            color: activeTab === 'CONFIRMADO_PREPARACION' ? '#111827' : '#E5E7EB',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-        >
-          📦 Por Preparar
-        </button>
-        <button
-          onClick={() => { setActiveTab('LISTO_PARA_RETIRO'); setSelectedOrder(null); }}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            border: 'none',
-            background: activeTab === 'LISTO_PARA_RETIRO' ? '#D4AF37' : '#1F2937',
-            color: activeTab === 'LISTO_PARA_RETIRO' ? '#111827' : '#E5E7EB',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-        >
-          🏷 Listos para Retiro
-        </button>
-        <button
-          onClick={() => { setActiveTab('SCANNER'); setSelectedOrder(null); }}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            border: 'none',
-            background: activeTab === 'SCANNER' ? '#10B981' : '#1F2937',
-            color: activeTab === 'SCANNER' ? '#FFFFFF' : '#E5E7EB',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-        >
-          📷 Mostrador / Lector QR
-        </button>
-        <button
-          onClick={() => { setActiveTab('TODOS'); setSelectedOrder(null); }}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            border: 'none',
-            background: activeTab === 'TODOS' ? '#D4AF37' : '#1F2937',
-            color: activeTab === 'TODOS' ? '#111827' : '#E5E7EB',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-        >
-          📋 Historial Completo
-        </button>
-      </div>
+          ariaLabel="Estados de pedidos de suplementos"
+        />
+      )}
 
-      {/* Contenido: Modo Escáner / Retiro Mostrador */}
-      {activeTab === 'SCANNER' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 450px) 1fr', gap: '1.5rem' }}>
-          <div style={{ background: '#1F2937', padding: '1.5rem', borderRadius: '8px', border: '1px solid #374151' }}>
-            <h2 style={{ color: '#F9FAFB', fontSize: '1.25rem', marginTop: 0 }}>Lector de Código QR / Retiro</h2>
-            <p style={{ color: '#9CA3AF', fontSize: '0.9rem' }}>
+      {scannerMode ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          <div className="card" style={{ padding: '1.5rem' }}>
+            <h2 style={{ color: 'var(--color-text-primary)', fontSize: '1.25rem', marginTop: 0 }}>
+              Lector de Código QR / Retiro
+            </h2>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
               Ingrese o escanee el código del ticket presentado por el socio en su app móvil.
             </p>
             <form onSubmit={handleInspectToken}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#D1D5DB', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                <label className="form-label" htmlFor="pickup-token-input">
                   Código o Token de Retiro (Ej: rtk_...):
                 </label>
                 <input
+                  id="pickup-token-input"
                   type="text"
+                  className="form-input"
                   value={inputToken}
                   onChange={(e) => setInputToken(e.target.value)}
                   placeholder="Escanee o pegue aquí el código"
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: '#111827',
-                    border: '1px solid #4B5563',
-                    borderRadius: '6px',
-                    color: '#F9FAFB',
-                    fontFamily: 'monospace',
-                    fontSize: '1rem'
-                  }}
+                  style={{ fontFamily: 'monospace', fontSize: '1rem' }}
                   autoFocus
                 />
               </div>
@@ -357,148 +305,177 @@ export default function SupplementOrdersPage() {
 
           <div>
             {scannedTicket ? (
-              <div style={{ background: '#111827', padding: '1.5rem', borderRadius: '8px', border: '2px solid #D4AF37' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #374151', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+              <div className="card" style={{ padding: '1.5rem', border: '2px solid var(--color-gold)' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: '1px solid var(--color-border)',
+                    paddingBottom: '0.75rem',
+                    marginBottom: '1rem',
+                  }}
+                >
                   <div>
-                    <span style={{ fontSize: '0.8rem', color: '#D4AF37', fontWeight: 600 }}>TICKET DE RETIRO FÍSICO</span>
-                    <h2 style={{ margin: '0.2rem 0', color: '#FFFFFF' }}>Pedido {scannedTicket.orderNumber}</h2>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-gold)', fontWeight: 700 }}>TICKET DE RETIRO FÍSICO</span>
+                    <h2 style={{ margin: '0.2rem 0', color: 'var(--color-text-primary)' }}>Pedido {scannedTicket.orderNumber}</h2>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{
-                      padding: '0.25rem 0.6rem',
-                      borderRadius: '4px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      background: scannedTicket.isConsumed ? '#EF4444' : '#10B981',
-                      color: '#FFFFFF'
-                    }}>
-                      {scannedTicket.isConsumed ? 'ENTREGADO / CONSUMIDO' : 'DISPONIBLE PARA ENTREGA'}
-                    </span>
-                  </div>
+                  <span
+                    style={{
+                      padding: '0.3rem 0.65rem',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      background: scannedTicket.isConsumed ? 'var(--color-danger)' : 'var(--color-success)',
+                      color: '#FFFFFF',
+                    }}
+                  >
+                    {scannedTicket.isConsumed ? 'ENTREGADO / CONSUMIDO' : 'DISPONIBLE PARA ENTREGA'}
+                  </span>
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <p style={{ margin: '0.25rem 0', color: '#D1D5DB' }}>
+                <div style={{ marginBottom: '1rem', color: 'var(--color-text-secondary)' }}>
+                  <p style={{ margin: '0.25rem 0' }}>
                     <strong>Socio:</strong> {scannedTicket.clientName} ({scannedTicket.clientDocumentMasked})
                   </p>
-                  <p style={{ margin: '0.25rem 0', color: '#D1D5DB' }}>
+                  <p style={{ margin: '0.25rem 0' }}>
                     <strong>Total Pagado:</strong> {formatCurrencyPen(scannedTicket.totalPen)}
                   </p>
-                  <p style={{ margin: '0.25rem 0', color: '#9CA3AF', fontSize: '0.85rem' }}>
+                  <p style={{ margin: '0.25rem 0', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                     <strong>Emitido:</strong> {scannedTicket.issuedAtUtc || 'Reciente'}
                   </p>
                 </div>
 
-                <h3 style={{ color: '#F3F4F6', fontSize: '1rem', borderBottom: '1px solid #374151', paddingBottom: '0.4rem' }}>
+                <h3 style={{ color: 'var(--color-text-primary)', fontSize: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.4rem' }}>
                   Suplementos a Entregar:
                 </h3>
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 1.5rem 0' }}>
                   {(scannedTicket.items || []).map((it) => (
-                    <li key={it.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #1F2937' }}>
-                      <span style={{ color: '#E5E7EB' }}>
-                        {it.quantity}x {it.productName} ({it.productBrand} - {it.productPresentation} {it.productFlavor ? `· ${it.productFlavor}` : ''})
+                    <li
+                      key={it.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '0.5rem 0',
+                        borderBottom: '1px solid var(--color-border)',
+                        color: 'var(--color-text-primary)',
+                      }}
+                    >
+                      <span>
+                        {it.quantity}x {it.productName} ({it.productBrand} - {it.productPresentation}{' '}
+                        {it.productFlavor ? `· ${it.productFlavor}` : ''})
                       </span>
-                      <span style={{ color: '#D4AF37', fontWeight: 600 }}>{formatCurrencyPen(it.lineTotalPen)}</span>
+                      <span style={{ color: 'var(--color-gold)', fontWeight: 700 }}>{formatCurrencyPen(it.lineTotalPen)}</span>
                     </li>
                   ))}
                 </ul>
 
                 {!scannedTicket.isConsumed ? (
-                  <div style={{ background: '#1F2937', padding: '1rem', borderRadius: '6px' }}>
-                    <label style={{ display: 'block', color: '#D1D5DB', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                  <div style={{ background: 'var(--color-bg-elevated)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                    <label className="form-label" htmlFor="delivery-notes">
                       Notas de verificación física (opcional):
                     </label>
                     <input
+                      id="delivery-notes"
                       type="text"
+                      className="form-input"
                       value={deliveryNotes}
                       onChange={(e) => setDeliveryNotes(e.target.value)}
                       placeholder="Ej: DNI contrastado, socio retiró en persona"
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        background: '#111827',
-                        border: '1px solid #4B5563',
-                        borderRadius: '4px',
-                        color: '#F9FAFB',
-                        marginBottom: '1rem'
-                      }}
+                      style={{ marginBottom: '1rem' }}
                     />
                     <Button onClick={handleConfirmDelivery} disabled={actionLoading}>
                       {actionLoading ? 'Procesando entrega…' : '✓ Confirmar Entrega Física'}
                     </Button>
                   </div>
                 ) : (
-                  <Alert variant="danger" message={`Este ticket ya fue consumido el ${scannedTicket.consumedAtUtc}. No entregue productos nuevamente.`} />
+                  <Alert
+                    variant="danger"
+                    message={`Este ticket ya fue consumido el ${scannedTicket.consumedAtUtc}. No entregue productos nuevamente.`}
+                  />
                 )}
               </div>
             ) : (
-              <div style={{ background: '#1F2937', padding: '2rem', borderRadius: '8px', textAlign: 'center', color: '#9CA3AF' }}>
-                <p>Escanee un código QR en recepción para validar la orden del socio.</p>
+              <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+                <p style={{ margin: 0 }}>Escanee o ingrese un token QR en recepción para validar la orden del socio.</p>
               </div>
             )}
           </div>
         </div>
       ) : (
-        /* Contenido: Tablas de Pedidos */
-        <div style={{ display: 'grid', gridTemplateColumns: selectedOrder ? '1fr 450px' : '1fr', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: selectedOrder ? '1fr 440px' : '1fr', gap: '1.5rem' }}>
           <div>
             {loading ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: '#9CA3AF' }}>Cargando pedidos…</div>
+              <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+                Cargando pedidos…
+              </div>
             ) : orders.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', background: '#1F2937', borderRadius: '8px', color: '#9CA3AF' }}>
+              <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
                 No hay pedidos en la bandeja seleccionada.
               </div>
             ) : (
-              <div style={{ overflowX: 'auto', background: '#1F2937', borderRadius: '8px', border: '1px solid #374151' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+              <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+                <table className="data-table" style={{ width: '100%' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #374151', color: '#9CA3AF' }}>
-                      <th style={{ padding: '0.75rem 1rem' }}>Pedido</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Socio</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Total</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Método</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Estado Pedido</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Estado Pago</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Acción</th>
+                    <tr>
+                      <th>Pedido</th>
+                      <th>Socio</th>
+                      <th>Total</th>
+                      <th>Método</th>
+                      <th>Estado Pedido</th>
+                      <th>Estado Pago</th>
+                      <th>Acción</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map((ord) => (
-                      <tr key={ord.id} style={{ borderBottom: '1px solid #2D3748', color: '#F3F4F6' }}>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{ord.orderNumber}</td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <div>{ord.clientName}</div>
-                          <small style={{ color: '#9CA3AF' }}>{ord.clientPhone || ord.clientDocumentMasked}</small>
+                      <tr key={ord.id}>
+                        <td style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{ord.orderNumber}</td>
+                        <td>
+                          <div style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{ord.clientName}</div>
+                          <small style={{ color: 'var(--color-text-muted)' }}>{ord.clientPhone || ord.clientDocumentMasked}</small>
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#D4AF37' }}>
-                          {formatCurrencyPen(ord.totalPen)}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem' }}>{ord.paymentMethod}</td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <span style={{
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            background: ord.orderStatus === 'ENTREGADO' ? '#065F46' : ord.orderStatus === 'LISTO_PARA_RETIRO' ? '#1E40AF' : '#374151',
-                            color: '#FFFFFF'
-                          }}>
+                        <td style={{ fontWeight: 700, color: 'var(--color-gold)' }}>{formatCurrencyPen(ord.totalPen)}</td>
+                        <td style={{ color: 'var(--color-text-secondary)' }}>{ord.paymentMethod}</td>
+                        <td>
+                          <span
+                            style={{
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background:
+                                ord.orderStatus === 'ENTREGADO'
+                                  ? '#065F46'
+                                  : ord.orderStatus === 'LISTO_PARA_RETIRO'
+                                  ? '#1E40AF'
+                                  : '#475569',
+                              color: '#FFFFFF',
+                            }}
+                          >
                             {ord.orderStatus}
                           </span>
                         </td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <span style={{
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            background: ord.paymentStatus === 'VERIFICADO' ? '#065F46' : ord.paymentStatus === 'EVIDENCIA_SUBIDA' ? '#92400E' : '#374151',
-                            color: '#FFFFFF'
-                          }}>
+                        <td>
+                          <span
+                            style={{
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background:
+                                ord.paymentStatus === 'VERIFICADO'
+                                  ? '#065F46'
+                                  : ord.paymentStatus === 'EVIDENCIA_SUBIDA'
+                                  ? '#92400E'
+                                  : '#475569',
+                              color: '#FFFFFF',
+                            }}
+                          >
                             {ord.paymentStatus}
                           </span>
                         </td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
+                        <td>
                           <Button variant="secondary" onClick={() => handleSelectOrder(ord.id)}>
                             Ver Detalle
                           </Button>
@@ -511,122 +488,198 @@ export default function SupplementOrdersPage() {
             )}
           </div>
 
-          {/* Panel Lateral: Detalle del Pedido Seleccionado */}
           {selectedOrder && (
-            <div style={{ background: '#111827', padding: '1.5rem', borderRadius: '8px', border: '1px solid #4B5563', maxHeight: '85vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #374151', paddingBottom: '0.5rem' }}>
-                <h2 style={{ margin: 0, color: '#F9FAFB', fontSize: '1.15rem' }}>Detalle {selectedOrder.orderNumber}</h2>
+            <div className="card" style={{ padding: '1.5rem', maxHeight: '85vh', overflowY: 'auto' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem',
+                  borderBottom: '1px solid var(--color-border)',
+                  paddingBottom: '0.5rem',
+                }}
+              >
+                <h2 style={{ margin: 0, color: 'var(--color-text-primary)', fontSize: '1.15rem' }}>
+                  Detalle {selectedOrder.orderNumber}
+                </h2>
                 <button
+                  type="button"
                   onClick={() => setSelectedOrder(null)}
-                  style={{ background: 'transparent', border: 'none', color: '#9CA3AF', fontSize: '1.25rem', cursor: 'pointer' }}
+                  aria-label="Cerrar detalle"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', fontSize: '1.25rem', cursor: 'pointer' }}
                 >
                   ✕
                 </button>
               </div>
 
               {detailLoading ? (
-                <div style={{ color: '#9CA3AF' }}>Cargando detalle…</div>
+                <div style={{ color: 'var(--color-text-secondary)' }}>Cargando detalle…</div>
               ) : (
                 <div>
-                  <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: '#D1D5DB' }}>
-                    <p style={{ margin: '0.2rem 0' }}><strong>Socio:</strong> {selectedOrder.clientName}</p>
-                    <p style={{ margin: '0.2rem 0' }}><strong>Documento:</strong> {selectedOrder.clientDocumentMasked}</p>
-                    <p style={{ margin: '0.2rem 0' }}><strong>Teléfono:</strong> {selectedOrder.clientPhone || 'No registrado'}</p>
-                    <p style={{ margin: '0.2rem 0' }}><strong>Total:</strong> <span style={{ color: '#D4AF37', fontWeight: 600 }}>{formatCurrencyPen(selectedOrder.totalPen)}</span></p>
-                    <p style={{ margin: '0.2rem 0' }}><strong>Método:</strong> {selectedOrder.paymentMethod}</p>
+                  <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      <strong>Socio:</strong> {selectedOrder.clientName}
+                    </p>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      <strong>Documento:</strong> {selectedOrder.clientDocumentMasked}
+                    </p>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      <strong>Teléfono:</strong> {selectedOrder.clientPhone || 'No registrado'}
+                    </p>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      <strong>Total:</strong>{' '}
+                      <span style={{ color: 'var(--color-gold)', fontWeight: 700 }}>
+                        {formatCurrencyPen(selectedOrder.totalPen)}
+                      </span>
+                    </p>
+                    <p style={{ margin: '0.25rem 0' }}>
+                      <strong>Método:</strong> {selectedOrder.paymentMethod}
+                    </p>
+
                     {selectedOrder.paymentMethod === 'TARJETA_PASARELA' && (
-                      <div role="status" style={{ margin: '0.7rem 0', padding: '0.9rem', border: '1px solid #D4AF37', borderRadius: '8px', background: '#2A2416', color: '#F5DE9B' }}>
+                      <div
+                        role="status"
+                        style={{
+                          margin: '0.7rem 0',
+                          padding: '0.9rem',
+                          border: '1px solid var(--color-gold)',
+                          borderRadius: '8px',
+                          background: 'rgba(212,175,55,0.1)',
+                          color: 'var(--color-text-primary)',
+                        }}
+                      >
                         <strong>Cobro digital CulqiLink</strong>
                         <p style={{ margin: '0.4rem 0' }}>Estado del enlace: {digitalLink?.status || 'sin enlace disponible'}</p>
-                        {digitalLink?.expiresAt && <p style={{ margin: '0.4rem 0' }}>Vence: {new Date(digitalLink.expiresAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</p>}
-                        <p style={{ margin: '0.4rem 0 0' }}>
+                        {digitalLink?.expiresAt && (
+                          <p style={{ margin: '0.4rem 0' }}>
+                            Vence: {new Date(digitalLink.expiresAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}
+                          </p>
+                        )}
+                        <p style={{ margin: '0.4rem 0 0.6rem' }}>
                           {selectedOrder.paymentStatus === 'VERIFICADO'
                             ? 'Cargo confirmado por Culqi. Continúe con la preparación y entrega del pedido.'
-                              : digitalLink?.status === 'REVIEW'
-                                ? 'Se detectó un cargo tardío o inconsistente: requiere revisión. No entregue productos hasta resolver la conciliación.'
-                                : digitalLink?.status === 'EXPIRED'
-                                  ? 'El enlace venció sin pago verificado. El pedido no puede prepararse ni entregarse.'
-                              : 'Esperando conciliación automática con Culqi. No confirme este pago manualmente ni entregue el pedido.'}
+                            : digitalLink?.status === 'REVIEW'
+                            ? 'Se detectó un cargo tardío o inconsistente: requiere revisión.'
+                            : digitalLink?.status === 'EXPIRED'
+                            ? 'El enlace venció sin pago verificado.'
+                            : 'Esperando conciliación automática con Culqi.'}
                         </p>
-                        <Button variant="secondary" onClick={() => handleSelectOrder(selectedOrder.id)} disabled={detailLoading}>Actualizar estado Culqi</Button>
+                        <Button variant="secondary" onClick={() => handleSelectOrder(selectedOrder.id)} disabled={detailLoading}>
+                          Actualizar estado Culqi
+                        </Button>
                       </div>
                     )}
-                    <p style={{ margin: '0.2rem 0' }}><strong>Referencia de Pago:</strong> {selectedOrder.paymentReference || 'Pendiente'}</p>
+
+                    <p style={{ margin: '0.25rem 0' }}>
+                      <strong>Referencia de Pago:</strong> {selectedOrder.paymentReference || 'Pendiente'}
+                    </p>
                     {selectedOrder.paymentEvidenceUrl && (
                       <p style={{ margin: '0.4rem 0' }}>
-                        <a href={selectedOrder.paymentEvidenceUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#60A5FA', textDecoration: 'underline' }}>
+                        <a
+                          href={selectedOrder.paymentEvidenceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'var(--color-gold)', textDecoration: 'underline', fontWeight: 600 }}
+                        >
                           Ver Comprobante Adjunto ↗
                         </a>
                       </p>
                     )}
                   </div>
 
-                  <h4 style={{ color: '#E5E7EB', margin: '0.75rem 0 0.5rem 0', borderTop: '1px solid #374151', paddingTop: '0.75rem' }}>
+                  <h4 style={{ color: 'var(--color-text-primary)', margin: '0.75rem 0 0.5rem 0', borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem' }}>
                     Productos Solicitados:
                   </h4>
                   <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem 0', fontSize: '0.85rem' }}>
                     {(selectedOrder.items || []).map((it) => (
-                      <li key={it.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid #1F2937' }}>
-                        <span style={{ color: '#D1D5DB' }}>{it.quantity}x {it.productName} ({it.productPresentation})</span>
-                        <span style={{ color: '#D4AF37' }}>{formatCurrencyPen(it.lineTotalPen)}</span>
+                      <li
+                        key={it.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '0.4rem 0',
+                          borderBottom: '1px solid var(--color-border)',
+                        }}
+                      >
+                        <span style={{ color: 'var(--color-text-secondary)' }}>
+                          {it.quantity}x {it.productName} ({it.productPresentation})
+                        </span>
+                        <span style={{ color: 'var(--color-gold)', fontWeight: 700 }}>{formatCurrencyPen(it.lineTotalPen)}</span>
                       </li>
                     ))}
                   </ul>
 
-                  {/* Acciones de Flujo */}
-                  {((selectedOrder.orderStatus === 'PENDIENTE_PAGO' && selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' && (isAdmin() || isRecepcion())) ||
-                    (selectedOrder.orderStatus === 'PAGADO_POR_VERIFICAR' && isAdmin())) && (
-                    <div style={{ background: '#1F2937', padding: '1rem', borderRadius: '6px', marginBottom: '1rem' }}>
-                      <h4 style={{ color: '#D4AF37', margin: '0 0 0.5rem 0' }}>
+                  {((selectedOrder.orderStatus === 'PENDIENTE_PAGO' &&
+                    selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' &&
+                    (isExecutive || isRecepcion())) ||
+                    (selectedOrder.orderStatus === 'PAGADO_POR_VERIFICAR' && isExecutive)) && (
+                    <div
+                      style={{
+                        background: 'var(--color-bg-elevated)',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        border: '1px solid var(--color-border)',
+                        marginBottom: '1rem',
+                      }}
+                    >
+                      <h4 style={{ color: 'var(--color-gold)', margin: '0 0 0.5rem 0' }}>
                         {selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' ? 'Registrar cobro en efectivo' : 'Validación de comprobante'}
                       </h4>
                       <form onSubmit={handleApprovePayment}>
                         <div style={{ marginBottom: '0.75rem' }}>
-                          <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.8rem' }}>Monto Verificado en Caja (S/):</label>
+                          <label className="form-label" htmlFor="approve-amount">
+                            Monto Verificado en Caja (S/):
+                          </label>
                           <input
+                            id="approve-amount"
                             type="number"
                             step="0.01"
+                            className="form-input"
                             value={approveAmount}
                             onChange={(e) => setApproveAmount(e.target.value)}
-                            style={{ width: '100%', padding: '0.4rem', background: '#111827', border: '1px solid #4B5563', borderRadius: '4px', color: '#FFF' }}
                             required
                           />
                         </div>
                         <div style={{ marginBottom: '0.75rem' }}>
-                          <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.8rem' }}>Notas:</label>
+                          <label className="form-label" htmlFor="approve-notes">
+                            Notas:
+                          </label>
                           <input
+                            id="approve-notes"
                             type="text"
+                            className="form-input"
                             value={approveNotes}
                             onChange={(e) => setApproveNotes(e.target.value)}
                             placeholder="Ej: Confirmado en cuenta BCP"
-                            style={{ width: '100%', padding: '0.4rem', background: '#111827', border: '1px solid #4B5563', borderRadius: '4px', color: '#FFF' }}
                           />
                         </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <Button type="submit" disabled={actionLoading}>
-                            {selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' ? 'Confirmar efectivo recibido' : 'Aprobar pago'}
-                          </Button>
-                        </div>
+                        <Button type="submit" disabled={actionLoading}>
+                          {selectedOrder.paymentMethod === 'EFECTIVO_MOSTRADOR' ? 'Confirmar efectivo recibido' : 'Aprobar pago'}
+                        </Button>
                       </form>
 
-                      {isAdmin() && <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '0.75rem' }}>
-                        <input
-                          type="text"
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          placeholder="Motivo de rechazo"
-                          style={{ width: '100%', padding: '0.4rem', background: '#111827', border: '1px solid #4B5563', borderRadius: '4px', color: '#FFF', marginBottom: '0.5rem' }}
-                        />
-                        <Button variant="danger" onClick={handleRejectPayment} disabled={actionLoading || !rejectReason.trim()}>
-                          Rechazar Pago
-                        </Button>
-                      </div>}
+                      {isExecutive && (
+                        <div style={{ marginTop: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem' }}>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            placeholder="Motivo de rechazo"
+                            style={{ marginBottom: '0.5rem' }}
+                          />
+                          <Button variant="danger" onClick={handleRejectPayment} disabled={actionLoading || !rejectReason.trim()}>
+                            Rechazar Pago
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {selectedOrder.orderStatus === 'CONFIRMADO_PREPARACION' && (
-                    <div style={{ background: '#1F2937', padding: '1rem', borderRadius: '6px', marginBottom: '1rem' }}>
-                      <p style={{ color: '#D1D5DB', fontSize: '0.85rem', margin: '0 0 0.75rem 0' }}>
+                    <div style={{ background: 'var(--color-bg-elevated)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)', marginBottom: '1rem' }}>
+                      <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', margin: '0 0 0.75rem 0' }}>
                         El pago está verificado. Una vez empaquetados los productos, marque el pedido como listo para generar el ticket QR del socio.
                       </p>
                       <Button onClick={handleMarkReady} disabled={actionLoading}>
@@ -636,7 +689,17 @@ export default function SupplementOrdersPage() {
                   )}
 
                   {selectedOrder.hasPickupToken && (
-                    <div style={{ background: '#064E3B', padding: '0.75rem', borderRadius: '6px', color: '#A7F3D0', fontSize: '0.85rem' }}>
+                    <div
+                      style={{
+                        background: 'var(--color-success-bg)',
+                        border: '1px solid var(--color-success-border)',
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                        color: 'var(--color-success)',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                      }}
+                    >
                       ✓ Ticket QR de retiro emitido para el socio. Puede reclamarlo en mostrador.
                     </div>
                   )}

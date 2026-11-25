@@ -98,7 +98,7 @@ async function renderChartToCanvas(containerElement, title, theme = 'dark', scal
   clonedSvg.setAttribute('width', width);
   clonedSvg.setAttribute('height', height);
 
-  const serializer = new XMLSerializer();
+  const serializer = new window.XMLSerializer();
   let svgString = serializer.serializeToString(clonedSvg);
   if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
     svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
@@ -108,7 +108,7 @@ async function renderChartToCanvas(containerElement, title, theme = 'dark', scal
   const svgUrl = URL.createObjectURL(svgBlob);
 
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = new window.Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       ctx.drawImage(img, 20, headerHeight, width, height);
@@ -152,7 +152,7 @@ export async function copyChartToClipboard(containerElement, title, theme = 'dar
       try {
         if (navigator.clipboard && typeof window.ClipboardItem !== 'undefined') {
           await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
+            new window.ClipboardItem({ 'image/png': blob })
           ]);
           resolve({ success: true, method: 'clipboard' });
         } else {

@@ -15,7 +15,8 @@ import { planTypeLabel, utcDateLabel, utcTimeLabel, dateLabel, methodLabel, stat
 import { formatCurrencyPen } from '../utils/formatters';
 
 export default function MemberProfilePage({ clientId, onBack, onChanged }) {
-  const { token, isAdmin } = useAuth();
+  const { token, isBusinessExecutive } = useAuth();
+  const isExecutive = isBusinessExecutive();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -176,7 +177,7 @@ export default function MemberProfilePage({ clientId, onBack, onChanged }) {
                         <td>{dateLabel(new Date(new Date(String(p.end_date).slice(0, 10) + 'T12:00:00Z').getTime() - 86400000).toISOString())}</td>
                         <td>{formatCurrencyPen(p.price_pen)}</td>
                         <td>
-                          {['VIGENTE', 'POR_VENCER'].includes(state) && isAdmin() ? (
+                          {['VIGENTE', 'POR_VENCER'].includes(state) && isExecutive ? (
                             <button
                               className="member-plan-edit"
                               title="Editar plan asignado"
@@ -185,7 +186,7 @@ export default function MemberProfilePage({ clientId, onBack, onChanged }) {
                             >
                               <img src={editPlanIcon} alt="" />
                             </button>
-                          ) : !p.cancelled_at_utc && isAdmin() ? (
+                          ) : !p.cancelled_at_utc && isExecutive ? (
                             <button className="member-text-action member-danger" onClick={() => setAction({ kind: 'cancel', period: p })}>
                               Cancelar plan
                             </button>
@@ -277,7 +278,7 @@ export default function MemberProfilePage({ clientId, onBack, onChanged }) {
             </div>
           </section>
 
-          {isAdmin() && (
+          {isExecutive && (
             <section className="member-panel member-audit">
               <header>
                 <h2>Historial de cambios de datos</h2>

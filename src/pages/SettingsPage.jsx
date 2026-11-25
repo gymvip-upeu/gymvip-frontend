@@ -10,6 +10,7 @@ import { Button } from '../components/common/Button';
 import { Alert } from '../components/common/Alert';
 import { Icon } from '../components/common/Icons';
 import { LoadingState } from '../components/feedback/LoadingState';
+import { VipTabBar } from '../components/common/VipTabBar';
 import StaffPage from './StaffPage';
 import DataImportPage from './DataImportPage';
 import {
@@ -21,9 +22,9 @@ import { httpClient } from '../api/httpClient';
 import { triggerSentryTestVerification } from '../config/sentry';
 
 export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
-  const { token, isAdmin, isGerente, logout } = useAuth();
+  const { token, isAdmin, isGerente } = useAuth();
   const isExecutive = isAdmin() || (isGerente && isGerente());
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState(initialTab === 'security' ? 'rules' : initialTab);
 
   // Estados de datos reales de recordatorios
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -34,8 +35,6 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
   const [cuts, setCuts] = useState([]);
   const [sentryTestMessage, setSentryTestMessage] = useState(null);
   const [cutsError, setCutsError] = useState('');
-  const [sessionError, setSessionError] = useState('');
-  const [revokingSessions, setRevokingSessions] = useState(false);
 
   // Estado del microservicio de comunicaciones
   const [serviceHealth, setServiceHealth] = useState({
@@ -107,7 +106,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
 
   // Ejecución manual de corte
   const handleEvaluateNow = async () => {
-    if (!isAdmin()) return;
+    if (!isExecutive) return;
     setEvaluating(true);
     setConfigError('');
     setConfigSuccess('');
@@ -122,24 +121,19 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
     }
   };
 
-  const handleRevokeAllSessions = async () => {
-    if (!window.confirm('Se cerrarán todas las sesiones de esta cuenta, incluida la actual. ¿Continuar?')) return;
-    setRevokingSessions(true);
-    setSessionError('');
-    try {
-      const response = await httpClient('/api/v1/auth/revoke-all-sessions', { method: 'POST' }, token);
-      if (!response.ok) throw new Error(`No se pudieron cerrar las sesiones (HTTP ${response.status}).`);
-      await logout();
-    } catch (error) {
-      setSessionError(error.message || 'No se pudieron cerrar las sesiones.');
-    } finally {
-      setRevokingSessions(false);
-    }
-  };
+  const settingsTabs = [
+    { id: 'rules', label: 'Reglas y Recordatorios', icon: 'bell' },
+    { id: 'comms', label: 'Microservicio de Comunicaciones', icon: 'message-circle' },
+    ...(isExecutive ? [{ id: 'staff', label: 'Personal y Roles', icon: 'shield-check', badge: 'GESTIÓN', badgeVariant: 'gold' }] : []),
+    ...(isAdmin() ? [
+      { id: 'import', label: 'Importación y Migración', icon: 'download', badge: 'TI', badgeVariant: 'gold' },
+      { id: 'diagnostics', label: 'Monitoreo & Sentry', icon: 'activity', badge: 'OBS', badgeVariant: 'info' },
+    ] : []),
+  ];
 
   return (
     <div className="settings-page" style={{ maxWidth: '980px', margin: '0 auto', paddingBottom: '32px' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
           Configuración Operativa
         </h1>
@@ -147,86 +141,13 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
           Consulta las reglas operativas, el estado de comunicaciones y la gestión de colaboradores.
         </p>
 
-        {/* Pestañas de Navegación */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className={`btn btn-sm ${activeTab === 'rules' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('rules')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
-          >
-            <Icon name="bell" size={15} />
-            <span>Reglas y Recordatorios</span>
-          </button>
-
-          <button
-            type="button"
-            className={`btn btn-sm ${activeTab === 'comms' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('comms')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
-          >
-            <Icon name="message-circle" size={15} />
-            <span>Microservicio de Comunicaciones</span>
-          </button>
-
-          {isExecutive && (
-            <button
-              type="button"
-              className={`btn btn-sm ${activeTab === 'staff' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setActiveTab('staff')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
-            >
-              <Icon name="shield-check" size={15} />
-              <span>Personal y Roles</span>
-              <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>GESTIÓN</Badge>
-            </button>
-          )}
-
-          {isAdmin() && (
-            <button
-              type="button"
-              className={`btn btn-sm ${activeTab === 'import' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setActiveTab('import')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
-            >
-              <Icon name="download" size={15} />
-              <span>Importación y Migración</span>
-              <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>ADMIN</Badge>
-            </button>
-          )}
-
-          {isAdmin() && (
-            <button
-              type="button"
-              className={`btn btn-sm ${activeTab === 'diagnostics' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setActiveTab('diagnostics')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '38px', borderRadius: 'var(--radius-md)' }}
-            >
-              <Icon name="activity" size={15} />
-              <span>Monitoreo & Sentry</span>
-              <Badge variant="info" style={{ fontSize: '10px', marginLeft: '4px' }}>OBS</Badge>
-            </button>
-          )}
-          <button
-            type="button"
-            className={`btn btn-sm ${activeTab === 'security' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('security')}
-          >
-            Seguridad de la cuenta
-          </button>
-        </div>
+        <VipTabBar
+          tabs={settingsTabs}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          ariaLabel="Pestañas de configuración operativa"
+        />
       </div>
-
-      {activeTab === 'security' && (
-        <section className="settings-card" style={{ padding: '24px' }}>
-          <h2>Dispositivos y sesiones</h2>
-          <p>Si perdiste tu teléfono, cierra todas las sesiones de esta cuenta. También se desactivarán sus dispositivos de notificación registrados.</p>
-          {sessionError && <Alert variant="danger" message={sessionError} onClose={() => setSessionError('')} />}
-          <Button onClick={handleRevokeAllSessions} disabled={revokingSessions}>
-            {revokingSessions ? 'Cerrando sesiones…' : 'Cerrar todas las sesiones'}
-          </Button>
-        </section>
-      )}
 
       {/* PESTAÑA 1: REGLAS Y RECORDATORIOS */}
       {activeTab === 'rules' && (
@@ -249,15 +170,15 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
                       Evaluación de vencimientos
                     </h2>
                   </div>
-                  <Badge variant={isAdmin() ? 'gold' : 'neutral'}>
-                    {isAdmin() ? 'Control Total ADMIN' : 'Modo Solo Lectura (Recepción)'}
+                  <Badge variant={isExecutive ? 'gold' : 'neutral'}>
+                    {isExecutive ? 'Control Ejecutivo' : 'Modo Solo Lectura (Recepción)'}
                   </Badge>
                 </div>
 
                 {reminderConfig && (
                   <p>Estado guardado: <strong>{reminderConfig.enabled ? 'Habilitado' : 'Pausado'}</strong></p>
                 )}
-                {isAdmin() && (
+                {isExecutive && (
                   <div className="reminder-actions">
                     <Button onClick={() => onNavigate('reminders')}>Abrir Recordatorios</Button>
                     <Button variant="secondary" onClick={handleEvaluateNow} disabled={evaluating}>
@@ -404,8 +325,8 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
         </div>
       )}
 
-      {/* PESTAÑA 3: PERSONAL Y ROLES (ADMIN) */}
-      {activeTab === 'staff' && isAdmin() && (
+      {/* PESTAÑA 3: PERSONAL Y ROLES (GERENCIA Y ADMIN) */}
+      {activeTab === 'staff' && isExecutive && (
         <StaffPage />
       )}
 

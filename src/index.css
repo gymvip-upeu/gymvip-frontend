@@ -725,6 +725,25 @@ button {
   overflow: hidden;
 }
 
+.user-profile-trigger {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.user-profile-trigger:hover,
+.user-profile-trigger:focus-visible {
+  border-color: var(--color-gold);
+  background: rgba(212, 175, 55, 0.08);
+  outline: none;
+}
+
 .user-email {
   font-size: 12px;
   font-weight: 600;
@@ -1677,5 +1696,102 @@ button {
   align-items: center;
   font-size: 11px;
   flex-shrink: 0;
+}
+
+/* ==============================================================================
+   GYM VIP — Barra Unificada de Subnavegación (VipTabBar) + Calendario de Asistencia
+   ============================================================================== */
+.vip-tabbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.vip-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vip-tab:hover {
+  border-color: var(--color-gold);
+  color: var(--color-text-primary);
+}
+
+.vip-tab.is-active {
+  background: var(--color-gold);
+  color: #0B0D12;
+  border-color: var(--color-gold);
+  font-weight: 700;
+}
+
+.vip-tab-count {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: rgba(212, 175, 55, 0.16);
+  color: var(--color-gold);
+}
+
+.vip-tab-count.is-active {
+  background: rgba(11, 13, 18, 0.18);
+  color: #0B0D12;
+}
+
+.vip-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.vip-calendar-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  padding: 6px 0;
+}
+
+.vip-calendar-cell {
+  min-height: 74px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.vip-calendar-cell:hover {
+  border-color: var(--color-gold);
+}
+
+.vip-calendar-cell.is-selected {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 1px var(--color-gold);
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.vip-calendar-cell.is-empty {
+  opacity: 0.35;
+  cursor: default;
 }
 

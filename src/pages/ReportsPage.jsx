@@ -14,19 +14,17 @@ import {
   getReportApi,
   exportReportApi,
 } from '../api/reportsApi';
+import { fetchDashboardMetrics } from '../api/dashboardApi';
 import { AnalyticsChartCard } from '../components/common/AnalyticsChartCard';
-import { ChartActions } from '../components/common/ChartActions';
 import { Icon } from '../components/common/Icons';
 import { Alert } from '../components/common/Alert';
 import { Badge } from '../components/common/Badge';
-import { Button } from '../components/common/Button';
 
 import { BarChart } from '@mui/x-charts/BarChart';
-import { LineChart } from '@mui/x-charts/LineChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 
 export default function ReportsPage() {
-  const { token, user, isAdmin } = useAuth();
+  const { token } = useAuth();
 
   // Preset de fecha y rangos
   const [selectedPreset, setSelectedPreset] = useState('this_month');
@@ -64,6 +62,25 @@ export default function ReportsPage() {
   });
   const [customReportName, setCustomReportName] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [overviewMetrics, setOverviewMetrics] = useState(null);
+  const [overviewLoading, setOverviewLoading] = useState(false);
+
+  const loadOverviewMetrics = useCallback(async () => {
+    if (!token) return;
+    setOverviewLoading(true);
+    try {
+      const data = await fetchDashboardMetrics(token);
+      setOverviewMetrics(data || null);
+    } catch {
+      setOverviewMetrics(null);
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadOverviewMetrics();
+  }, [loadOverviewMetrics]);
 
   // Manejo de cambio de preset de fecha
   const handlePresetChange = (presetId) => {
@@ -769,6 +786,153 @@ export default function ReportsPage() {
           </div>
         )}
       </AnalyticsChartCard>
+
+      {/* Analítica Gerencial Consolidada (trasladada del Dashboard principal) */}
+      <div style={{ marginTop: '28px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
+            Analítica Gerencial del Club
+          </h2>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: 0 }}>
+            Distribución de membresías, popularidad de planes, afluencia semanal, vencimientos y recaudación por método de pago.
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+          <AnalyticsChartCard
+            title="Estado de Membresías"
+            subtitle="Distribución autoritativa de cobertura activa"
+            iconName="pie-chart"
+            badge="Tiempo Real"
+            filename="gymvip_estado_membresias"
+            isLoading={overviewLoading}
+          >
+            <div style={{ height: '240px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <PieChart
+                series={[
+                  {
+                    data: (() => {
+                      const s = overviewMetrics?.membershipsByStatus || {};
+                      const items = [
+                        { id: 0, value: s.VIGENTE ?? 0, label: 'Vigentes', color: '#D4AF37' },
+                        { id: 1, value: s.VENCIDO ?? 0, label: 'Vencidas', color: '#EF4444' },
+                        { id: 2, value: s.CONGELADO ?? 0, label: 'Congeladas', color: '#3B82F6' },
+                        { id: 3, value: s.CANCELADO ?? 0, label: 'Canceladas', color: '#64748B' },
+                      ].filter((d) => d.value > 0);
+                      return items.length ? items : [{ id: 99, value: 1, label: 'Sin Datos', color: '#334155' }];
+                    })(),
+                    innerRadius: 46,
+                    outerRadius: 82,
+                    paddingAngle: 3,
+                    cornerRadius: 4,
+                  },
+                ]}
+                height={230}
+                margin={{ top: 10, bottom: 20, left: 10, right: 120 }}
+              />
+            </div>
+          </AnalyticsChartCard>
+
+          <AnalyticsChartCard
+            title="Popularidad de Planes Activos"
+            subtitle="Top de membresías vigentes por plan"
+            iconName="tag"
+            badge="Top Planes"
+            filename="gymvip_planes_activos"
+            isLoading={overviewLoading}
+            isEmpty={!overviewMetrics?.membershipsByPlan?.length}
+            emptyMessage="Aún no se han asignado planes vigentes en el sistema."
+          >
+            <div style={{ height: '240px', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px', padding: '0 8px' }}>
+              {(overviewMetrics?.membershipsByPlan || []).map((plan, idx) => {
+                const maxCount = Math.max(...(overviewMetrics?.membershipsByPlan || []).map((p) => p.memberCount), 1);
+                const pct = Math.round((plan.memberCount / maxCount) * 100);
+                return (
+                  <div key={idx}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                      <span style={{ color: 'var(--color-text-secondary)', fontWeight: 600 }}>{plan.planName}</span>
+                      <span style={{ color: 'var(--color-gold)', fontWeight: 700 }}>{plan.memberCount} socios</span>
+                    </div>
+                    <div style={{ height: '8px', background: 'var(--color-bg-elevated)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: 'var(--color-gold)', borderRadius: '4px' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </AnalyticsChartCard>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+          <AnalyticsChartCard
+            title="Afluencia y Asistencia (7 Días)"
+            subtitle="Marcaciones validadas en torniquete (America/Lima)"
+            iconName="check-circle"
+            filename="gymvip_asistencia_semanal"
+            isLoading={overviewLoading}
+          >
+            <div style={{ height: '240px', width: '100%' }}>
+              <BarChart
+                xAxis={[{ scaleType: 'band', data: (overviewMetrics?.recentAttendance7Days || []).map((d) => d.dayName) }]}
+                series={[{ data: (overviewMetrics?.recentAttendance7Days || []).map((d) => d.count), color: '#10B981', label: 'Asistencias' }]}
+                height={230}
+                margin={{ top: 20, bottom: 25, left: 35, right: 15 }}
+              />
+            </div>
+          </AnalyticsChartCard>
+
+          <AnalyticsChartCard
+            title="Vencimientos por Intervalo"
+            subtitle="Previsión de renovación y cobranza"
+            iconName="calendar"
+            filename="gymvip_vencimientos_intervalo"
+            isLoading={overviewLoading}
+          >
+            <div style={{ height: '240px', width: '100%' }}>
+              <BarChart
+                xAxis={[{ scaleType: 'band', data: Object.keys(overviewMetrics?.expirationsByInterval || {}) }]}
+                series={[{ data: Object.values(overviewMetrics?.expirationsByInterval || {}), color: '#F59E0B', label: 'Socios' }]}
+                height={230}
+                margin={{ top: 20, bottom: 25, left: 35, right: 15 }}
+              />
+            </div>
+          </AnalyticsChartCard>
+        </div>
+
+        {overviewMetrics?.financialSummary?.revenueByMethod && Object.values(overviewMetrics.financialSummary.revenueByMethod).some((v) => Number(v) > 0) && (
+          <AnalyticsChartCard
+            title="Ingresos por Método de Pago (Mes Actual)"
+            subtitle="Recaudación consolidada por canal de cobranza"
+            iconName="credit-card"
+            badge="Finanzas"
+            filename="gymvip_ingresos_metodo_pago"
+            isLoading={overviewLoading}
+          >
+            <div style={{ height: '220px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <PieChart
+                series={[
+                  {
+                    data: Object.entries(overviewMetrics.financialSummary.revenueByMethod)
+                      .map(([method, amount], idx) => ({
+                        id: idx,
+                        value: Number(amount),
+                        label: method,
+                        color: ['#D4AF37', '#10B981', '#3B82F6', '#8B5CF6', '#F59E0B'][idx % 5],
+                      }))
+                      .filter((d) => d.value > 0),
+                    innerRadius: 40,
+                    outerRadius: 75,
+                    paddingAngle: 3,
+                    cornerRadius: 4,
+                  },
+                ]}
+                height={210}
+                margin={{ top: 10, bottom: 20, left: 10, right: 140 }}
+              />
+            </div>
+          </AnalyticsChartCard>
+        )}
+      </div>
 
       {/* Modal para Guardar Favorito */}
       {showSaveModal && (

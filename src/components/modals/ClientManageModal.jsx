@@ -38,7 +38,8 @@ function initialForm(client) {
 }
 
 export default function ClientManageModal({ client, onClose, onUpdated }) {
-  const { token, isAdmin } = useAuth();
+  const { token, isBusinessExecutive } = useAuth();
+  const isExecutive = isBusinessExecutive();
   const [detail, setDetail] = useState(null);
   const [form, setForm] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -114,7 +115,7 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
   }, [client.id, token, reload]);
 
   useEffect(() => {
-    if (!isAdmin()) return;
+    if (!isExecutive) return;
     let active = true;
     setHistory(null);
     setHistoryError('');
@@ -320,14 +321,14 @@ export default function ClientManageModal({ client, onClose, onUpdated }) {
               )}
             </div>
 
-            {/* Sección 3: Historial de Cambios / Auditoría (Exclusivo ADMIN) */}
-            {isAdmin() && (
+            {/* Sección 3: Historial de Cambios / Auditoría (Gerencia y TI) */}
+            {isExecutive && (
               <div style={{ marginTop: '28px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <h3 style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
                     Libro de Auditoría de Cambios
                   </h3>
-                  <Badge variant="gold" style={{ fontSize: '11px' }}>Exclusivo ADMIN</Badge>
+                  <Badge variant="gold" style={{ fontSize: '11px' }}>Gerencia / Admin TI</Badge>
                 </div>
 
                 {historyError && <Alert variant="danger" message={historyError} />}

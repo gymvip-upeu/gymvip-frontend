@@ -52,7 +52,7 @@ test('Routing: todos los módulos del menú tienen una ruta canónica que abre s
   const modules = [
     'home', 'clients', 'plans', 'supplements', 'supplementOrders', 'promotions',
     'facilities', 'coverage', 'verification', 'attendance', 'memberships',
-    'reminders', 'faq', 'communications', 'staff', 'settings', 'reports', 'incidents', 'dataImport',
+    'reminders', 'faq', 'communications', 'staff', 'settings', 'reports', 'incidents', 'dataImport', 'profile',
   ];
   for (const module of modules) {
     const path = VIEW_PATH_MAP[module];

@@ -1,35 +1,25 @@
 // ==============================================================================
-// GYM VIP — Panel Desplegable de Notificaciones y Alertas del Sistema
-// Anclado bajo la campana del Header, con datos reales y navegación operativa
+// GYM VIP — Centro Unificado de Alertas Prioritarias (Campana Header)
+// Consolidado en una lista accionable única (Vencimientos + Pedidos por Verificar)
 // ==============================================================================
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from './Icons';
 import { Badge } from './Badge';
-import { Button } from './Button';
 import { listCoverage } from '../../api/jorgeApi';
-import { getReminderConfigApi, evaluateRemindersNowApi } from '../../api/reminderApi';
-import { getCommunicationsApi, retryCommunicationApi } from '../../api/commsApi';
+import { listAdminOrdersApi } from '../../api/supplementOrderApi';
 import { dateLabel } from '../members/memberUtils';
 
 export function NotificationsModal({ isOpen, onClose, onNavigate }) {
   const panelRef = useRef(null);
-  const { token, user, isAdmin, isRecepcion } = useAuth();
+  const { token, user, isBusinessExecutive, isRecepcion } = useAuth();
+  const canOperate = isBusinessExecutive() || isRecepcion();
 
-  const [activeTab, setActiveTab] = useState('vencimientos');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [actionNotice, setActionNotice] = useState('');
+  const [feedItems, setFeedItems] = useState([]);
 
-  // Datos reales
-  const [alerts, setAlerts] = useState([]);
-  const [reminderConfig, setReminderConfig] = useState(null);
-  const [commsItems, setCommsItems] = useState([]);
-  const [evaluating, setEvaluating] = useState(false);
-  const [retryingId, setRetryingId] = useState(null);
-
-  // Persistencia de leídos/vistos en localStorage por usuario
   const storageKey = user?.email ? `gymvip_seen_alerts_${user.email}` : 'gymvip_seen_alerts_default';
   const [seenIds, setSeenIds] = useState(() => {
     try {
@@ -42,8 +32,7 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
 
   const markAllAsSeen = () => {
     const allIds = new Set(seenIds);
-    alerts.forEach((a) => a.clientId && allIds.add(a.clientId));
-    commsItems.forEach((c) => c.id && allIds.add(c.id));
+    feedItems.forEach((item) => item.id && allIds.add(item.id));
     setSeenIds(allIds);
     try {
       localStorage.setItem(storageKey, JSON.stringify(Array.from(allIds)));
@@ -51,40 +40,47 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
   };
 
   const loadData = useCallback(async () => {
-    if (!token) return;
+    if (!token || !canOperate) return;
     setLoading(true);
     setError('');
-    setActionNotice('');
-
     try {
-      if (activeTab === 'vencimientos') {
-        if (isAdmin() || isRecepcion()) {
-          const res = await listCoverage({ state: 'ALERTAS', page: 0, size: 8 }, token);
-          const items = Array.isArray(res?.content) ? res.content : [];
-          // Ordenar por fecha más próxima
-          items.sort((a, b) => {
-            const dA = a.lastIncludedDate ? new Date(`${a.lastIncludedDate}T00:00:00Z`).getTime() : Infinity;
-            const dB = b.lastIncludedDate ? new Date(`${b.lastIncludedDate}T00:00:00Z`).getTime() : Infinity;
-            return dA - dB;
-          });
-          setAlerts(items);
-        }
-      } else if (activeTab === 'recordatorios') {
-        const config = await getReminderConfigApi(token).catch(() => null);
-        setReminderConfig(config);
-      } else if (activeTab === 'comunicaciones') {
-        const comms = await getCommunicationsApi({ page: 0, size: 6 }, token).catch((err) => {
-          setError(err.message || 'Microservicio de comunicaciones no disponible.');
-          return { content: [] };
-        });
-        setCommsItems(Array.isArray(comms?.content) ? comms.content : []);
-      }
+      const [coverageRes, ordersRes] = await Promise.all([
+        listCoverage({ state: 'ALERTAS', page: 0, size: 6 }, token).catch(() => ({ content: [] })),
+        listAdminOrdersApi({ status: 'PAGADO_POR_VERIFICAR', page: 0, size: 5 }, token).catch(() => ({ content: [] })),
+      ]);
+
+      const coverageAlerts = (Array.isArray(coverageRes?.content) ? coverageRes.content : []).map((item) => ({
+        id: `cov_${item.clientId}`,
+        kind: 'COVERAGE',
+        title: item.clientName || item.fullName,
+        subtitle: `DNI: ${item.documentNumber || '—'} · Plan: ${item.planName || 'General'}`,
+        badgeLabel: item.state === 'VENCIDO' ? 'VENCIDO' : `Vence en ${item.daysRemaining}d`,
+        badgeVariant: item.state === 'VENCIDO' ? 'danger' : 'warning',
+        detail: `Límite: ${item.lastIncludedDate ? dateLabel(item.lastIncludedDate) : 'Sin fecha'}`,
+        targetView: 'coverage',
+        actionLabel: 'Gestionar',
+      }));
+
+      const orderList = Array.isArray(ordersRes?.content) ? ordersRes.content : Array.isArray(ordersRes) ? ordersRes : [];
+      const orderAlerts = orderList.map((ord) => ({
+        id: `ord_${ord.id}`,
+        kind: 'ORDER',
+        title: `Pedido ${ord.orderNumber} por verificar`,
+        subtitle: `${ord.clientName} · ${ord.paymentMethod}`,
+        badgeLabel: 'PAGO QR',
+        badgeVariant: 'gold',
+        detail: `Total S/ ${Number(ord.totalPen || 0).toFixed(2)}`,
+        targetView: 'supplementOrders',
+        actionLabel: 'Revisar Pago',
+      }));
+
+      setFeedItems([...orderAlerts, ...coverageAlerts]);
     } catch (e) {
-      setError(e.message || 'No fue posible consultar la información.');
+      setError(e.message || 'No fue posible consultar las alertas operativas.');
     } finally {
       setLoading(false);
     }
-  }, [activeTab, token, isAdmin, isRecepcion]);
+  }, [token, canOperate]);
 
   useEffect(() => {
     if (isOpen) {
@@ -92,62 +88,28 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
     }
   }, [isOpen, loadData]);
 
-  // Cierre al presionar Escape o clic exterior
   useEffect(() => {
     if (!isOpen) return;
-
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         onClose();
       }
     };
-
     const handleClickOutside = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
-        // Ignorar clics dentro del botón de campana en el header
         const bellBtn = document.querySelector('.header-icon-btn[aria-label="Notificaciones"]');
         if (bellBtn && bellBtn.contains(e.target)) return;
         onClose();
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mousedown', handleClickOutside);
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, onClose]);
-
-  const handleEvaluateNow = async () => {
-    setEvaluating(true);
-    setActionNotice('');
-    try {
-      const res = await evaluateRemindersNowApi(token);
-      setActionNotice(res.message || `Corte evaluado: ${res.evaluatedCount || 0} socios procesados.`);
-      loadData();
-    } catch (e) {
-      setError(e.message || 'Error al ejecutar corte de recordatorios.');
-    } finally {
-      setEvaluating(false);
-    }
-  };
-
-  const handleRetryComms = async (id) => {
-    setRetryingId(id);
-    setActionNotice('');
-    try {
-      await retryCommunicationApi(id, token);
-      setActionNotice('Reintento solicitado exitosamente.');
-      loadData();
-    } catch (e) {
-      setError(e.message || 'Error al solicitar el reintento.');
-    } finally {
-      setRetryingId(null);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -156,17 +118,17 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
       ref={panelRef}
       className="notifications-dropdown-panel"
       role="region"
-      aria-label="Panel de Notificaciones del Sistema"
+      aria-label="Alertas Prioritarias de Hoy"
     >
-      {/* Encabezado del Dropdown */}
       <div className="notifications-dropdown-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
             <Icon name="bell" size={18} />
           </span>
           <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
-            Avisos y Operaciones
+            Alertas Operativas
           </h3>
+          {feedItems.length > 0 && <Badge variant="gold" style={{ fontSize: '10px' }}>{feedItems.length}</Badge>}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -174,7 +136,7 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
             type="button"
             className="btn-action-icon"
             onClick={loadData}
-            title="Actualizar datos"
+            title="Actualizar alertas"
             disabled={loading}
             style={{ width: '28px', height: '28px', color: 'var(--color-text-secondary)' }}
           >
@@ -185,7 +147,6 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
             className="btn-action-icon"
             onClick={onClose}
             aria-label="Cerrar notificaciones"
-            title="Cerrar notificaciones"
             style={{ width: '28px', height: '28px' }}
           >
             <Icon name="x-circle" size={16} />
@@ -193,233 +154,70 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
         </div>
       </div>
 
-      {/* Selector de Pestañas */}
-      <div className="notifications-tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'vencimientos'}
-          className={`notifications-tab-btn ${activeTab === 'vencimientos' ? 'active' : ''}`}
-          onClick={() => setActiveTab('vencimientos')}
-        >
-          <span>Vencimientos</span>
-          {alerts.length > 0 && <span className="notifications-tab-badge">{alerts.length}</span>}
-        </button>
-
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'recordatorios'}
-          className={`notifications-tab-btn ${activeTab === 'recordatorios' ? 'active' : ''}`}
-          onClick={() => setActiveTab('recordatorios')}
-        >
-          <span>Recordatorios</span>
-        </button>
-
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'comunicaciones'}
-          className={`notifications-tab-btn ${activeTab === 'comunicaciones' ? 'active' : ''}`}
-          onClick={() => setActiveTab('comunicaciones')}
-        >
-          <span>Comunicaciones</span>
-        </button>
-      </div>
-
-      {/* Alertas inline de error o acción */}
       {error && (
-        <div style={{ padding: '8px 14px', background: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '12px', borderBottom: '1px solid var(--color-danger-border)' }}>
+        <div style={{ padding: '8px 14px', background: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '12px' }}>
           {error}
         </div>
       )}
-      {actionNotice && (
-        <div style={{ padding: '8px 14px', background: 'var(--color-success-bg)', color: 'var(--color-success)', fontSize: '12px', borderBottom: '1px solid var(--color-success-border)' }}>
-          {actionNotice}
-        </div>
-      )}
 
-      {/* Cuerpo del Panel */}
-      <div className="notifications-body" role="tabpanel">
+      <div className="notifications-body">
         {loading ? (
-          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            <span style={{ fontSize: '13px' }}>Consultando registros en vivo...</span>
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '13px' }}>
+            Consultando alertas de hoy…
           </div>
-        ) : activeTab === 'vencimientos' ? (
-          /* TAB 1: VENCIMIENTOS */
-          alerts.length === 0 ? (
-            <div style={{ padding: '28px 16px', textAlign: 'center' }}>
-              <span style={{ color: 'var(--color-success)', display: 'block', marginBottom: '8px' }}>
-                <Icon name="check-circle" size={24} />
-              </span>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                Todas las membresías al día
-              </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                No hay alertas de socios por vencer o vencidos actualmente.
-              </p>
-            </div>
-          ) : (
-            alerts.map((item) => {
-              const isUnread = !seenIds.has(item.clientId);
-              const isExpired = item.state === 'VENCIDO';
-              return (
-                <div
-                  key={item.clientId}
-                  className={`notification-card ${isUnread ? 'unread' : ''}`}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <strong style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>
-                        {item.clientName}
-                      </strong>
-                      <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', display: 'block', marginTop: '1px' }}>
-                        DNI: {item.documentNumber || '—'} · Plan: {item.planName || 'General'}
-                      </span>
-                    </div>
-                    <Badge variant={isExpired ? 'danger' : 'warning'} style={{ fontSize: '10px' }}>
-                      {isExpired ? 'VENCIDO' : `Vence en ${item.daysRemaining} d`}
-                    </Badge>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                    <span>Límite: {item.lastIncludedDate ? dateLabel(item.lastIncludedDate) : 'Sin fecha'}</span>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontSize: '11px', padding: '2px 8px', minHeight: '26px' }}
-                      onClick={() => {
-                        onClose();
-                        onNavigate?.('clients');
-                      }}
-                    >
-                      Ver Socio
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )
-        ) : activeTab === 'recordatorios' ? (
-          /* TAB 2: RECORDATORIOS */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="notification-card" style={{ background: 'var(--color-surface-panel)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Servicio Automático:</span>
-                <Badge variant={reminderConfig?.enabled ? 'gold' : 'neutral'}>
-                  {reminderConfig?.enabled ? 'HABILITADO' : 'INACTIVO'}
-                </Badge>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px', fontSize: '12px' }}>
-                <div style={{ padding: '8px', background: 'var(--color-surface-input)', borderRadius: '6px' }}>
-                  <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block' }}>Anticipación</span>
-                  <strong>{reminderConfig?.anticipationDays?.length ? `${reminderConfig.anticipationDays.join(', ')} días antes` : 'Sin días seleccionados'}</strong>
-                </div>
-                <div style={{ padding: '8px', background: 'var(--color-surface-input)', borderRadius: '6px' }}>
-                  <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block' }}>Evaluación disponible</span>
-                  <strong>Corte manual</strong>
-                </div>
-              </div>
-
-              <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                Canales guardados: <strong style={{ color: 'var(--color-gold)' }}>
-                  {reminderConfig?.channels?.length ? reminderConfig.channels.map((channel) => (
-                    channel === 'APP' ? 'Aplicación móvil' : channel === 'WHATSAPP' ? 'WhatsApp' : channel
-                  )).join(', ') : 'Sin canales seleccionados'}
-                </strong>
-              </div>
-            </div>
-
-            {isAdmin() && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <Button
-                  variant="primary"
-                  onClick={handleEvaluateNow}
-                  disabled={evaluating}
-                  style={{ width: '100%', minHeight: '36px', fontSize: '12px' }}
-                >
-                  <Icon name="refresh" size={14} />
-                  <span>{evaluating ? 'Evaluando corte...' : 'Ejecutar Corte Manual Ahora'}</span>
-                </Button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '11px', width: '100%' }}
-                  onClick={() => {
-                    onClose();
-                    onNavigate?.('reminders');
-                  }}
-                >
-                  Abrir Recordatorios
-                </button>
-              </div>
-            )}
+        ) : !canOperate ? (
+          <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '12px' }}>
+            Las alertas operativas de recepción y renovaciones están disponibles para personal operativo.
+          </div>
+        ) : feedItems.length === 0 ? (
+          <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+            <span style={{ color: 'var(--color-success)', display: 'block', marginBottom: '8px' }}>
+              <Icon name="check-circle" size={24} />
+            </span>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+              Operación al día
+            </p>
+            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+              Sin vencimientos críticos ni pagos Yape/Plin pendientes de verificación.
+            </p>
           </div>
         ) : (
-          /* TAB 3: COMUNICACIONES */
-          commsItems.length === 0 ? (
-            <div style={{ padding: '28px 16px', textAlign: 'center' }}>
-              <span style={{ color: 'var(--color-text-muted)', display: 'block', marginBottom: '8px' }}>
-                <Icon name="message-circle" size={24} />
-              </span>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                Sin envíos recientes
-              </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                Los avisos generados por recordatorios figurarán aquí.
-              </p>
-            </div>
-          ) : (
-            commsItems.map((item) => {
-              const isUnread = !seenIds.has(item.id);
-              const isFailed = item.status === 'FALLIDO';
-              return (
-                <div key={item.id} className={`notification-card ${isUnread ? 'unread' : ''}`}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <strong style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>
-                        {item.clientName || 'Socio GYM VIP'}
-                      </strong>
-                      <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', display: 'block' }}>
-                        Destino: {item.recipientMasked} · {item.channel}
-                      </span>
-                    </div>
-                    <Badge variant={isFailed ? 'danger' : item.status === 'ENTREGADO' || item.status === 'LEIDO' ? 'gold' : 'neutral'} style={{ fontSize: '10px' }}>
-                      {item.status}
-                    </Badge>
-                  </div>
-
-                  {item.errorMessage && (
-                    <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: 'var(--color-danger)', lineHeight: 1.3 }}>
-                      {item.errorMessage}
-                    </p>
-                  )}
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '11px' }}>
-                    <span style={{ color: 'var(--color-text-muted)' }}>
-                      {item.createdAt ? new Date(item.createdAt).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : 'Hoy'}
+          feedItems.map((item) => {
+            const isUnread = !seenIds.has(item.id);
+            return (
+              <div key={item.id} className={`notification-card ${isUnread ? 'unread' : ''}`}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                  <div>
+                    <strong style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{item.title}</strong>
+                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', display: 'block', marginTop: '2px' }}>
+                      {item.subtitle}
                     </span>
-                    {isFailed && isAdmin() && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        style={{ fontSize: '10px', padding: '2px 8px', minHeight: '24px' }}
-                        disabled={retryingId === item.id}
-                        onClick={() => handleRetryComms(item.id)}
-                      >
-                        {retryingId === item.id ? 'Reintentando...' : 'Reintentar'}
-                      </button>
-                    )}
                   </div>
+                  <Badge variant={item.badgeVariant} style={{ fontSize: '10px', flexShrink: 0 }}>
+                    {item.badgeLabel}
+                  </Badge>
                 </div>
-              );
-            })
-          )
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                  <span>{item.detail}</span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '11px', padding: '2px 8px', minHeight: '26px' }}
+                    onClick={() => {
+                      onClose();
+                      onNavigate?.(item.targetView);
+                    }}
+                  >
+                    {item.actionLabel}
+                  </button>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 
-      {/* Pie del Dropdown */}
       <div className="notifications-footer">
         <button
           type="button"
@@ -429,16 +227,16 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
           Marcar todo como visto
         </button>
 
-        {activeTab === 'comunicaciones' && (
+        {canOperate && (
           <button
             type="button"
             onClick={() => {
               onClose();
-              onNavigate?.('communications');
+              onNavigate?.('coverage');
             }}
             style={{ background: 'none', border: 'none', color: 'var(--color-gold)', fontWeight: 600, cursor: 'pointer', padding: 0 }}
           >
-            Ver historial completo →
+            Ver Vigencias →
           </button>
         )}
       </div>

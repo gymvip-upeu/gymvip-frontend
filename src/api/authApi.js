@@ -36,3 +36,15 @@ export async function getCurrentUserApi(token) {
   }
   return response.json();
 }
+
+export async function updateCurrentUserApi(payload, token) {
+  const response = await httpClient('/api/v1/auth/me', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }, token);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'No se pudieron actualizar tus datos personales.');
+  }
+  return response.json();
+}

@@ -63,8 +63,8 @@ function FilterDialog({ filters, onApply, onClose }) {
 }
 
 export default function FaqPage() {
-  const { token, isAdmin } = useAuth();
-  const admin = isAdmin();
+  const { token, isBusinessExecutive } = useAuth();
+  const admin = isBusinessExecutive();
   const { records, error: loadError, loading, refresh, applyRecord } = useFaqCatalog();
   const [view, setView] = useState('list');
   const [selectedId, setSelectedId] = useState(null);

@@ -82,3 +82,21 @@ test('network failure during unlock propagates without inventing valid state', a
   );
 });
 
+test('current profile uses the authenticated token and supports updating personal data', async () => {
+  const api = await authApiWith(async (endpoint, options, token) => {
+    assert.equal(token, 'profile-token');
+    if (options.method === 'PUT') {
+      assert.equal(endpoint, '/api/v1/auth/me');
+      return { ok: true, json: async () => ({ id: 'account-1', firstName: 'Gerente', lastName: 'General' }) };
+    }
+    assert.equal(endpoint, '/api/v1/auth/me');
+    assert.deepEqual(options, {});
+    return { ok: true, json: async () => ({ id: 'account-1', email: 'gerente@vipcenterfit.pe', roles: ['GERENTE'], status: 'ACTIVO' }) };
+  });
+  const profile = await api.getCurrentUserApi('profile-token');
+  assert.equal(profile.id, 'account-1');
+  assert.deepEqual(profile.roles, ['GERENTE']);
+  const updated = await api.updateCurrentUserApi({ firstName: 'Gerente', lastName: 'General', phone: '999888777' }, 'profile-token');
+  assert.equal(updated.firstName, 'Gerente');
+});
+

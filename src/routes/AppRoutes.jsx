@@ -38,6 +38,7 @@ const FacilitiesPage = lazy(() => import('../pages/FacilitiesPage'));
 const CommunicationsPage = lazy(() => import('../pages/CommunicationsPage'));
 const ReportsPage = lazy(() => import('../pages/ReportsPage'));
 const IncidentsPage = lazy(() => import('../pages/IncidentsPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const DataImportPage = lazy(() => import('../pages/DataImportPage'));
 const Error401Page = lazy(() => import('../pages/Error401Page'));
 const Error403Page = lazy(() => import('../pages/Error403Page'));
@@ -63,7 +64,7 @@ export function AppRoutes() {
   }, [currentView]);
 
   useEffect(() => {
-    if (auditorOnly && !['reports', 'incidents'].includes(currentView)) {
+    if (auditorOnly && !['reports', 'incidents', 'profile'].includes(currentView)) {
       setCurrentView('reports');
       window.history.replaceState({ view: 'reports' }, '', '/reportes');
     }
@@ -85,7 +86,7 @@ export function AppRoutes() {
 
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId) => {
-    if (auditorOnly && !['reports', 'incidents'].includes(viewId)) return;
+    if (auditorOnly && !['reports', 'incidents', 'profile'].includes(viewId)) return;
     // Guarda de permisos para rutas administrativas
     if (viewId === 'staff' && !isExecutive) {
       setAccessError('Acceso Denegado (403): La gestión de personal está reservada para Gerentes y Administradores.');
@@ -198,7 +199,15 @@ export function AppRoutes() {
   }
 
   if (auditorOnly) {
-    return <AdminLayout currentView={currentView} onNavigate={handleNavigate}><SentryErrorBoundary section="Auditoría"><Suspense fallback={<p>Cargando auditoría…</p>}>{currentView === 'incidents' ? <IncidentsPage /> : <ReportsPage />}</Suspense></SentryErrorBoundary></AdminLayout>;
+    return (
+      <AdminLayout currentView={currentView} onNavigate={handleNavigate}>
+        <SentryErrorBoundary section="Auditoría">
+          <Suspense fallback={<p>Cargando auditoría…</p>}>
+            {currentView === 'profile' ? <ProfilePage /> : currentView === 'incidents' ? <IncidentsPage /> : <ReportsPage />}
+          </Suspense>
+        </SentryErrorBoundary>
+      </AdminLayout>
+    );
   }
 
   return (
@@ -222,6 +231,7 @@ export function AppRoutes() {
             {currentView === 'communications' && (isExecutive || isRecepcion() ? <CommunicationsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'staff' && (isExecutive ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'settings' && ((isExecutive || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'profile' && <ProfilePage />}
             {currentView === 'reports' && (isExecutive || auditorOnly ? <ReportsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'incidents' && (isExecutive || auditorOnly ? <IncidentsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'dataImport' && (isAdmin() ? <DataImportPage onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN (Soporte TI)']} onGoHome={() => handleNavigate('home')} />)}

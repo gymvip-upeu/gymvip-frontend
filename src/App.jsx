@@ -8,8 +8,12 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { SentryErrorBoundary } from './components/common/SentryErrorBoundary';
+import AccountActivationPage from './pages/AccountActivationPage';
 
 export default function App() {
+  if (['/activar-cuenta', '/restablecer-contrasena'].includes(window.location.pathname)) {
+    return <AccountActivationPage recovery={window.location.pathname === '/restablecer-contrasena'} />;
+  }
   return (
     <SentryErrorBoundary section="Sistema Central GYM VIP">
       <AuthProvider>
