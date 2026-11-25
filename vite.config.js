@@ -11,9 +11,23 @@ export default defineConfig(({ mode }) => {
       sourcemap: true,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-sentry': ['@sentry/react'],
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (
+              id.includes('@mui/x-charts') ||
+              id.includes('@mui/x-internals') ||
+              id.includes('d3-') ||
+              id.includes('victory-vendor') ||
+              id.includes('internmap')
+            ) {
+              return 'vendor-charts';
+            }
+            if (id.includes('@mui/') || id.includes('@emotion/')) return 'vendor-mui';
+            if (id.includes('@sentry/')) return 'vendor-sentry';
+            if (id.includes('/react/') || id.includes('\\react\\') || id.includes('/react-dom/') || id.includes('\\react-dom\\') || id.includes('/scheduler/') || id.includes('\\scheduler\\')) {
+              return 'vendor-react';
+            }
+            return undefined;
           },
         },
       },

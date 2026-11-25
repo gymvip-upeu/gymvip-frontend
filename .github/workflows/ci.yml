@@ -22,17 +22,17 @@ jobs:
       - name: Checkout Código Fuente
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 20
+      - name: Configurar Node.js 22 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Instalación Limpia Reproducible
         run: npm ci
 
       - name: Auditoría de Seguridad de Dependencias
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=moderate
 
       - name: Linter y Verificación Estricta de Sintaxis JSX (ESLint)
         run: npm run lint

@@ -1,12 +1,12 @@
 import js from '@eslint/js';
-import reactPlugin from 'eslint-plugin-react';
+import eslintReact from '@eslint-react/eslint-plugin';
 
 export default [
   js.configs.recommended,
   {
     files: ['src/**/*.{js,jsx}'],
     plugins: {
-      react: reactPlugin,
+      '@eslint-react': eslintReact,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -39,22 +39,20 @@ export default [
         Event: 'readonly',
         CustomEvent: 'readonly',
         AbortController: 'readonly',
+        XMLSerializer: 'readonly',
+        Image: 'readonly',
+        ClipboardItem: 'readonly',
         process: 'readonly',
       },
     },
     rules: {
-      'react/jsx-uses-react': 'off',
-      'react/react-in-jsx-scope': 'off',
-      'react/jsx-uses-vars': 'error',
-      'react/jsx-no-duplicate-props': 'error',
+      '@eslint-react/no-duplicate-key': 'error',
+      '@eslint-react/jsx-no-comment-textnodes': 'warn',
+      '@eslint-react/jsx-no-children-prop': 'warn',
+      '@eslint-react/dom-no-void-elements-with-children': 'error',
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^(React|_)' }],
       'no-undef': 'error',
       'no-empty': ['warn', { allowEmptyCatch: true }],
-    },
-    settings: {
-      react: {
-        version: '18.3',
-      },
     },
   },
 ];
