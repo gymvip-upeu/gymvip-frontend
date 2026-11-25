@@ -30,8 +30,12 @@ export default function LockScreenModal() {
     setError(null);
     try {
       await unlockSession(password);
-    } catch {
-      setError('Contraseña incorrecta o cuenta temporalmente inhabilitada.');
+    } catch (err) {
+      if (err?.status === 429 || err?.message?.toLowerCase().includes('demasiados')) {
+        setError('Demasiados intentos fallidos. Su acceso ha sido bloqueado temporalmente por seguridad (5 minutos).');
+      } else {
+        setError('Contraseña incorrecta o cuenta temporalmente inhabilitada.');
+      }
     }
   };
 

@@ -25,7 +25,7 @@ export default function LoginModal() {
       await login(email, password);
     } catch (err) {
       if (err?.status === 429 || err?.message?.includes('429') || err?.message?.toLowerCase().includes('demasiados')) {
-        setError('Demasiados intentos fallidos. Su acceso ha sido bloqueado temporalmente por seguridad (15 minutos).');
+        setError('Demasiados intentos fallidos. Su acceso ha sido bloqueado temporalmente por seguridad (5 minutos).');
       } else if (err?.status === 401) {
         // Mensaje neutro y seguro anti-enumeración: no revela si el correo existe o no
         setError('Credenciales de acceso incorrectas o cuenta inhabilitada.');
