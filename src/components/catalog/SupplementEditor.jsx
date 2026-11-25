@@ -11,7 +11,7 @@ import { formatCurrencyPen } from '../../utils/formatters';
 
 export default function SupplementEditor({item,onClose,onSaved}) {
   const {token}=useAuth();
-  const [form,setForm]=useState({name:item?.name||'',brand:item?.brand||'',category:item?.category||'',presentation:item?.presentation||'',netContent:item?.netContent||'',flavor:item?.flavor||'',description:item?.description||'',ingredients:item?.ingredients||'',pricePen:item?.pricePen??'',availability:item?.availability||'DISPONIBLE',published:item?.published??true});
+  const [form,setForm]=useState({name:item?.name||'',brand:item?.brand||'',category:item?.category||'',presentation:item?.presentation||'',netContent:item?.netContent||'',flavor:item?.flavor||'',description:item?.description||'',ingredients:item?.ingredients||'',pricePen:item?.pricePen??'',availability:item?.availability||'DISPONIBLE',published:item?.published??false});
   const [photos,setPhotos]=useState(item?.images||[]),[tab,setTab]=useState('information'),[picker,setPicker]=useState(false),[review,setReview]=useState(false),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[errors,setErrors]=useState({});
   const urls=useRef([]),saving=useRef(false);
   useEffect(()=>()=>urls.current.forEach(URL.revokeObjectURL),[]);
@@ -40,7 +40,7 @@ export default function SupplementEditor({item,onClose,onSaved}) {
           <Button type="button" variant="secondary" disabled={photos.length>=5} onClick={()=>setPicker(true)}>＋ Añadir imágenes</Button><p className="catalog-help">{photos.length} de 5 imágenes · JPG o PNG · máximo 5 MB cada una.</p>
         </section>
         <section role="tabpanel" id="supplement-panel-availability" aria-labelledby="supplement-tab-availability" hidden={tab!=='availability'}>
-          <h2>Disponibilidad y publicación</h2><p className="catalog-help">La disponibilidad se actualiza manualmente. Ocultar un producto conserva su información y su historial.</p>
+          <h2>Disponibilidad y publicación</h2><p className="catalog-help">Publicar hace visible el producto. La disponibilidad se indica manualmente y no agrega existencias: el stock se comprueba al comprar. Ocultar conserva la información y el historial.</p>
           <label>Disponibilidad<select className="form-input" value={form.availability} onChange={e=>setForm(v=>({...v,availability:e.target.value}))}><option value="DISPONIBLE">Disponible</option><option value="AGOTADO">Agotado temporalmente</option></select></label>
           <label className="catalog-check-card"><input type="checkbox" checked={form.published} onChange={e=>setForm(v=>({...v,published:e.target.checked}))}/><span>Mostrar en el catálogo<small>{form.published?'El suplemento estará habilitado para consulta.':'El suplemento permanecerá oculto para los clientes.'}</small></span></label>
           <div className="catalog-note"><strong>Sin eliminación</strong><p>Podrás volver a publicar el suplemento cuando lo necesites.</p></div>
