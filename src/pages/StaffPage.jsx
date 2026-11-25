@@ -14,7 +14,8 @@ import { LoadingState, EmptyState } from '../components/feedback/LoadingState';
 import StaffModal from '../components/modals/StaffModal';
 
 export default function StaffPage() {
-  const { token, isAdmin, user } = useAuth();
+  const { token, isAdmin, isGerente, user } = useAuth();
+  const isExecutive = isAdmin() || (isGerente && isGerente());
   const {
     accounts,
     loading,
@@ -27,7 +28,7 @@ export default function StaffPage() {
     updateRole,
     updateProfile,
     inactivateAccount,
-  } = useStaff(token, isAdmin());
+  } = useStaff(token, isExecutive);
 
   // Modales
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -36,20 +37,8 @@ export default function StaffPage() {
   const [confirmInactivateAccount, setConfirmInactivateAccount] = useState(null);
   const [editingProfile, setEditingProfile] = useState(null);
 
-  if (!isAdmin()) {
-    return (
-      <div className="card" style={{ padding: '48px', textAlign: 'center', maxWidth: '600px', margin: '40px auto' }}>
-        <div style={{ color: 'var(--color-gold)', marginBottom: '14px' }}>
-          <Icon name="shield-check" size={48} />
-        </div>
-        <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, margin: '12px 0 6px 0', color: 'var(--color-text-primary)' }}>
-          Acceso Restringido (HTTP 403)
-        </h2>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', lineHeight: 1.6, margin: '0 auto' }}>
-          La administración de personal, asignación de roles y control de cuentas requiere credenciales de Administrador.
-        </p>
-      </div>
-    );
+  if (!isExecutive) {
+    return null;
   }
 
   const handleCreateSuccess = (newAccount) => {

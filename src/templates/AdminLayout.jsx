@@ -74,7 +74,6 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       items: [
         { id: 'clients', label: 'Directorio', iconName: 'users', title: 'Directorio y Registro de Miembros' },
         { id: 'memberships', label: 'Membresías', iconName: 'credit-card', title: 'Membresías y Cobros' },
-        { id: 'coverage', label: 'Vigencias y Alertas', iconName: 'calendar', title: 'Seguimiento de Vigencias y Vencimientos' },
       ],
     },
     {
@@ -82,7 +81,6 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       label: 'OPERACIONES',
       iconName: 'check-circle',
       items: [
-        { id: 'verification', label: 'Control de Acceso', iconName: 'shield-check', title: 'Verificación Manual de Ingreso' },
         { id: 'attendance', label: 'Asistencia y Agenda', iconName: 'calendar', title: 'Marcaciones de Torniquete y Agenda' },
         { id: 'facilities', label: 'Instalaciones VIP', iconName: 'tool', title: 'Áreas del Gimnasio y Canales' },
       ],
@@ -127,9 +125,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         label: 'ADMINISTRACIÓN',
         iconName: 'settings',
         items: [
-          ...(isExecutive ? [{ id: 'staff', label: 'Usuarios y Personal', iconName: 'user', title: 'Gestión de Personal y Roles' }] : []),
           { id: 'settings', label: 'Configuración General', iconName: 'settings', title: 'Ajustes Operativos del Sistema' },
-          ...(isAdmin() ? [{ id: 'dataImport', label: 'Importación Masiva (TI)', iconName: 'download', title: 'Centro de Importación y Migración (TI)' }] : []),
         ],
       },
     ] : []),

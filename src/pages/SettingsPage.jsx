@@ -21,7 +21,8 @@ import { httpClient } from '../api/httpClient';
 import { triggerSentryTestVerification } from '../config/sentry';
 
 export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
-  const { token, isAdmin, logout } = useAuth();
+  const { token, isAdmin, isGerente, logout } = useAuth();
+  const isExecutive = isAdmin() || (isGerente && isGerente());
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // Estados de datos reales de recordatorios
@@ -168,7 +169,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
             <span>Microservicio de Comunicaciones</span>
           </button>
 
-          {isAdmin() && (
+          {isExecutive && (
             <button
               type="button"
               className={`btn btn-sm ${activeTab === 'staff' ? 'btn-primary' : 'btn-secondary'}`}
@@ -177,7 +178,7 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
             >
               <Icon name="shield-check" size={15} />
               <span>Personal y Roles</span>
-              <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>ADMIN</Badge>
+              <Badge variant="gold" style={{ fontSize: '10px', marginLeft: '4px' }}>GESTIÓN</Badge>
             </button>
           )}
 
