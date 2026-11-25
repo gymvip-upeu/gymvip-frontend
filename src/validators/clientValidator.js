@@ -44,7 +44,8 @@ export function validateClientRegistration(data) {
     errors.push('Si proporciona un teléfono de contacto, debe tener un formato válido (7 a 20 dígitos).');
   }
 
-  // Correo opcional: solo se valida formato si fue ingresado
+  if (data.createAccess && !data.email?.trim()) errors.push('El correo real es obligatorio para generar acceso a la app.');
+  // Sin acceso a la app, el correo sigue siendo opcional.
   if (data.email && data.email.trim() && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(data.email.trim())) {
     errors.push('Si proporciona un correo electrónico, debe tener un formato válido.');
   }
