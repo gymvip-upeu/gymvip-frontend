@@ -20,6 +20,8 @@ export function Sidebar({
   onOpenProfile,
   onLogout,
 }) {
+  const [menuQuery, setMenuQuery] = useState('');
+
   // Estado de grupos expandidos persistido en localStorage
   const [expandedGroups, setExpandedGroups] = useState(() => {
     try {
@@ -29,6 +31,20 @@ export function Sidebar({
       return { members: true, operations: true, sales: true };
     }
   });
+
+  const normalizedQuery = menuQuery.trim().toLowerCase();
+  const visibleGroups = normalizedQuery
+    ? navigationGroups
+        .map((group) => ({
+          ...group,
+          items: (group.items || []).filter(
+            (it) =>
+              it.label.toLowerCase().includes(normalizedQuery) ||
+              group.label.toLowerCase().includes(normalizedQuery)
+          ),
+        }))
+        .filter((group) => group.items.length > 0)
+    : navigationGroups;
 
   // Expansión automática del grupo que contiene la vista activa
   useEffect(() => {
@@ -141,12 +157,31 @@ export function Sidebar({
 
         {/* Lista de Navegación por Grupos */}
         <nav className="sidebar-nav">
-          {/* Elementos Directos (ej. Dashboard) */}
+          {!isCollapsed && (
+            <div style={{ padding: '4px 10px 10px 10px' }}>
+              <div className="input-with-icon" style={{ position: 'relative' }}>
+                <span className="input-icon" aria-hidden="true" style={{ left: '10px' }}>
+                  <Icon name="search" size={14} color="var(--color-text-muted)" />
+                </span>
+                <input
+                  type="search"
+                  className="form-input with-left-icon"
+                  value={menuQuery}
+                  onChange={(e) => setMenuQuery(e.target.value)}
+                  placeholder="Filtrar módulo..."
+                  aria-label="Filtrar módulos de navegación"
+                  style={{ minHeight: '34px', fontSize: '12px', paddingRight: '10px' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Elementos Directos (Inicio) */}
           {directItems.map((item) => renderSingleItem(item, false))}
 
           {/* Grupos Funcionales Colapsables */}
-          {navigationGroups.map((group) => {
-            const isExpanded = !!expandedGroups[group.id];
+          {visibleGroups.map((group) => {
+            const isExpanded = normalizedQuery ? true : !!expandedGroups[group.id];
             const hasActiveChild = group.items.some((it) => it.id === currentView);
 
             return (

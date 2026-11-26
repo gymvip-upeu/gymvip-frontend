@@ -219,20 +219,14 @@ export default function SupplementOrdersPage() {
   };
 
   return (
-    <section className="catalog-page" style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
+    <section className="catalog-page" style={{ padding: '1rem 1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
       <div
         className="catalog-page-heading"
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap', marginBottom: '1.25rem' }}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '1.25rem' }}
       >
-        <div>
-          <div style={{ color: 'var(--color-gold)', fontWeight: 700, fontSize: '12px', letterSpacing: '1px' }}>
-            VIP CENTER FIT / PEDIDOS Y RETIROS
-          </div>
-          <h1 style={{ margin: '0.25rem 0', color: 'var(--color-text-primary)' }}>Bandeja de Pedidos de Suplementos</h1>
-          <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-            Verificación de pagos Yape/Plin/Transferencia, preparación de pedidos y entrega segura con Ticket QR.
-          </p>
-        </div>
+        <p style={{ color: 'var(--color-text-secondary)', margin: 0, fontSize: '14px' }}>
+          Verificación de pagos Yape/Plin/Transferencia, preparación de pedidos y entrega segura con Ticket QR.
+        </p>
 
         <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
           <Button

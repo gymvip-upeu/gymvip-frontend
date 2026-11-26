@@ -4,8 +4,25 @@
 
 import { httpClient } from './httpClient.js';
 
-export async function listAdminOrdersApi(status = '', token = null) {
-  const query = status && status !== 'TODOS' ? `?status=${encodeURIComponent(status)}` : '';
+export async function listAdminOrdersApi(statusOrParams = '', token = null) {
+  const params = new URLSearchParams();
+  if (typeof statusOrParams === 'string') {
+    if (statusOrParams && statusOrParams !== 'TODOS') {
+      params.set('status', statusOrParams);
+    }
+  } else if (statusOrParams && typeof statusOrParams === 'object') {
+    if (statusOrParams.status && statusOrParams.status !== 'TODOS') {
+      params.set('status', String(statusOrParams.status));
+    }
+    if (Number.isInteger(statusOrParams.page) && statusOrParams.page >= 0) {
+      params.set('page', String(statusOrParams.page));
+    }
+    if (Number.isInteger(statusOrParams.size) && statusOrParams.size > 0) {
+      params.set('size', String(statusOrParams.size));
+    }
+  }
+  const qs = params.toString();
+  const query = qs ? `?${qs}` : '';
   const response = await httpClient(`/api/v1/admin/orders${query}`, {}, token);
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));

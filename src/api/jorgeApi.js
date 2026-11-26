@@ -24,7 +24,16 @@ export async function verifyCoverage(id, token) {
     throw new Error('Respuesta de verificación inválida. No se puede confirmar el ingreso.');
   return value;
 }
-export function listCoverage(filters, token) {
-  const params = new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== '' && value != null));
-  return request(`/api/v1/coverage?${params}`, token);
+export async function listCoverage(filters, token) {
+  const params = new URLSearchParams(Object.entries(filters || {}).filter(([, value]) => value !== '' && value != null));
+  const data = await request(`/api/v1/coverage?${params}`, token);
+  if (Array.isArray(data)) {
+    return { content: data, totalElements: data.length, totalPages: 1 };
+  }
+  return {
+    content: Array.isArray(data?.content) ? data.content : [],
+    totalElements: Number.isFinite(data?.totalElements) ? data.totalElements : 0,
+    totalPages: Number.isFinite(data?.totalPages) ? data.totalPages : 1,
+    ...(data || {}),
+  };
 }

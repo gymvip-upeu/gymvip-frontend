@@ -272,7 +272,7 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
                 <Typography sx={{ color: 'var(--color-text-secondary)' }}>
                   {profile?.email || person?.email || user?.email}
                 </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={1} mt={1.5}>
+                <Stack direction="row" gap={1} mt={1.5} sx={{ flexWrap: 'wrap' }}>
                   {roles.map((role) => (
                     <Chip
                       key={role}
@@ -460,7 +460,7 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
                   Modo actual: <strong>{showGuides ? 'Modo Guiado (con explicaciones)' : 'Modo Compacto (sin consejos opcionales)'}</strong>.
                 </Typography>
               </Box>
-              <Stack direction="row" gap={1.2} flexWrap="wrap">
+              <Stack direction="row" gap={1.2} sx={{ flexWrap: 'wrap' }}>
                 <Button
                   variant={showGuides ? 'contained' : 'outlined'}
                   disabled={savingGuides}
@@ -515,7 +515,7 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
                   <Typography variant="caption" sx={{ color: 'var(--color-text-secondary)', display: 'block', mb: 1.5 }}>
                     Guarda tus códigos de recuperación de un solo uso: {(mfaSetup.recoveryCodes || []).join(' · ')}
                   </Typography>
-                  <Stack direction="row" gap={1.2} alignItems="center" flexWrap="wrap">
+                  <Stack direction="row" gap={1.2} alignItems="center" sx={{ flexWrap: 'wrap' }}>
                     <TextField
                       sx={inputFieldSx}
                       size="small"
@@ -545,7 +545,7 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
 
               {profile?.mfaEnabled && (
                 <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
-                  <Stack direction="row" gap={1.2} alignItems="center" flexWrap="wrap">
+                  <Stack direction="row" gap={1.2} alignItems="center" sx={{ flexWrap: 'wrap' }}>
                     <TextField sx={inputFieldSx} size="small" type="password" label="Contraseña actual" value={mfaPassword} onChange={(e) => setMfaPassword(e.target.value)} />
                     <TextField sx={inputFieldSx} size="small" label="Código TOTP o recuperación" value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} />
                     <Button
@@ -586,7 +586,7 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
                   Cierra otros dispositivos conectados o cambia tu contraseña periódicamente.
                 </Typography>
               </Box>
-              <Stack direction="row" gap={1.5} flexWrap="wrap">
+              <Stack direction="row" gap={1.5} sx={{ flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined"
                   disabled={revokingSessions}

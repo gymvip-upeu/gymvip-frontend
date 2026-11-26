@@ -246,15 +246,13 @@ export default function AttendanceAgendaPage() {
           spacing={2}
           sx={{ justifyContent: 'space-between', alignItems: { md: 'center' }, mb: 2 }}
         >
-          <Box>
-            <Typography variant="h4" component="h1">
-              Agenda y Control de Asistencias
-            </Typography>
-            <Typography color="text.secondary">
-              Consulta histórica en lista o calendario visual mensual y control de torniquete QR.
-            </Typography>
-          </Box>
+          <Typography color="text.secondary">
+            Consulta histórica en lista o calendario visual mensual/semanal con hora local de Lima (UTC-5).
+          </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+            <Button variant="outlined" onClick={() => { applyQuickRange('today'); loadAgenda(0); }}>
+              Ir a Hoy
+            </Button>
             {canExport && (
               <Button variant="outlined" onClick={handleExportCsv} disabled={exporting || loading}>
                 {exporting ? 'Generando CSV…' : 'Exportar CSV'}
@@ -301,7 +299,7 @@ export default function AttendanceAgendaPage() {
         </Box>
 
         <Paper component="form" onSubmit={handleSearchSubmit} sx={{ p: 2, mb: 3 }}>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={1} useFlexGap sx={{ mb: 2, flexWrap: 'wrap' }}>
             {[
               ['today', 'Hoy'],
               ['week', 'Últimos 7 días'],

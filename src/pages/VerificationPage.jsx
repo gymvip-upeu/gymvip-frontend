@@ -14,7 +14,6 @@ import ReceptionTerminalModal from '../components/modals/ReceptionTerminalModal'
 import { Button } from '../components/common/Button';
 import { Alert } from '../components/common/Alert';
 import { Icon } from '../components/common/Icons';
-import OperationsNav from '../components/common/OperationsNav';
 
 function formatLimaTime(utcString) {
   if (!utcString) return '-';
@@ -207,12 +206,8 @@ export default function VerificationPage({ onNavigate }) {
 
   return (
     <section className="verification-page" style={{ maxWidth: '960px', margin: '0 auto' }}>
-      <OperationsNav activeTab="verification" onNavigate={onNavigate} />
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
-          Verificación de Ingreso y Control de Asistencia
-        </h1>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+      <div style={{ marginBottom: '20px' }}>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
           Identifique al miembro mediante búsqueda manual o escaneo de código QR para autorizar su acceso y registrar asistencia.
         </p>
       </div>

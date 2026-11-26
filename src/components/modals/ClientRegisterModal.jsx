@@ -285,6 +285,9 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
                 value={documentType}
                 onChange={(e) => {
                   setDocumentType(e.target.value);
+                  if (e.target.value === 'DNI') {
+                    setDocumentNumber((prev) => prev.replace(/\D/g, '').slice(0, 8));
+                  }
                   setLookupSuccess(null);
                   setLookupNotice(null);
                 }}
@@ -303,15 +306,21 @@ export default function ClientRegisterModal({ token, onClose, onSuccess }) {
               <input
                 id="client-doc-number"
                 type="text"
+                inputMode={documentType === 'DNI' ? 'numeric' : 'text'}
+                pattern={documentType === 'DNI' ? '[0-9]{8}' : undefined}
                 className="form-input"
                 value={documentNumber}
                 onChange={(e) => {
-                  setDocumentNumber(e.target.value);
+                  const raw = e.target.value;
+                  const next = documentType === 'DNI'
+                    ? raw.replace(/\D/g, '').slice(0, 8)
+                    : raw.replace(/[^A-Za-z0-9-]/g, '').slice(0, 20).toUpperCase();
+                  setDocumentNumber(next);
                   setLookupSuccess(null);
                   setLookupNotice(null);
                 }}
-                placeholder="72819201"
-                maxLength={50}
+                placeholder={documentType === 'DNI' ? '8 dígitos (ej. 07281920)' : 'Nro. de documento'}
+                maxLength={documentType === 'DNI' ? 8 : 20}
                 required
                 disabled={submitting || lookupLoading}
               />

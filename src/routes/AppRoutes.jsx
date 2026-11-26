@@ -40,6 +40,10 @@ const ReportsPage = lazy(() => import('../pages/ReportsPage'));
 const IncidentsPage = lazy(() => import('../pages/IncidentsPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const DataImportPage = lazy(() => import('../pages/DataImportPage'));
+const StaffPage = lazy(() => import('../pages/StaffPage'));
+const EmpresasSedesPage = lazy(() => import('../pages/EmpresasSedesPage'));
+const IntegracionesPage = lazy(() => import('../pages/IntegracionesPage'));
+const ObservabilidadPage = lazy(() => import('../pages/ObservabilidadPage'));
 const Error401Page = lazy(() => import('../pages/Error401Page'));
 const Error403Page = lazy(() => import('../pages/Error403Page'));
 const Error404Page = lazy(() => import('../pages/Error404Page'));
@@ -98,6 +102,10 @@ export function AppRoutes() {
     }
     if (viewId === 'reminders' && !isExecutive) {
       setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Gerentes y Administradores.');
+      return;
+    }
+    if (['integrations', 'monitoring', 'branches'].includes(viewId) && !isExecutive && !isRecepcion()) {
+      setAccessError('Acceso Denegado (403): Esta vista de plataforma requiere privilegios operativos o ejecutivos.');
       return;
     }
     if (['settings', 'communications', 'faq'].includes(viewId) && !isExecutive && !isRecepcion()) {
@@ -228,8 +236,11 @@ export function AppRoutes() {
             {currentView === 'reminders' && (isExecutive ? <ReminderConfigPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'faq' && (isExecutive || isRecepcion() ? <FaqPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'facilities' && (isExecutive || isRecepcion() ? <FacilitiesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'branches' && (isExecutive || isRecepcion() ? <EmpresasSedesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'integrations' && (isExecutive ? <IntegracionesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'monitoring' && (isExecutive ? <ObservabilidadPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'communications' && (isExecutive || isRecepcion() ? <CommunicationsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
-            {currentView === 'staff' && (isExecutive ? <SettingsPage initialTab="staff" onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'staff' && (isExecutive ? <StaffPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'settings' && ((isExecutive || isRecepcion()) ? <SettingsPage initialTab="rules" onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'profile' && <ProfilePage />}
             {currentView === 'reports' && (isExecutive || auditorOnly ? <ReportsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}

@@ -30,9 +30,12 @@ export default function PlansPage() {
   } = usePlans(token);
 
   const [query, setQuery] = useState('');
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'table'
+  const [page, setPage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [confirmStatusPlan, setConfirmStatusPlan] = useState(null);
+  const PLAN_PAGE_SIZE = 6;
 
   const handleCreateNew = () => {
     setEditingPlan(null);
@@ -63,6 +66,9 @@ export default function PlansPage() {
   const visiblePlans = plans.filter((p) =>
     p.name.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))
   );
+  const totalPages = Math.max(1, Math.ceil(visiblePlans.length / PLAN_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pagedPlans = visiblePlans.slice(safePage * PLAN_PAGE_SIZE, (safePage + 1) * PLAN_PAGE_SIZE);
 
   const getDurationLabel = (days) => {
     switch (Number(days)) {
@@ -75,18 +81,18 @@ export default function PlansPage() {
   };
 
   return (
-    <div className="plans-page" style={{ maxWidth: '1120px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
-            Catálogo de Planes
-          </h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-            Tarifario oficial en Soles (PEN), versionado inmutable snapshot y condiciones de servicio.
-          </p>
-        </div>
+    <div className="plans-page" style={{ maxWidth: '1240px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
+          Tarifario oficial en Soles (PEN), versionado inmutable snapshot y condiciones de servicio.
+        </p>
 
-        {isExecutive ? (
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'inline-flex', gap: '6px' }} role="group" aria-label="Vista de planes">
+            <Button variant={viewMode === 'cards' ? 'primary' : 'secondary'} onClick={() => setViewMode('cards')} style={{ minHeight: '36px', fontSize: '12px' }}>Tarjetas</Button>
+            <Button variant={viewMode === 'table' ? 'primary' : 'secondary'} onClick={() => setViewMode('table')} style={{ minHeight: '36px', fontSize: '12px' }}>Tabla</Button>
+          </div>
+          {isExecutive ? (
           <Button
             variant="primary"
             onClick={handleCreateNew}
@@ -100,6 +106,7 @@ export default function PlansPage() {
             Modo Consulta (Recepción)
           </Badge>
         )}
+        </div>
       </div>
 
       {successToast && (
@@ -163,9 +170,53 @@ export default function PlansPage() {
             subtitle={query ? 'Pruebe con otro término de búsqueda o cambie el filtro de estado.' : (isExecutive ? 'Comience creando el primer plan de membresía.' : 'No se encontraron planes disponibles.')}
           />
         </div>
+      ) : viewMode === 'table' ? (
+        <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Plan</th>
+                <th>Versión</th>
+                <th>Duración</th>
+                <th>Precio (PEN)</th>
+                <th>Beneficios</th>
+                <th>Estado</th>
+                {isExecutive && <th style={{ textAlign: 'right' }}>Acciones</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {pagedPlans.map((p) => {
+                const isActive = p.status === 'ACTIVO';
+                return (
+                  <tr key={p.id}>
+                    <td>
+                      <strong>{p.name}</strong>
+                      <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>{p.description || '—'}</div>
+                    </td>
+                    <td><Badge variant="gold">v{p.version}</Badge></td>
+                    <td>{getDurationLabel(p.durationDays)}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--color-gold)' }}>{formatCurrencyPen(p.pricePen)}</td>
+                    <td style={{ fontSize: '12px', maxWidth: '240px' }}>{p.benefits || '—'}</td>
+                    <td><Badge variant={isActive ? 'success' : 'neutral'}>{p.status}</Badge></td>
+                    {isExecutive && (
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          <Button variant="secondary" onClick={() => handleEdit(p)} style={{ fontSize: '12px', minHeight: '30px' }}>Editar</Button>
+                          <Button variant="secondary" onClick={() => setConfirmStatusPlan(p)} style={{ fontSize: '12px', minHeight: '30px', color: isActive ? 'var(--color-danger)' : 'var(--color-success)' }}>
+                            {isActive ? 'Inactivar' : 'Activar'}
+                          </Button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '22px' }}>
-          {visiblePlans.map((p) => {
+          {pagedPlans.map((p) => {
             const isActive = p.status === 'ACTIVO';
             return (
               <div
@@ -269,6 +320,16 @@ export default function PlansPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {visiblePlans.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+          <span>Mostrando {visiblePlans.length} planes · Página {safePage + 1} de {totalPages}</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button variant="secondary" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))} style={{ minHeight: '34px', fontSize: '12px' }}>Anterior</Button>
+            <Button variant="secondary" disabled={safePage + 1 >= totalPages} onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} style={{ minHeight: '34px', fontSize: '12px' }}>Siguiente</Button>
+          </div>
         </div>
       )}
 

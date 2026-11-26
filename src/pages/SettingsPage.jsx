@@ -12,20 +12,17 @@ import { Icon } from '../components/common/Icons';
 import { LoadingState } from '../components/feedback/LoadingState';
 import { VipTabBar } from '../components/common/VipTabBar';
 import ChannelStatusPanel from '../components/common/ChannelStatusPanel';
-import StaffPage from './StaffPage';
-import DataImportPage from './DataImportPage';
 import {
   getReminderConfigApi,
   getReminderCutsApi,
   evaluateRemindersNowApi,
 } from '../api/reminderApi';
 import { httpClient } from '../api/httpClient';
-import { triggerSentryTestVerification } from '../config/sentry';
 
 export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
   const { token, isAdmin, isGerente } = useAuth();
   const isExecutive = isAdmin() || (isGerente && isGerente());
-  const [activeTab, setActiveTab] = useState(initialTab === 'security' ? 'rules' : initialTab);
+  const [activeTab, setActiveTab] = useState(initialTab === 'comms' ? 'comms' : 'rules');
 
   // Estados de datos reales de recordatorios
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -123,24 +120,47 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
   };
 
   const settingsTabs = [
-    { id: 'rules', label: 'Reglas y Recordatorios', icon: 'bell' },
-    { id: 'comms', label: 'Microservicio de Comunicaciones', icon: 'message-circle' },
-    ...(isExecutive ? [{ id: 'staff', label: 'Personal y Roles', icon: 'shield-check', badge: 'GESTIÓN', badgeVariant: 'gold' }] : []),
-    ...(isAdmin() ? [
-      { id: 'import', label: 'Importación y Migración', icon: 'download', badge: 'TI', badgeVariant: 'gold' },
-      { id: 'diagnostics', label: 'Monitoreo & Sentry', icon: 'activity', badge: 'OBS', badgeVariant: 'info' },
-    ] : []),
+    { id: 'rules', label: 'Reglas de Negocio', icon: 'shield-check' },
+    { id: 'comms', label: 'Preferencias y Canales', icon: 'message-circle' },
   ];
 
   return (
-    <div className="settings-page" style={{ maxWidth: '980px', margin: '0 auto', paddingBottom: '32px' }}>
+    <div className="settings-page" style={{ maxWidth: '1040px', margin: '0 auto', paddingBottom: '32px' }}>
       <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
-          Configuración Operativa
-        </h1>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: '0 0 16px 0' }}>
-          Consulta las reglas operativas, el estado de comunicaciones y la gestión de colaboradores.
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: '0 0 14px 0' }}>
+          Parámetros operativos del club y accesos directos a los módulos especializados de administración.
         </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px', marginBottom: '18px' }}>
+          {isExecutive && (
+            <>
+              <button type="button" className="card" onClick={() => onNavigate?.('staff')} style={{ padding: '12px 14px', textAlign: 'left', cursor: 'pointer' }}>
+                <strong style={{ color: 'var(--color-gold)', fontSize: '13px' }}>Personal y Roles →</strong>
+                <span style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Nómina, sedes y permisos RBAC</span>
+              </button>
+              <button type="button" className="card" onClick={() => onNavigate?.('branches')} style={{ padding: '12px 14px', textAlign: 'left', cursor: 'pointer' }}>
+                <strong style={{ color: 'var(--color-gold)', fontSize: '13px' }}>Empresas y Sedes →</strong>
+                <span style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Sucursales y aforos</span>
+              </button>
+              <button type="button" className="card" onClick={() => onNavigate?.('integrations')} style={{ padding: '12px 14px', textAlign: 'left', cursor: 'pointer' }}>
+                <strong style={{ color: 'var(--color-gold)', fontSize: '13px' }}>Integraciones y APIs →</strong>
+                <span style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>WhatsApp, Resend, Culqi, FCM</span>
+              </button>
+            </>
+          )}
+          {isAdmin() && (
+            <>
+              <button type="button" className="card" onClick={() => onNavigate?.('dataImport')} style={{ padding: '12px 14px', textAlign: 'left', cursor: 'pointer' }}>
+                <strong style={{ color: 'var(--color-gold)', fontSize: '13px' }}>Importación Masiva →</strong>
+                <span style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Asistente Excel multi-entidad</span>
+              </button>
+              <button type="button" className="card" onClick={() => onNavigate?.('monitoring')} style={{ padding: '12px 14px', textAlign: 'left', cursor: 'pointer' }}>
+                <strong style={{ color: 'var(--color-gold)', fontSize: '13px' }}>Observabilidad →</strong>
+                <span style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Salud JVM, DB y Sentry</span>
+              </button>
+            </>
+          )}
+        </div>
 
         <VipTabBar
           tabs={settingsTabs}
@@ -321,114 +341,6 @@ export default function SettingsPage({ initialTab = 'rules', onNavigate }) {
                 style={{ fontSize: '13px' }}
               >
                 <span>Abrir Centro de Monitoreo de Comunicaciones →</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* PESTAÑA 3: PERSONAL Y ROLES (GERENCIA Y ADMIN) */}
-      {activeTab === 'staff' && isExecutive && (
-        <StaffPage />
-      )}
-
-      {/* PESTAÑA DE IMPORTACIÓN Y MIGRACIÓN MASIVA (ADMIN) */}
-      {activeTab === 'import' && isAdmin() && (
-        <DataImportPage onNavigate={onNavigate} />
-      )}
-
-      {/* PESTAÑA 4: MONITOREO Y DIAGNÓSTICO SENTRY (ADMIN) */}
-      {activeTab === 'diagnostics' && isAdmin() && (
-        <div style={{ display: 'grid', gap: '24px' }}>
-          {sentryTestMessage && (
-            <Alert
-              variant={sentryTestMessage.variant}
-              title={sentryTestMessage.title}
-              message={sentryTestMessage.message}
-              onClose={() => setSentryTestMessage(null)}
-            />
-          )}
-
-          <div className="card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <span style={{ color: 'var(--color-gold)' }} aria-hidden="true">
-                <Icon name="activity" size={20} />
-              </span>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
-                Observabilidad y Monitoreo de Errores (Sentry)
-              </h2>
-            </div>
-
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
-              Sentry monitorea en tiempo real excepciones de frontend, trazas de rendimiento y sesiones en vivo con enmascaramiento estricto de privacidad.
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ padding: '16px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                <strong style={{ display: 'block', color: 'var(--color-gold)', marginBottom: '8px', fontSize: '13px' }}>
-                  Proyecto Sentry
-                </strong>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                  Organización: <code>universidad-peruana-union-p0</code><br />
-                  Proyecto Frontend: <code>gymvip-frontend</code><br />
-                  Proyecto Backend: <code>gymvip-backend</code>
-                </p>
-              </div>
-
-              <div style={{ padding: '16px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                <strong style={{ display: 'block', color: 'var(--color-gold)', marginBottom: '8px', fontSize: '13px' }}>
-                  Parámetros de Telemetría
-                </strong>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                  Traces Sample Rate: <code>0.2</code> (Prod) / <code>1.0</code> (Dev)<br />
-                  Replays en Error: <code>1.0 (100%)</code><br />
-                  Privacidad: <code>maskAllText + blockAllMedia + maskAllInputs</code>
-                </p>
-              </div>
-
-              <div style={{ padding: '16px', background: 'var(--color-surface-input)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                <strong style={{ display: 'block', color: 'var(--color-gold)', marginBottom: '8px', fontSize: '13px' }}>
-                  Filtros de Seguridad y Privacidad
-                </strong>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                  ✔ Sanitización de contraseñas y tokens JWT.<br />
-                  ✔ PII de clientes excluido en breadcrumbs.<br />
-                  ✔ Respuestas HTTP 400 y 401 excluidas de alertas críticas.
-                </p>
-              </div>
-            </div>
-
-            <div style={{ padding: '18px', background: 'var(--color-surface-panel)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
-                Prueba Controlada de Verificación
-              </h3>
-              <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '14px' }}>
-                Emite intencionalmente una excepción de prueba tipificada hacia Sentry para comprobar que la tubería de captura y notificación se encuentra operativa. Esta acción está restringida a administradores.
-              </p>
-
-              <Button
-                type="button"
-                variant="warning"
-                onClick={() => {
-                  try {
-                    const error = triggerSentryTestVerification('Panel de Control GYM VIP');
-                    setSentryTestMessage({
-                      variant: 'success',
-                      title: 'Excepción de Prueba Enviada a Sentry',
-                      message: `Se emitió exitosamente el evento "${error.message}". Consulta el issue generado en el dashboard de Sentry para confirmar la recepción.`,
-                    });
-                  } catch (err) {
-                    setSentryTestMessage({
-                      variant: 'danger',
-                      title: 'Fallo al Emitir Prueba',
-                      message: err.message || 'Error al comunicarse con el SDK de Sentry.',
-                    });
-                  }
-                }}
-                style={{ minHeight: '38px', fontSize: '13px' }}
-              >
-                <Icon name="activity" size={15} />
-                <span>Emitir Excepción de Prueba Controlada a Sentry</span>
               </Button>
             </div>
           </div>

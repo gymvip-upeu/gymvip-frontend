@@ -13,8 +13,8 @@ export default function CatalogImage({item,photo,large=false,className=''}) {
     }).catch(()=>active&&setFailed(true));
     return()=>{active=false;if(objectUrl)URL.revokeObjectURL(objectUrl);};
   },[item?.id,selected?.id,selected?.url,token,large]);
-  const src=selected?.url || url;
+  const src=failed ? '' : (selected?.url || url);
   return <div className={`catalog-image ${large?'catalog-image-large':''} ${className}`}>
-    {src?<img src={src} alt={item?.name ? `${item.name}: ${selected?.filename||'imagen principal'}` : selected?.filename||'Imagen del suplemento'}/>:<div className="catalog-image-placeholder"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="5" y="7" width="38" height="34" rx="6"/><circle cx="17" cy="18" r="4"/><path d="m6 34 11-9 8 7 8-13 10 15"/></svg><span>{failed?'Imagen no disponible':selected?'Cargando imagen…':'Sin imagen'}</span></div>}
+    {src?<img src={src} loading="lazy" decoding="async" onError={()=>setFailed(true)} alt={item?.name ? `${item.name}: ${selected?.filename||'imagen principal'}` : selected?.filename||'Imagen del suplemento'}/>:<div className="catalog-image-placeholder"><svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="5" y="7" width="38" height="34" rx="6"/><circle cx="17" cy="18" r="4"/><path d="m6 34 11-9 8 7 8-13 10 15"/></svg><span>{failed?'Imagen no disponible':selected?'Cargando imagen…':'Sin imagen'}</span></div>}
   </div>;
 }

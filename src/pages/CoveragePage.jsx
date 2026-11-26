@@ -13,7 +13,6 @@ import { Icon } from '../components/common/Icons';
 import { stateLabel, dateLabel } from '../components/common/CoverageCard';
 import { LoadingDotsSpinner } from '../components/feedback/LoadingDotsSpinner';
 import ClientManageModal from '../components/modals/ClientManageModal';
-import OperationsNav from '../components/common/OperationsNav';
 
 export default function CoveragePage({ onNavigate }) {
   const { token, user } = useAuth();
@@ -107,16 +106,10 @@ export default function CoveragePage({ onNavigate }) {
 
   return (
     <section className="coverage-page" style={{ maxWidth: '1120px', margin: '0 auto' }}>
-      <OperationsNav activeTab="coverage" onNavigate={onNavigate} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--color-text-primary)' }}>
-            Vigencias y Alertas de Vencimiento
-          </h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-            Supervise la cobertura pagada en tiempo real y priorice a los miembros que requieren renovación.
-          </p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '20px' }}>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
+          Supervise la cobertura pagada en tiempo real y priorice a los miembros que requieren renovación.
+        </p>
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <Button variant="secondary" onClick={() => setRevision((n) => n + 1)}>

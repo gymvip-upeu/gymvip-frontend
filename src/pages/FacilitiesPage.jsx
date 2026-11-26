@@ -2,12 +2,14 @@
 // GYM VIP — Gestión de Áreas, Instalaciones y Canales de Comunicación (HU-34)
 // ==============================================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getFacilitiesApi, getFacilitiesArchiveApi, restoreFacilityApi, updateFacilityStatusApi, createFacilityApi, getChannelStatusApi } from '../api/facilityApi';
+import { getFacilitiesApi, getFacilitiesArchiveApi, restoreFacilityApi, updateFacilityStatusApi, createFacilityApi } from '../api/facilityApi';
 import { Badge } from '../components/common/Badge';
 import { Icon } from '../components/common/Icons';
 import { Alert } from '../components/common/Alert';
+
+const PAGE_SIZE = 6;
 
 export default function FacilitiesPage() {
   const { token, isBusinessExecutive } = useAuth();
@@ -15,7 +17,10 @@ export default function FacilitiesPage() {
 
   const [facilities, setFacilities] = useState([]);
   const [showArchive, setShowArchive] = useState(false);
-  const [channelStatus, setChannelStatus] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('TODOS');
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'table'
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -43,20 +48,31 @@ export default function FacilitiesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [facData, chanData] = await Promise.all([
-        showArchive ? getFacilitiesArchiveApi(token) : getFacilitiesApi(token),
-        getChannelStatusApi(token).catch(() => null),
-      ]);
+      const facData = showArchive ? await getFacilitiesArchiveApi(token) : await getFacilitiesApi(token);
       setFacilities(Array.isArray(facData) ? facData : []);
-      if (chanData?.channels) {
-        setChannelStatus(chanData.channels);
-      }
     } catch (err) {
-      setError(err.message || 'Error al conectar con los servicios de instalaciones.');
+      setError(err.message || 'Error al conectar con los servicios de áreas.');
     } finally {
       setLoading(false);
     }
   }, [token, showArchive]);
+
+  const filteredFacilities = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return facilities.filter((fac) => {
+      const matchesQ =
+        !q ||
+        (fac.name || '').toLowerCase().includes(q) ||
+        (fac.description || '').toLowerCase().includes(q) ||
+        (fac.location || '').toLowerCase().includes(q);
+      const matchesStatus = statusFilter === 'TODOS' || fac.status === statusFilter;
+      return matchesQ && matchesStatus;
+    });
+  }, [facilities, searchQuery, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredFacilities.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pagedFacilities = filteredFacilities.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   useEffect(() => {
     loadData();
@@ -146,17 +162,16 @@ export default function FacilitiesPage() {
   };
 
   return (
-    <div className="facilities-page-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Encabezado */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-gold)', letterSpacing: '1px' }}>GESTIÓN OPERATIVA</span>
-          <h1 style={{ fontSize: '24px', margin: '4px 0 0 0', color: 'var(--color-text-primary)' }}>Áreas e Instalaciones VIP</h1>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+    <div className="facilities-page-container" style={{ padding: '12px 20px', maxWidth: '1240px', margin: '0 auto' }}>
+      {/* Barra de acciones sin encabezado duplicado ni bloque técnico de canales (COR-03, COR-04) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
+          Administra zonas de entrenamiento, horarios, ubicaciones y estados operativos de cada área.
+        </p>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {isExecutive && (
-            <button type="button" className="btn btn-secondary" onClick={() => setShowArchive((value) => !value)}>
-              {showArchive ? 'Ver instalaciones activas' : 'Ver archivo'}
+            <button type="button" className="btn btn-secondary" onClick={() => { setShowArchive((value) => !value); setPage(0); }}>
+              {showArchive ? 'Ver áreas activas' : 'Ver archivadas'}
             </button>
           )}
           <button
@@ -183,7 +198,7 @@ export default function FacilitiesPage() {
       {error && (
         <Alert
           variant="danger"
-          title="Error en Instalaciones"
+          title="Error en Áreas"
           message={error}
           onClose={() => setError(null)}
         />
@@ -197,57 +212,95 @@ export default function FacilitiesPage() {
         />
       )}
 
-      {/* Monitoreo de Canales de Notificación */}
-      <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-          <Icon name="bell" size={18} color="var(--color-gold)" />
-          <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--color-text-primary)' }}>
-            Estado de Canales de Notificación y Envío Outbox
-          </h3>
+      {/* Barra de filtros, búsqueda y selector vista Tarjetas / Tabla */}
+      <div className="card" style={{ padding: '14px 16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', flex: '1', minWidth: '240px', flexWrap: 'wrap' }}>
+          <div className="input-with-icon" style={{ flex: '1', minWidth: '210px', maxWidth: '340px' }}>
+            <span className="input-icon" aria-hidden="true">
+              <Icon name="search" size={15} color="var(--color-text-muted)" />
+            </span>
+            <input
+              type="search"
+              className="form-input with-left-icon"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+              placeholder="Buscar área o piso..."
+              aria-label="Buscar área por nombre o ubicación"
+            />
+          </div>
+
+          <select
+            className="form-select"
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+            aria-label="Filtrar áreas por estado"
+            style={{ minWidth: '170px' }}
+          >
+            <option value="TODOS">Todos los estados</option>
+            <option value="DISPONIBLE">Disponible</option>
+            <option value="MANTENIMIENTO">Mantenimiento</option>
+            <option value="FUERA_DE_SERVICIO">Fuera de servicio</option>
+          </select>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-          <div style={{ background: 'var(--color-surface-variant)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>WhatsApp (Meta Cloud API)</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 600 }}>{channelStatus?.whatsapp?.provider || 'Meta v21'}</span>
-              <Badge variant={channelStatus?.whatsapp?.status === 'CONFIGURED_REAL' ? 'success' : 'warning'}>
-                {channelStatus?.whatsapp?.status || 'SIMULATION'}
-              </Badge>
-            </div>
-          </div>
-          <div style={{ background: 'var(--color-surface-variant)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>Correo Electrónico (Resend)</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 600 }}>{channelStatus?.email?.provider || 'Resend API'}</span>
-              <Badge variant={channelStatus?.email?.status === 'CONFIGURED_REAL' ? 'success' : 'warning'}>
-                {channelStatus?.email?.status || 'SIMULATION'}
-              </Badge>
-            </div>
-          </div>
-          <div style={{ background: 'var(--color-surface-variant)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>Push Móvil (Firebase FCM)</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 600 }}>Firebase Messaging</span>
-              <Badge variant={channelStatus?.push?.status === 'CONFIGURED_REAL' ? 'success' : 'warning'}>
-                {channelStatus?.push?.status || 'NO VERIFICADO'}
-              </Badge>
-            </div>
-          </div>
+
+        <div style={{ display: 'inline-flex', gap: '6px' }} role="group" aria-label="Modo de visualización">
+          <button type="button" className={`btn btn-sm ${viewMode === 'cards' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setViewMode('cards')}>
+            Tarjetas
+          </button>
+          <button type="button" className={`btn btn-sm ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setViewMode('table')}>
+            Tabla
+          </button>
         </div>
       </div>
 
-      {/* Lista de Instalaciones */}
+      {/* Lista de Áreas */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '48px', color: 'var(--color-text-secondary)' }}>
-          Cargando catálogo de áreas e instalaciones...
+          Cargando catálogo de áreas...
         </div>
-      ) : facilities.length === 0 ? (
+      ) : pagedFacilities.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px', background: 'var(--color-surface)', borderRadius: '12px' }}>
-          <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>{showArchive ? 'No hay instalaciones archivadas.' : 'No hay áreas registradas actualmente en el sistema.'}</p>
+          <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>{showArchive ? 'No hay áreas archivadas.' : 'No se encontraron áreas con los filtros actuales.'}</p>
+        </div>
+      ) : viewMode === 'table' ? (
+        <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Área</th>
+                <th>Ubicación</th>
+                <th>Horario</th>
+                <th>Planes</th>
+                <th>Estado</th>
+                <th style={{ textAlign: 'right' }}>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagedFacilities.map((fac) => (
+                <tr key={fac.id}>
+                  <td>
+                    <strong>{fac.name}</strong>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>{fac.description}</div>
+                  </td>
+                  <td>{fac.location}</td>
+                  <td style={{ fontSize: '12px' }}>{fac.schedule}</td>
+                  <td>{fac.includedPlanTypes || 'TODOS'}</td>
+                  <td>{renderStatusBadge(fac.status)}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    {showArchive ? (
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleRestore(fac)}>Restaurar</button>
+                    ) : (
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleOpenStatusModal(fac)}>Cambiar Estado</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
-          {facilities.map((fac) => (
+          {pagedFacilities.map((fac) => (
             <div
               key={fac.id}
               style={{
@@ -291,6 +344,16 @@ export default function FacilitiesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {filteredFacilities.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+          <span>Mostrando {filteredFacilities.length} áreas · Página {safePage + 1} de {totalPages}</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Anterior</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={safePage + 1 >= totalPages} onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}>Siguiente</button>
+          </div>
         </div>
       )}
 

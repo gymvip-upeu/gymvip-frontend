@@ -43,12 +43,12 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMobileOpen]);
 
-  // Elementos directos en la raíz de navegación
+  // Elementos directos en la raíz de navegación (COR-01: Inicio)
   const directItems = [
-    { id: 'home', label: 'Dashboard', iconName: 'home', title: 'Dashboard Analítico Principal' },
+    { id: 'home', label: 'Inicio', iconName: 'home', title: 'Inicio y Resumen Operativo' },
   ];
 
-  // Grupos funcionales generados según permisos efectivos (RBAC granular)
+  // Grupos funcionales generados según permisos efectivos (COR-02 & COR-05)
   const rawGroups = [
     {
       id: 'members',
@@ -56,16 +56,19 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       iconName: 'users',
       items: [
         ...(hasPermission(user, 'members.read') ? [{ id: 'clients', label: 'Directorio', iconName: 'users', title: 'Directorio y Registro de Miembros' }] : []),
-        ...(hasPermission(user, 'memberships.read') ? [{ id: 'memberships', label: 'Membresías', iconName: 'credit-card', title: 'Membresías y Cobros' }] : []),
+        ...(hasPermission(user, 'memberships.read') ? [{ id: 'memberships', label: 'Membresías y Cobros', iconName: 'credit-card', title: 'Afiliación, Renovación y Cobros' }] : []),
+        ...(hasPermission(user, 'memberships.read') ? [{ id: 'coverage', label: 'Vigencias y Alertas', iconName: 'calendar', title: 'Control de Vigencias y Renovaciones' }] : []),
       ],
     },
     {
       id: 'operations',
-      label: 'OPERACIONES',
+      label: 'OPERACIÓN DIARIA',
       iconName: 'check-circle',
       items: [
-        ...(hasPermission(user, 'attendance.read') ? [{ id: 'attendance', label: 'Asistencia y Agenda', iconName: 'calendar', title: 'Marcaciones de Torniquete y Agenda' }] : []),
-        ...(hasPermission(user, 'branches.read') && !auditorOnly ? [{ id: 'facilities', label: 'Instalaciones y Sedes', iconName: 'tool', title: 'Áreas, Sedes y Canales' }] : []),
+        ...(hasPermission(user, 'attendance.read') ? [{ id: 'attendance', label: 'Asistencia y Agenda', iconName: 'calendar', title: 'Calendario y Registro de Asistencias' }] : []),
+        ...(hasPermission(user, 'attendance.manage') ? [{ id: 'verification', label: 'Verificar Acceso QR', iconName: 'shield-check', title: 'Control de Torniquete y Acceso QR' }] : []),
+        ...(hasPermission(user, 'branches.read') && !auditorOnly ? [{ id: 'facilities', label: 'Áreas del Gimnasio', iconName: 'tool', title: 'Zonas, Horarios y Disponibilidad' }] : []),
+        ...(hasPermission(user, 'incidents.read') ? [{ id: 'incidents', label: 'Incidencias', iconName: 'alert-triangle', title: 'Incidencias Operativas y Seguimiento' }] : []),
       ],
     },
     {
@@ -74,9 +77,9 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       iconName: 'tag',
       items: [
         ...(hasPermission(user, 'plans.read') ? [{ id: 'plans', label: 'Planes y Tarifas', iconName: 'tag', title: 'Catálogo Tarifario Oficial' }] : []),
-        ...(hasPermission(user, 'inventory.read') ? [{ id: 'supplements', label: 'Suplementos y Stock', iconName: 'package', title: 'Kardex y Catálogo de Suplementos' }] : []),
-        ...(hasAnyPermission(user, ['inventory.read', 'inventory.adjust']) ? [{ id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Descuentos y Promociones Activas' }] : []),
-        ...(hasPermission(user, 'inventory.transfer') ? [{ id: 'supplementOrders', label: 'Pedidos y Despacho QR', iconName: 'package', title: 'Bandeja de Pedidos y Retiro QR' }] : []),
+        ...(hasPermission(user, 'inventory.read') ? [{ id: 'supplements', label: 'Suplementos y Stock', iconName: 'package', title: 'Catálogo de Suplementos y Stock' }] : []),
+        ...(hasPermission(user, 'inventory.transfer') ? [{ id: 'supplementOrders', label: 'Pedidos y Despacho QR', iconName: 'package', title: 'Verificación de Pagos y Retiro QR' }] : []),
+        ...(hasAnyPermission(user, ['inventory.read', 'inventory.adjust']) ? [{ id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Descuentos y Campañas Activas' }] : []),
       ],
     },
     {
@@ -92,48 +95,47 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       ],
     },
     {
-      id: 'analytics',
-      label: 'ANÁLISIS Y CONTROL',
-      iconName: 'bar-chart',
-      items: [
-        ...(hasPermission(user, 'reports.read') ? [{ id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Constructor de Reportes Dinámicos' }] : []),
-        ...(hasPermission(user, 'incidents.read') ? [{ id: 'incidents', label: 'Incidencias', iconName: 'alert-triangle', title: 'Libro de Incidencias y Auditoría' }] : []),
-      ],
-    },
-    {
       id: 'administration',
-      label: 'ADMINISTRACIÓN',
+      label: 'ANÁLISIS Y PLATAFORMA',
       iconName: 'settings',
       items: [
-        ...(hasPermission(user, 'employees.read') && !auditorOnly ? [{ id: 'staff', label: 'Personal y Roles', iconName: 'shield-check', title: 'Nómina, Roles RBAC y Auditoría' }] : []),
-        ...(hasAnyPermission(user, ['communications.configure', 'inventory.transfer']) ? [{ id: 'settings', label: 'Configuración General', iconName: 'settings', title: 'Ajustes Operativos del Sistema' }] : []),
+        ...(hasPermission(user, 'reports.read') ? [{ id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Constructor de Reportes y Exportación' }] : []),
+        ...(hasPermission(user, 'employees.read') && !auditorOnly ? [{ id: 'staff', label: 'Personal y Roles', iconName: 'shield-check', title: 'Equipo, Turnos y Matriz RBAC' }] : []),
+        ...(hasPermission(user, 'branches.read') && !auditorOnly ? [{ id: 'branches', label: 'Empresas y Sedes', iconName: 'monitor', title: 'Organizaciones y Sucursales' }] : []),
+        ...(hasPermission(user, 'members.import') ? [{ id: 'dataImport', label: 'Importación Masiva', iconName: 'file-text', title: 'Centro de Migración Excel Multientidad' }] : []),
+        ...(hasPermission(user, 'integrations.read') ? [{ id: 'integrations', label: 'Integraciones y APIs', iconName: 'send', title: 'Conectividad Meta, Resend, Culqi y Firebase' }] : []),
+        ...(hasPermission(user, 'platform.manage') || hasPermission(user, 'integrations.read') ? [{ id: 'monitoring', label: 'Observabilidad', iconName: 'bar-chart', title: 'Salud JVM, PostgreSQL y Auditoría' }] : []),
+        ...(hasAnyPermission(user, ['communications.configure', 'inventory.transfer']) ? [{ id: 'settings', label: 'Configuración General', iconName: 'settings', title: 'Parámetros Operativos del Sistema' }] : []),
       ],
     },
   ];
   const navigationGroups = rawGroups.filter((group) => group.items.length > 0);
 
   const viewTitles = {
-    home: 'Dashboard Analítico Principal',
-    clients: 'Directorio y Gestión de Miembros',
-    operations: 'Operaciones: Cobros, Vigencias y Acceso',
-    memberships: 'Membresías y Cobros en Mostrador',
-    coverage: 'Seguimiento y Alertas de Vigencias',
-    verification: 'Control Manual de Acceso en Recepción',
-    attendance: 'Agenda y Control de Asistencia',
+    home: 'Inicio · Resumen Operativo',
+    clients: 'Directorio de Miembros',
+    operations: 'Membresías y Cobros',
+    memberships: 'Membresías y Cobros',
+    coverage: 'Vigencias y Alertas de Vencimiento',
+    verification: 'Control de Acceso y QR',
+    attendance: 'Agenda y Calendario de Asistencias',
     plans: 'Catálogo de Planes y Tarifas',
-    supplements: 'Catálogo de Suplementos y Kardex',
-    supplementOrders: 'Bandeja de Pedidos de Suplementos y Retiro QR',
-    promotions: 'Gestión de Promociones y Descuentos',
-    facilities: 'Áreas e Instalaciones del Gimnasio',
-    reminders: 'Configuración de Recordatorios y Cortes',
-    faq: 'Catálogo de Respuestas Frecuentes',
-    communications: 'Monitoreo y Trazabilidad de Comunicaciones',
-    staff: 'Gestión de Personal y Roles',
-    settings: 'Configuración Operativa del Sistema',
-    dataImport: 'Centro de Importación y Migración Masiva de Datos',
+    supplements: 'Suplementos y Control de Stock',
+    supplementOrders: 'Pedidos y Despacho QR',
+    promotions: 'Promociones y Campañas',
+    facilities: 'Áreas del Gimnasio',
+    branches: 'Empresas y Sedes',
+    integrations: 'Centro de Integraciones y APIs',
+    monitoring: 'Observabilidad y Telemetría',
+    reminders: 'Recordatorios Automáticos',
+    faq: 'Respuestas Frecuentes',
+    communications: 'Historial de Comunicaciones',
+    staff: 'Personal, Roles y Permisos RBAC',
+    settings: 'Configuración Operativa',
+    dataImport: 'Centro de Importación Masiva',
     profile: 'Mi Perfil Personal y Seguridad',
-    reports: 'Reportes Personalizables y Métricas',
-    incidents: 'Incidencias Operativas y Auditoría',
+    reports: 'Reportes y Analítica Exportable',
+    incidents: 'Incidencias Operativas',
   };
 
   const currentItem = {
