@@ -8,6 +8,7 @@ import CatalogImage from '../../components/catalog/CatalogImage';
 import CatalogHistory from '../../components/catalog/CatalogHistory';
 import SupplementPicker from '../../components/catalog/SupplementPicker';
 import PromotionEditor from '../../components/catalog/PromotionEditor';
+import GroupPromotionsPanel from '../../components/commercial/GroupPromotionsPanel';
 import { dateLabel,presentationLabel,promotionStateLabel,updatedLabel } from '../../components/catalog/catalogUtils';
 import { formatCurrencyPen } from '../../utils/formatters';
 
@@ -31,6 +32,7 @@ export default function PromotionsPage() {
     </>:<><button className="catalog-back" onClick={back}>← Volver a promociones</button>{notice&&<Alert variant="success" message={notice} onClose={()=>setNotice('')}/>}{error&&!confirm&&<Alert variant="danger" message={error}/>}{loading?<div className="catalog-empty" role="status">Cargando promoción…</div>:detail?<><div className="catalog-page-heading"><div><div className="catalog-eyebrow">PROMOCIONES / DETALLE</div><h1>{detail.name}</h1></div></div>{card(detail,true)}{isAdmin()&&<CatalogHistory key={`${detail.id}-${detail.version}`} item={detail} kind="promotion"/>}</>:<Button variant="secondary" onClick={()=>setReload(n=>n+1)}>Reintentar</Button>}</>}
     {picker&&<SupplementPicker selected={product} onClose={()=>setPicker(false)} onSelect={value=>{setProduct(value);setPage(0);setPicker(false);}}/>}
     {confirm&&<MemberDialog title="Desactivar promoción" subtitle={confirm.name} onClose={()=>setConfirm(null)} busy={busy}>{error&&<Alert variant="danger" message={error}/>}<p className="catalog-help">Dejará de presentarse como oferta vigente. Se conservarán sus condiciones, fechas e historial y podrás editarla después.</p><div className="member-actions"><Button variant="secondary" disabled={busy} onClick={()=>setConfirm(null)}>Cancelar</Button><Button disabled={busy} onClick={deactivate}>{busy?'Guardando…':'Desactivar promoción'}</Button></div></MemberDialog>}
+    {view.kind==='list'&&<GroupPromotionsPanel />}
     <footer className="catalog-footer">GYM VIP · Catálogo y promociones</footer>
   </section>;
 }

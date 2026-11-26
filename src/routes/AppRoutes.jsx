@@ -54,10 +54,16 @@ const Error401Page = lazy(() => import('../pages/errors/Error401Page'));
 const Error403Page = lazy(() => import('../pages/errors/Error403Page'));
 const Error404Page = lazy(() => import('../pages/errors/Error404Page'));
 const Error500Page = lazy(() => import('../pages/errors/Error500Page'));
+const PlatformDashboardPage = lazy(() => import('../pages/platform/PlatformDashboardPage'));
+const CompanyRequestsPage = lazy(() => import('../pages/platform/CompanyRequestsPage'));
+const LicensesCommissionsPage = lazy(() => import('../pages/platform/LicensesCommissionsPage'));
+const SimulatorPage = lazy(() => import('../pages/platform/SimulatorPage'));
+const CommercialProfilePage = lazy(() => import('../pages/organization/CommercialProfilePage'));
 
 export function AppRoutes() {
   const { user, isLocked, isAdmin, isGerente, isRecepcion } = useAuth();
-  const isExecutive = isAdmin() || (isGerente && isGerente());
+  const isSuperAdmin = Boolean(user?.roles?.some((r) => String(r).toUpperCase().replace(/^ROLE_/, '') === 'SUPER_ADMIN'));
+  const isExecutive = isSuperAdmin || isAdmin() || (isGerente && isGerente());
   const isHr = isExecutive || Boolean(user?.roles?.includes('RECURSOS_HUMANOS'));
   const isInventoryStaff = isExecutive || Boolean(user?.roles?.some((r) => ['INVENTARIO', 'COMPRAS'].includes(r)));
   const isCashStaff = isExecutive || isRecepcion() || Boolean(user?.roles?.some((r) => ['CAJERO', 'CONTADOR'].includes(r)));
@@ -127,6 +133,14 @@ export function AppRoutes() {
       return;
     }
 
+    if (['platformDashboard', 'platformRequests', 'platformLicenses', 'platformSimulator'].includes(viewId) && !isSuperAdmin) {
+      setAccessError('Acceso Denegado (403): La Consola Global SaaS está reservada exclusivamente para SUPER_ADMIN.');
+      return;
+    }
+    if (viewId === 'commercialProfile' && !isExecutive) {
+      setAccessError('Acceso Denegado (403): El perfil comercial público requiere rol ejecutivo del gimnasio.');
+      return;
+    }
     setAccessError(null);
     const targetPath = VIEW_PATH_MAP[viewId] || '/inicio';
 
@@ -134,7 +148,7 @@ export function AppRoutes() {
       window.history.pushState({ view: viewId }, '', targetPath);
     }
     setCurrentView(viewId);
-  }, [isExecutive, isAdmin, isRecepcion, auditorOnly]);
+  }, [isExecutive, isSuperAdmin, isAdmin, isRecepcion, auditorOnly]);
 
   // Manejo de eventos popstate (botones Atrás / Adelante del navegador)
   useEffect(() => {
@@ -169,6 +183,18 @@ export function AppRoutes() {
         window.history.replaceState({ view: 'home' }, '', '/inicio');
         return;
       }
+      if (['platformDashboard', 'platformRequests', 'platformLicenses', 'platformSimulator'].includes(nextView) && !isSuperAdmin) {
+        setAccessError('Acceso Denegado (403): La Consola Global SaaS está reservada exclusivamente para SUPER_ADMIN.');
+        setCurrentView('home');
+        window.history.replaceState({ view: 'home' }, '', '/inicio');
+        return;
+      }
+      if (nextView === 'commercialProfile' && !isExecutive) {
+        setAccessError('Acceso Denegado (403): El perfil comercial público requiere rol ejecutivo del gimnasio.');
+        setCurrentView('home');
+        window.history.replaceState({ view: 'home' }, '', '/inicio');
+        return;
+      }
 
       setAccessError(null);
       setCurrentView(nextView);
@@ -183,7 +209,7 @@ export function AppRoutes() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isExecutive, isAdmin, isRecepcion]);
+  }, [isExecutive, isSuperAdmin, isAdmin, isRecepcion]);
 
   // Normalización de URL raíz a /inicio en primera carga
   useEffect(() => {
@@ -262,6 +288,11 @@ export function AppRoutes() {
             {currentView === 'reports' && (isExecutive || auditorOnly ? <ReportsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'incidents' && (isExecutive || auditorOnly ? <IncidentsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'dataImport' && (isAdmin() ? <DataImportPage onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN (Soporte TI)']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'platformDashboard' && (isSuperAdmin ? <PlatformDashboardPage onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'platformRequests' && (isSuperAdmin ? <CompanyRequestsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'platformLicenses' && (isSuperAdmin ? <LicensesCommissionsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'platformSimulator' && (isSuperAdmin ? <SimulatorPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'commercialProfile' && (isExecutive ? <CommercialProfilePage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN_EMPRESA', 'GERENTE']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'notFound' && <Error404Page requestedPath={typeof window !== 'undefined' ? window.location.pathname : ''} onNavigate={handleNavigate} />}
             {currentView === 'forbidden' && <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />}
             {currentView === 'unauthorized' && <Error401Page onLoginClick={() => window.location.reload()} onGoHome={() => handleNavigate('home')} />}

@@ -63,7 +63,7 @@ export const ROLE_PERMISSION_MAP = {
   MARKETING: ['branches.read', 'inventory.read', 'inventory.adjust', 'communications.read', 'communications.configure', 'preferences.manage'],
   ATENCION_CLIENTE: ['branches.read', 'members.read', 'memberships.read', 'communications.read', 'incidents.read', 'preferences.manage'],
   MANTENIMIENTO: ['branches.read', 'incidents.read', 'incidents.manage', 'preferences.manage'],
-  ADMIN: SUPER_ADMIN_PERMS,
+  ADMIN: CORP_ADMIN_PERMS,
   GERENTE: [...MANAGER_BRANCH_PERMS, 'plans.manage', 'employees.create', 'employees.assign_role', 'employees.inactivate', 'branches.manage', 'integrations.read'],
   AUDITOR: AUDITOR_PERMS,
   CLIENTE: ['branches.read', 'memberships.read', 'plans.read', 'inventory.read', 'attendance.read', 'communications.read', 'training.routines.read', 'training.routines.create', 'training.progress.read', 'training.sessions.log', 'training.classes.reserve', 'preferences.manage'],

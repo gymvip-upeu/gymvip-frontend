@@ -11,7 +11,8 @@ import { Header } from './Header';
 
 export function AdminLayout({ currentView, onNavigate, children }) {
   const { user, logout, isAdmin, isGerente, isRecepcion } = useAuth();
-  const isExecutive = isAdmin() || (isGerente && isGerente());
+  const isSuperAdmin = Boolean(user?.roles?.some((r) => String(r).toUpperCase().replace(/^ROLE_/, '') === 'SUPER_ADMIN'));
+  const isExecutive = isSuperAdmin || isAdmin() || (isGerente && isGerente());
   const auditorOnly = (user?.roles?.includes('AUDITOR') || user?.roles?.includes('AUDITOR_EMPRESA')) && !isExecutive && !isRecepcion();
 
   // Preferencia de plegado persistida en localStorage
@@ -111,7 +112,16 @@ export function AdminLayout({ currentView, onNavigate, children }) {
           { id: 'staff', label: 'Personal y Roles', iconName: 'shield-check', title: 'Equipo, Turnos y Matriz RBAC' },
           { id: 'hr', label: 'RRHH y Turnos', iconName: 'users', title: 'Fichas Laborales y Turnos por Sede' },
         ] : []),
-        ...(hasPermission(user, 'branches.read') && !auditorOnly ? [{ id: 'branches', label: 'Empresas y Sedes', iconName: 'monitor', title: 'Organizaciones y Sucursales' }] : []),
+        ...(hasPermission(user, 'branches.read') && !auditorOnly ? [
+          { id: 'branches', label: 'Empresas y Sedes', iconName: 'monitor', title: 'Organizaciones y Sucursales' },
+          ...(isExecutive ? [{ id: 'commercialProfile', label: 'Perfil Comercial Público', iconName: 'globe', title: 'Vitrina Pública y Reseñas Verificadas' }] : []),
+        ] : []),
+        ...(isSuperAdmin ? [
+          { id: 'platformDashboard', label: 'SaaS · Consola Global', iconName: 'shield-check', title: 'Dashboard SaaS Exclusivo SUPER_ADMIN' },
+          { id: 'platformRequests', label: 'SaaS · Solicitudes B2B', iconName: 'users', title: 'Afiliación de Gimnasios' },
+          { id: 'platformLicenses', label: 'SaaS · Licencias y Comisiones', iconName: 'credit-card', title: 'Licencias SaaS y Ledger Calculado' },
+          { id: 'platformSimulator', label: 'SaaS · Simulador Financiero', iconName: 'bar-chart', title: 'Punto de Equilibrio y Sostenibilidad' },
+        ] : []),
         ...(hasPermission(user, 'members.import') ? [{ id: 'dataImport', label: 'Importación Masiva', iconName: 'file-text', title: 'Centro de Migración Excel Multientidad' }] : []),
         ...(hasPermission(user, 'integrations.read') ? [{ id: 'integrations', label: 'Integraciones y APIs', iconName: 'send', title: 'Conectividad Meta, Resend, Culqi y Firebase' }] : []),
         ...(hasPermission(user, 'platform.manage') || hasPermission(user, 'integrations.read') ? [{ id: 'monitoring', label: 'Observabilidad', iconName: 'bar-chart', title: 'Salud JVM, PostgreSQL y Auditoría' }] : []),
@@ -152,6 +162,11 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     profile: 'Mi Perfil Personal y Seguridad',
     reports: 'Reportes y Analítica Exportable',
     incidents: 'Incidencias Operativas',
+    platformDashboard: 'Consola Global SaaS · SUPER_ADMIN',
+    platformRequests: 'Solicitudes de Afiliación B2B',
+    platformLicenses: 'Licencias SaaS y Comisiones',
+    platformSimulator: 'Simulador Financiero B2B2C',
+    commercialProfile: 'Perfil Comercial Público B2C',
   };
 
   const currentItem = {

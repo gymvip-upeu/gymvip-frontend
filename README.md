@@ -11,7 +11,7 @@
 > **Ubicación en el Workspace:** `gymvip-frontend/`  
 > **Organización Oficial:** [gymvip-upeu/gymvip-frontend](https://github.com/gymvip-upeu/gymvip-frontend)  
 > **Documentación Centralizada:** `../documentos/`  
-> **Fecha de Actualización:** 26 de Noviembre de 2026 | Revisión Enterprise (`develop`)
+> **Fecha de Actualización:** 26 de Noviembre de 2026 | Revisión GYM VIP 2.0 SaaS & MUI v9 (`develop`, 145/145 tests, Clean Architecture `pages/<dominio>`)
 
 ---
 
