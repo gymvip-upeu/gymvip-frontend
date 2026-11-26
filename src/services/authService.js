@@ -2,7 +2,7 @@
 // GYM VIP — Servicio de Autenticación y Autorización (RBAC Enterprise)
 // ==============================================================================
 
-import { loginApi, logoutApi, getCurrentUserApi } from '../api/authApi';
+import { loginApi, logoutApi, getCurrentUserApi, verifyMfaLoginApi } from '../api/authApi';
 import { validateLogin } from '../validators/authValidator';
 import { normalizeRoleCode } from './permissionsService';
 
@@ -32,6 +32,13 @@ export async function authenticate(email, password) {
     throw new Error(errors.join(' '));
   }
   return await loginApi(email, password);
+}
+
+export async function verifyMfaChallenge(challengeToken, code) {
+  if (!challengeToken || !String(code || '').trim()) {
+    throw new Error('Ingrese el código de verificación MFA.');
+  }
+  return await verifyMfaLoginApi(challengeToken, String(code).trim());
 }
 
 export async function signOut(token) {

@@ -12,9 +12,10 @@ import athleteImg from '../../assets/hero-athlete.jpg';
 import { GymVipLogo } from '../common/GymVipLogo';
 
 export default function LoginModal() {
-  const { login, loading } = useAuth();
+  const { login, verifyMfaLogin, cancelMfaChallenge, mfaChallenge, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,16 +23,21 @@ export default function LoginModal() {
     e.preventDefault();
     setError(null);
     try {
-      await login(email, password);
+      if (mfaChallenge) {
+        await verifyMfaLogin(mfaCode);
+      } else {
+        await login(email, password);
+      }
     } catch (err) {
       if (err?.status === 429 || err?.message?.includes('429') || err?.message?.toLowerCase().includes('demasiados')) {
         setError('Demasiados intentos fallidos. Su acceso ha sido bloqueado temporalmente por seguridad (5 minutos).');
       } else if (err?.status === 401) {
-        // Mensaje neutro y seguro anti-enumeración: no revela si el correo existe o no
-        setError('Credenciales de acceso incorrectas o cuenta inhabilitada.');
+        setError(mfaChallenge
+          ? 'Código TOTP o código de recuperación inválido o expirado.'
+          : 'Credenciales de acceso incorrectas o cuenta inhabilitada.');
       } else if (err?.status) {
         setError(`El servidor rechazó el acceso (HTTP ${err.status}). Intente nuevamente en unos momentos.`);
-      } else if (err?.message?.includes('obligatorio') || err?.message?.includes('formato válido')) {
+      } else if (err?.message?.includes('obligatorio') || err?.message?.includes('formato válido') || err?.message?.includes('MFA')) {
         setError(err.message);
       } else {
         setError('No se pudo conectar con el servidor. Revise su conexión e intente nuevamente.');
@@ -61,9 +67,11 @@ export default function LoginModal() {
         </div>
 
         <div className="login-card-intro">
-          <h2 className="login-section-title">Portal Operativo</h2>
+          <h2 className="login-section-title">{mfaChallenge ? 'Verificación MFA Requerida' : 'Portal Operativo'}</h2>
           <p className="login-section-desc">
-            Ingrese sus credenciales autorizadas de colaborador para acceder a la administración.
+            {mfaChallenge
+              ? `Cuenta: ${mfaChallenge.email}. Ingrese el código de 6 dígitos de su app autenticadora o un código de recuperación.`
+              : 'Ingrese sus credenciales autorizadas de colaborador para acceder a la administración.'}
           </p>
         </div>
 
@@ -75,8 +83,58 @@ export default function LoginModal() {
           />
         )}
 
-        {/* Formulario de Acceso Directo */}
+        {/* Formulario de Acceso Directo o Paso 2 MFA */}
         <form onSubmit={handleSubmit} className="login-clean-form" noValidate>
+          {mfaChallenge ? (
+            <>
+              <div className="form-group">
+                <label className="form-label" htmlFor="login-mfa-code">
+                  Código TOTP o Código de Recuperación
+                </label>
+                <div className="input-with-icon">
+                  <span className="input-icon" aria-hidden="true">
+                    <Icon name="shield-check" size={16} color="var(--color-gold)" />
+                  </span>
+                  <input
+                    id="login-mfa-code"
+                    type="text"
+                    inputMode="numeric"
+                    className="form-input with-left-icon"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    placeholder="123456 ó XXXX-XXXX"
+                    autoFocus
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={loading || !mfaCode.trim()}
+                className="login-submit-button"
+                style={{ width: '100%', marginTop: '20px', minHeight: '46px', fontSize: '15px' }}
+              >
+                {loading ? 'Verificando código...' : 'Verificar y Acceder'}
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={loading}
+                onClick={() => {
+                  setMfaCode('');
+                  setError(null);
+                  cancelMfaChallenge();
+                }}
+                style={{ width: '100%', marginTop: '10px', minHeight: '40px', fontSize: '13px' }}
+              >
+                Volver / Cambiar cuenta
+              </Button>
+            </>
+          ) : (
+            <>
           <div className="form-group">
             <label className="form-label" htmlFor="login-email">
               Correo Institucional
@@ -160,6 +218,8 @@ export default function LoginModal() {
               ¿Olvidó su contraseña o requiere acceso? Contacte a la administración del gimnasio.
             </span>
           </div>
+            </>
+          )}
         </form>
 
         {/* Nota Institucional de Seguridad */}

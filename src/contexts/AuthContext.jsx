@@ -3,7 +3,7 @@
 // ==============================================================================
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { authenticate, signOut, isAdminUser, isGerenteUser, isRecepcionUser, isAuditorUser, isBusinessExecutive } from '../services/authService';
+import { authenticate, signOut, verifyMfaChallenge, isAdminUser, isGerenteUser, isRecepcionUser, isAuditorUser, isBusinessExecutive } from '../services/authService';
 import { registerUnauthorizedHandler } from '../api/httpClient';
 import { setSentryUser, clearSentryUser, addSentryBreadcrumb } from '../config/sentry';
 
@@ -23,6 +23,7 @@ export function AuthProvider({ children }) {
   });
 
   const [token, setToken] = useState(() => localStorage.getItem('gymvip_token') || null);
+  const [mfaChallenge, setMfaChallenge] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -95,23 +96,37 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Iniciar sesión desde cero
+  const applyAuthenticatedSession = (data) => {
+    setToken(data.token);
+    setUser(data);
+    setMfaChallenge(null);
+    setIsLocked(false);
+    setLockedAccount({ email: data.email, roles: data.roles });
+    sessionStorage.removeItem('gymvip_locked');
+    localStorage.setItem('gymvip_token', data.token);
+    localStorage.setItem('gymvip_user', JSON.stringify(data));
+    localStorage.setItem('gymvip_locked_account', JSON.stringify({ email: data.email, roles: data.roles }));
+    setSentryUser(data);
+    lastActivityRef.current = Date.now();
+  };
+
+  // Iniciar sesión desde cero (soporta desafío MFA TOTP obligatorio en 2 pasos TEC-09)
   const login = async (email, password) => {
     setLoading(true);
     setError(null);
     try {
       const data = await authenticate(email, password);
-      setToken(data.token);
-      setUser(data);
-      setIsLocked(false);
-      setLockedAccount({ email: data.email, roles: data.roles });
-      sessionStorage.removeItem('gymvip_locked');
-      localStorage.setItem('gymvip_token', data.token);
-      localStorage.setItem('gymvip_user', JSON.stringify(data));
-      localStorage.setItem('gymvip_locked_account', JSON.stringify({ email: data.email, roles: data.roles }));
-      setSentryUser(data);
+      if (data?.mfaRequired && data?.challengeToken) {
+        setMfaChallenge({
+          challengeToken: data.challengeToken,
+          email: data.email || email,
+          message: data.message || 'Ingrese su código TOTP de 6 dígitos o código de recuperación.',
+        });
+        addSentryBreadcrumb('auth', 'Desafío MFA TOTP requerido');
+        return data;
+      }
+      applyAuthenticatedSession(data);
       addSentryBreadcrumb('auth', 'Inicio de sesión exitoso');
-      lastActivityRef.current = Date.now();
       return data;
     } catch (err) {
       setError(err.message || 'Credenciales de acceso incorrectas');
@@ -119,6 +134,30 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const verifyMfaLogin = async (code) => {
+    if (!mfaChallenge?.challengeToken) {
+      throw new Error('No hay desafío MFA activo.');
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await verifyMfaChallenge(mfaChallenge.challengeToken, code);
+      applyAuthenticatedSession(data);
+      addSentryBreadcrumb('auth', 'Verificación MFA TOTP completada');
+      return data;
+    } catch (err) {
+      setError(err.message || 'Código MFA inválido o expirado.');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelMfaChallenge = () => {
+    setMfaChallenge(null);
+    setError(null);
   };
 
   // Cierre de sesión total
@@ -178,12 +217,15 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     token,
+    mfaChallenge,
     loading,
     error,
     isLocked,
     lockedAccount,
     lockReason,
     login,
+    verifyMfaLogin,
+    cancelMfaChallenge,
     logout,
     lockSession,
     unlockSession,

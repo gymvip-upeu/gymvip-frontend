@@ -50,11 +50,19 @@ test('COR-16: validador de DNI exige exactamente 8 dígitos numéricos preservan
   assert.ok(errs.some((e) => e.toLowerCase().includes('8 dígitos')));
 });
 
-test('COR-01..20: nuevas rutas limpias resuelven correctamente sin romper /instalaciones', () => {
+test('COR-01..20 & EMP-03..13: rutas operativas y empresariales resuelven correctamente sin romper /instalaciones', () => {
   assert.equal(resolveViewFromPath('/areas'), 'facilities');
   assert.equal(resolveViewFromPath('/instalaciones'), 'facilities');
   assert.equal(resolveViewFromPath('/empresas'), 'branches');
   assert.equal(resolveViewFromPath('/integraciones'), 'integrations');
   assert.equal(resolveViewFromPath('/observabilidad'), 'monitoring');
+  assert.equal(resolveViewFromPath('/rrhh'), 'hr');
+  assert.equal(resolveViewFromPath('/inventario'), 'inventory');
+  assert.equal(resolveViewFromPath('/compras'), 'purchasing');
+  assert.equal(resolveViewFromPath('/cajas'), 'cash');
+  assert.equal(resolveViewFromPath('/clases'), 'classes');
+  assert.equal(resolveViewFromPath('/fidelizacion'), 'loyalty');
   assert.equal(VIEW_PATH_MAP.facilities, '/areas');
+  assert.equal(VIEW_PATH_MAP.hr, '/rrhh');
+  assert.equal(VIEW_PATH_MAP.loyalty, '/fidelizacion');
 });

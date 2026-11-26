@@ -44,6 +44,12 @@ const StaffPage = lazy(() => import('../pages/StaffPage'));
 const EmpresasSedesPage = lazy(() => import('../pages/EmpresasSedesPage'));
 const IntegracionesPage = lazy(() => import('../pages/IntegracionesPage'));
 const ObservabilidadPage = lazy(() => import('../pages/ObservabilidadPage'));
+const RecursosHumanosPage = lazy(() => import('../pages/RecursosHumanosPage'));
+const InventarioActivosPage = lazy(() => import('../pages/InventarioActivosPage'));
+const ComprasProveedoresPage = lazy(() => import('../pages/ComprasProveedoresPage'));
+const CajasFinanzasPage = lazy(() => import('../pages/CajasFinanzasPage'));
+const ClasesEntrenamientoPage = lazy(() => import('../pages/ClasesEntrenamientoPage'));
+const FidelizacionPage = lazy(() => import('../pages/FidelizacionPage'));
 const Error401Page = lazy(() => import('../pages/Error401Page'));
 const Error403Page = lazy(() => import('../pages/Error403Page'));
 const Error404Page = lazy(() => import('../pages/Error404Page'));
@@ -237,6 +243,12 @@ export function AppRoutes() {
             {currentView === 'faq' && (isExecutive || isRecepcion() ? <FaqPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'facilities' && (isExecutive || isRecepcion() ? <FacilitiesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'branches' && (isExecutive || isRecepcion() ? <EmpresasSedesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'hr' && (isExecutive ? <RecursosHumanosPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECURSOS_HUMANOS']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'inventory' && <InventarioActivosPage />}
+            {currentView === 'purchasing' && <ComprasProveedoresPage />}
+            {currentView === 'cash' && <CajasFinanzasPage />}
+            {currentView === 'classes' && <ClasesEntrenamientoPage />}
+            {currentView === 'loyalty' && <FidelizacionPage />}
             {currentView === 'integrations' && (isExecutive ? <IntegracionesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'monitoring' && (isExecutive ? <ObservabilidadPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'communications' && (isExecutive || isRecepcion() ? <CommunicationsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}

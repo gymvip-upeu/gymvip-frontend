@@ -67,6 +67,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       items: [
         ...(hasPermission(user, 'attendance.read') ? [{ id: 'attendance', label: 'Asistencia y Agenda', iconName: 'calendar', title: 'Calendario y Registro de Asistencias' }] : []),
         ...(hasPermission(user, 'attendance.manage') ? [{ id: 'verification', label: 'Verificar Acceso QR', iconName: 'shield-check', title: 'Control de Torniquete y Acceso QR' }] : []),
+        ...(hasPermission(user, 'training.routines.read') ? [{ id: 'classes', label: 'Clases y Entrenamiento', iconName: 'check-circle', title: 'Clases Grupales y Rutinas de Entrenadores' }] : []),
         ...(hasPermission(user, 'branches.read') && !auditorOnly ? [{ id: 'facilities', label: 'Áreas del Gimnasio', iconName: 'tool', title: 'Zonas, Horarios y Disponibilidad' }] : []),
         ...(hasPermission(user, 'incidents.read') ? [{ id: 'incidents', label: 'Incidencias', iconName: 'alert-triangle', title: 'Incidencias Operativas y Seguimiento' }] : []),
       ],
@@ -79,7 +80,13 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         ...(hasPermission(user, 'plans.read') ? [{ id: 'plans', label: 'Planes y Tarifas', iconName: 'tag', title: 'Catálogo Tarifario Oficial' }] : []),
         ...(hasPermission(user, 'inventory.read') ? [{ id: 'supplements', label: 'Suplementos y Stock', iconName: 'package', title: 'Catálogo de Suplementos y Stock' }] : []),
         ...(hasPermission(user, 'inventory.transfer') ? [{ id: 'supplementOrders', label: 'Pedidos y Despacho QR', iconName: 'package', title: 'Verificación de Pagos y Retiro QR' }] : []),
-        ...(hasAnyPermission(user, ['inventory.read', 'inventory.adjust']) ? [{ id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Descuentos y Campañas Activas' }] : []),
+        ...(hasAnyPermission(user, ['inventory.read', 'inventory.adjust']) ? [
+          { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Descuentos y Campañas Activas' },
+          { id: 'inventory', label: 'Inventario y Equipos', iconName: 'package', title: 'Stock por Sede, Kardex y Activos' },
+          { id: 'purchasing', label: 'Proveedores y Compras', iconName: 'credit-card', title: 'Proveedores y Órdenes de Compra' },
+        ] : []),
+        ...(hasPermission(user, 'payments.read') ? [{ id: 'cash', label: 'Cajas y Finanzas', iconName: 'credit-card', title: 'Arqueo de Cajas y Movimientos PEN' }] : []),
+        ...(hasPermission(user, 'members.read') ? [{ id: 'loyalty', label: 'Fidelización Opt-in', iconName: 'crown', title: 'Programa Voluntario de Puntos' }] : []),
       ],
     },
     {
@@ -100,7 +107,10 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       iconName: 'settings',
       items: [
         ...(hasPermission(user, 'reports.read') ? [{ id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Constructor de Reportes y Exportación' }] : []),
-        ...(hasPermission(user, 'employees.read') && !auditorOnly ? [{ id: 'staff', label: 'Personal y Roles', iconName: 'shield-check', title: 'Equipo, Turnos y Matriz RBAC' }] : []),
+        ...(hasPermission(user, 'employees.read') && !auditorOnly ? [
+          { id: 'staff', label: 'Personal y Roles', iconName: 'shield-check', title: 'Equipo, Turnos y Matriz RBAC' },
+          { id: 'hr', label: 'RRHH y Turnos', iconName: 'users', title: 'Fichas Laborales y Turnos por Sede' },
+        ] : []),
         ...(hasPermission(user, 'branches.read') && !auditorOnly ? [{ id: 'branches', label: 'Empresas y Sedes', iconName: 'monitor', title: 'Organizaciones y Sucursales' }] : []),
         ...(hasPermission(user, 'members.import') ? [{ id: 'dataImport', label: 'Importación Masiva', iconName: 'file-text', title: 'Centro de Migración Excel Multientidad' }] : []),
         ...(hasPermission(user, 'integrations.read') ? [{ id: 'integrations', label: 'Integraciones y APIs', iconName: 'send', title: 'Conectividad Meta, Resend, Culqi y Firebase' }] : []),
@@ -125,6 +135,12 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     promotions: 'Promociones y Campañas',
     facilities: 'Áreas del Gimnasio',
     branches: 'Empresas y Sedes',
+    hr: 'Recursos Humanos y Turnos',
+    inventory: 'Inventario por Sede y Activos',
+    purchasing: 'Proveedores y Órdenes de Compra',
+    cash: 'Control de Cajas y Movimientos PEN',
+    classes: 'Clases Grupales y Entrenamiento',
+    loyalty: 'Programa de Fidelización Opt-in',
     integrations: 'Centro de Integraciones y APIs',
     monitoring: 'Observabilidad y Telemetría',
     reminders: 'Recordatorios Automáticos',
