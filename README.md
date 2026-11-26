@@ -3,8 +3,8 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![React Version](https://img.shields.io/badge/React-18.3.1-blue.svg)]()
 [![Vite Version](https://img.shields.io/badge/Vite-6.4.6-purple.svg)]()
-[![UI Library](https://img.shields.io/badge/Material%20UI-v5-007FFF.svg)]()
-[![Charts Library](https://img.shields.io/badge/%40mui%2Fx--charts-v7.27.0-ff69b4.svg)]()
+[![UI Library](https://img.shields.io/badge/Material%20UI-v9.6-007FFF.svg)]()
+[![Charts Library](https://img.shields.io/badge/%40mui%2Fx--charts-v9.18-ff69b4.svg)]()
 [![Branch](https://img.shields.io/badge/branch-develop-yellow.svg)]()
 [![License](https://img.shields.io/badge/license-Academic%20Proprietary-lightgrey.svg)]()
 
@@ -52,10 +52,10 @@ Single Page Application (SPA) basada en componentes modulares desacoplados:
 | **Node.js** | 20.x LTS / 22.x | Entorno de ejecución JavaScript del desarrollador |
 | **npm** | 10.x | Gestor reproducible de paquetes |
 | **React** | 18.3.1 | Biblioteca declarativa de interfaz de usuario |
-| **Vite** | 6.4.4 | Herramienta de compilación rápida y servidor de desarrollo |
-| **Material UI (MUI)** | 5.16.x | Sistema base de componentes UI |
-| **MUI X-Charts** | 7.27.0 | Gráficos SVG interactivos (PieChart, BarChart) |
-| **@sentry/react** | 11.15.0 | Telemetría de errores y monitoreo de rendimiento |
+| **Vite** | 6.4.6 | Herramienta de compilación rápida y servidor de desarrollo |
+| **Material UI (MUI)** | 9.6.0 | Sistema base de componentes UI |
+| **MUI X-Charts** | 9.18.1 | Gráficos SVG interactivos (PieChart, BarChart) |
+| **@sentry/react** | 11.17.0 | Telemetría de errores y monitoreo de rendimiento |
 | **Vanilla CSS Tokens** | Custom CSS | Variables Luxury Dark & Gold (`#0B1320`, `#D4AF37`) |
 
 ---

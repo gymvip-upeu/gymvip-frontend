@@ -58,7 +58,11 @@ const Error500Page = lazy(() => import('../pages/Error500Page'));
 export function AppRoutes() {
   const { user, isLocked, isAdmin, isGerente, isRecepcion } = useAuth();
   const isExecutive = isAdmin() || (isGerente && isGerente());
-  const auditorOnly = user?.roles?.includes('AUDITOR') && !isExecutive && !isRecepcion();
+  const isHr = isExecutive || Boolean(user?.roles?.includes('RECURSOS_HUMANOS'));
+  const isInventoryStaff = isExecutive || Boolean(user?.roles?.some((r) => ['INVENTARIO', 'COMPRAS'].includes(r)));
+  const isCashStaff = isExecutive || isRecepcion() || Boolean(user?.roles?.some((r) => ['CAJERO', 'CONTADOR'].includes(r)));
+  const isTrainerOrStaff = isExecutive || isRecepcion() || Boolean(user?.roles?.some((r) => ['ENTRENADOR_JEFE', 'ENTRENADOR'].includes(r)));
+  const auditorOnly = (user?.roles?.includes('AUDITOR') || user?.roles?.includes('AUDITOR_EMPRESA')) && !isExecutive && !isRecepcion();
 
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -243,12 +247,12 @@ export function AppRoutes() {
             {currentView === 'faq' && (isExecutive || isRecepcion() ? <FaqPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'facilities' && (isExecutive || isRecepcion() ? <FacilitiesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'branches' && (isExecutive || isRecepcion() ? <EmpresasSedesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
-            {currentView === 'hr' && (isExecutive ? <RecursosHumanosPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECURSOS_HUMANOS']} onGoHome={() => handleNavigate('home')} />)}
-            {currentView === 'inventory' && <InventarioActivosPage />}
-            {currentView === 'purchasing' && <ComprasProveedoresPage />}
-            {currentView === 'cash' && <CajasFinanzasPage />}
-            {currentView === 'classes' && <ClasesEntrenamientoPage />}
-            {currentView === 'loyalty' && <FidelizacionPage />}
+            {currentView === 'hr' && (isHr ? <RecursosHumanosPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECURSOS_HUMANOS']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'inventory' && (isInventoryStaff ? <InventarioActivosPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'INVENTARIO']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'purchasing' && (isInventoryStaff ? <ComprasProveedoresPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'COMPRAS']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'cash' && (isCashStaff ? <CajasFinanzasPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'CAJERO', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'classes' && (isTrainerOrStaff ? <ClasesEntrenamientoPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN', 'ENTRENADOR', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'loyalty' && (isExecutive || isRecepcion() ? <FidelizacionPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'integrations' && (isExecutive ? <IntegracionesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'monitoring' && (isExecutive ? <ObservabilidadPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'communications' && (isExecutive || isRecepcion() ? <CommunicationsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}

@@ -78,9 +78,13 @@ export default function FidelizacionPage() {
             <Button
               variant={loyalty.enrolled ? 'secondary' : 'primary'}
               onClick={async () => {
-                const next = await toggleLoyaltyOptInApi(selected.id, !loyalty.enrolled, token);
-                setLoyalty({ ...loyalty, enrolled: next.enrolled });
-                setNotice(next.enrolled ? 'Socio inscrito voluntariamente al programa.' : 'Programa desactivado para este socio.');
+                try {
+                  const next = await toggleLoyaltyOptInApi(selected.id, !loyalty.enrolled, token);
+                  setLoyalty({ ...loyalty, enrolled: next.enrolled });
+                  setNotice(next.enrolled ? 'Socio inscrito voluntariamente al programa.' : 'Programa desactivado para este socio.');
+                } catch (err) {
+                  setError(err.message);
+                }
               }}
             >
               {loyalty.enrolled ? 'Desactivar Opt-in' : 'Activar Programa Opt-in'}

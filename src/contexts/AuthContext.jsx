@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  // Desbloquear sesión: revalida SOLO la contraseña contra el backend para la cuenta conocida
+  // Desbloquear sesión: revalida contraseña + desafío TOTP si la cuenta tiene MFA activo
   const unlockSession = async (password) => {
     const targetEmail = lockedAccount?.email || user?.email;
     if (!targetEmail) {
@@ -77,16 +77,17 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const data = await authenticate(targetEmail, password);
-      setToken(data.token);
-      setUser(data);
-      setIsLocked(false);
-      setLockReason('inactivity');
-      sessionStorage.removeItem('gymvip_locked');
-      localStorage.setItem('gymvip_token', data.token);
-      localStorage.setItem('gymvip_user', JSON.stringify(data));
-      setSentryUser(data);
+      if (data?.mfaRequired && data?.challengeToken) {
+        setMfaChallenge({
+          challengeToken: data.challengeToken,
+          email: data.email || targetEmail,
+          message: data.message || 'Ingrese su código TOTP de 6 dígitos o código de recuperación.',
+        });
+        addSentryBreadcrumb('auth', 'Desafío MFA TOTP requerido en desbloqueo');
+        return data;
+      }
+      applyAuthenticatedSession(data);
       addSentryBreadcrumb('auth', 'Sesión desbloqueada');
-      lastActivityRef.current = Date.now();
       return data;
     } catch (err) {
       setError(err.message || 'Contraseña incorrecta o cuenta inactiva.');

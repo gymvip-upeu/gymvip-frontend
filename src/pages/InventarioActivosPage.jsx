@@ -199,8 +199,12 @@ export default function InventarioActivosPage() {
                         className="form-select"
                         value={eq.operational_status}
                         onChange={async (e) => {
-                          await updateAssetStatusApi(eq.id, e.target.value, token);
-                          await loadAll();
+                          try {
+                            await updateAssetStatusApi(eq.id, e.target.value, token);
+                            await loadAll();
+                          } catch (err) {
+                            setError(err.message);
+                          }
                         }}
                       >
                         <option value="OPERATIVO">OPERATIVO</option>

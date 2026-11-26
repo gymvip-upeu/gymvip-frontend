@@ -138,9 +138,13 @@ export default function ComprasProveedoresPage() {
                     <Button
                       variant="secondary"
                       onClick={async () => {
-                        await receivePurchaseOrderApi(po.id, token);
-                        setNotice(`Orden ${po.order_number} recibida e ingresada al inventario.`);
-                        await loadAll();
+                        try {
+                          await receivePurchaseOrderApi(po.id, token);
+                          setNotice(`Orden ${po.order_number} recibida e ingresada al inventario.`);
+                          await loadAll();
+                        } catch (err) {
+                          setError(err.message);
+                        }
                       }}
                     >
                       Confirmar Recepción

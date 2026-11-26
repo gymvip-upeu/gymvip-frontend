@@ -98,7 +98,7 @@ export default function LoginModal() {
                   <input
                     id="login-mfa-code"
                     type="text"
-                    inputMode="numeric"
+                    inputMode="text"
                     className="form-input with-left-icon"
                     value={mfaCode}
                     onChange={(e) => setMfaCode(e.target.value)}

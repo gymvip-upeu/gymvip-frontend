@@ -11,8 +11,9 @@ import { Icon } from '../common/Icons';
 import athleteImg from '../../assets/hero-athlete.jpg';
 
 export default function LockScreenModal() {
-  const { lockedAccount, lockReason, unlockSession, switchAccount, loading } = useAuth();
+  const { lockedAccount, lockReason, unlockSession, verifyMfaLogin, mfaChallenge, cancelMfaChallenge, switchAccount, loading } = useAuth();
   const [password, setPassword] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
   const [error, setError] = useState(null);
   const [showPasswordField, setShowPasswordField] = useState(false);
 
@@ -22,12 +23,24 @@ export default function LockScreenModal() {
 
   const handleUnlockSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    if (mfaChallenge) {
+      if (!mfaCode.trim()) {
+        setError('Ingrese su código TOTP o código de recuperación.');
+        return;
+      }
+      try {
+        await verifyMfaLogin(mfaCode.trim());
+      } catch (err) {
+        setError(err?.message || 'Código MFA inválido o expirado.');
+      }
+      return;
+    }
     if (!password) {
       setError('Por favor, ingrese su contraseña para continuar.');
       return;
     }
 
-    setError(null);
     try {
       await unlockSession(password);
     } catch (err) {
@@ -111,26 +124,50 @@ export default function LockScreenModal() {
           </div>
         ) : (
           <form onSubmit={handleUnlockSubmit} className="lock-unlock-form" noValidate>
-            <div className="form-group">
-              <label className="form-label" htmlFor="lock-password">
-                Ingrese su contraseña para desbloquear
-              </label>
-              <div className="input-with-icon">
-                <span className="input-icon" aria-hidden="true">
-                  <Icon name="shield-check" size={16} color="var(--color-gold)" />
-                </span>
-                <input
-                  id="lock-password"
-                  type="password"
-                  className="form-input with-left-icon"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  required
-                  autoFocus
-                />
+            {mfaChallenge ? (
+              <div className="form-group">
+                <label className="form-label" htmlFor="lock-mfa-code">
+                  Código TOTP o Código de Recuperación
+                </label>
+                <div className="input-with-icon">
+                  <span className="input-icon" aria-hidden="true">
+                    <Icon name="shield-check" size={16} color="var(--color-gold)" />
+                  </span>
+                  <input
+                    id="lock-mfa-code"
+                    type="text"
+                    inputMode="text"
+                    className="form-input with-left-icon"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    placeholder="123456 ó XXXX-XXXX"
+                    required
+                    autoFocus
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="form-group">
+                <label className="form-label" htmlFor="lock-password">
+                  Ingrese su contraseña para desbloquear
+                </label>
+                <div className="input-with-icon">
+                  <span className="input-icon" aria-hidden="true">
+                    <Icon name="shield-check" size={16} color="var(--color-gold)" />
+                  </span>
+                  <input
+                    id="lock-password"
+                    type="password"
+                    className="form-input with-left-icon"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+            )}
 
             <Button
               type="submit"
@@ -138,10 +175,22 @@ export default function LockScreenModal() {
               disabled={loading}
               style={{ width: '100%', marginTop: '20px', minHeight: '46px', fontSize: '15px' }}
             >
-              {loading ? 'Revalidando credenciales...' : 'Confirmar y Desbloquear'}
+              {loading ? 'Validando credenciales...' : mfaChallenge ? 'Verificar y Desbloquear' : 'Confirmar y Desbloquear'}
             </Button>
 
-            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <div style={{ textAlign: 'center', marginTop: '16px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              {mfaChallenge && (
+                <button
+                  type="button"
+                  className="lock-switch-account-btn"
+                  onClick={() => {
+                    cancelMfaChallenge();
+                    setMfaCode('');
+                  }}
+                >
+                  Volver a clave
+                </button>
+              )}
               <button
                 type="button"
                 className="lock-switch-account-btn"
