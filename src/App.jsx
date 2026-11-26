@@ -9,7 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { SentryErrorBoundary } from './components/common/SentryErrorBoundary';
-import AccountActivationPage from './pages/AccountActivationPage';
+import AccountActivationPage from './pages/auth/AccountActivationPage';
 
 export default function App() {
   if (['/activar-cuenta', '/restablecer-contrasena'].includes(window.location.pathname)) {
