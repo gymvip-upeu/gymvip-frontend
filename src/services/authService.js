@@ -1,14 +1,27 @@
 // ==============================================================================
-// GYM VIP — Servicio de Autenticación y Autorización
+// GYM VIP — Servicio de Autenticación y Autorización (RBAC Enterprise)
 // ==============================================================================
 
 import { loginApi, logoutApi, getCurrentUserApi } from '../api/authApi';
 import { validateLogin } from '../validators/authValidator';
+import { normalizeRoleCode } from './permissionsService';
 
 export const ROLES = {
-  ADMIN: 'ADMIN',       // Soporte Técnico / Administrador de Sistemas TI
-  GERENTE: 'GERENTE',   // Gerente General / Dirección Ejecutiva de Negocio
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  SOPORTE_PLATAFORMA: 'SOPORTE_PLATAFORMA',
+  ADMIN_EMPRESA: 'ADMIN_EMPRESA',
+  GERENTE_GENERAL: 'GERENTE_GENERAL',
+  AUDITOR_EMPRESA: 'AUDITOR_EMPRESA',
+  CONTADOR: 'CONTADOR',
+  RECURSOS_HUMANOS: 'RECURSOS_HUMANOS',
+  GERENTE_SEDE: 'GERENTE_SEDE',
   RECEPCION: 'RECEPCION',
+  CAJERO: 'CAJERO',
+  INVENTARIO: 'INVENTARIO',
+  ENTRENADOR_JEFE: 'ENTRENADOR_JEFE',
+  ENTRENADOR: 'ENTRENADOR',
+  ADMIN: 'ADMIN',
+  GERENTE: 'GERENTE',
   CLIENTE: 'CLIENTE',
   AUDITOR: 'AUDITOR',
 };
@@ -31,23 +44,23 @@ export async function verifySession(token) {
 
 export function hasRole(user, role) {
   if (!user || !user.roles) return false;
-  return user.roles.map((r) => r.toUpperCase()).includes(role.toUpperCase());
+  return user.roles.map(normalizeRoleCode).includes(normalizeRoleCode(role));
 }
 
 export function isAdminUser(user) {
-  return hasRole(user, ROLES.ADMIN);
+  return hasRole(user, ROLES.SUPER_ADMIN) || hasRole(user, ROLES.ADMIN) || hasRole(user, ROLES.ADMIN_EMPRESA);
 }
 
 export function isGerenteUser(user) {
-  return hasRole(user, ROLES.GERENTE);
+  return hasRole(user, ROLES.GERENTE) || hasRole(user, ROLES.GERENTE_GENERAL) || hasRole(user, ROLES.GERENTE_SEDE);
 }
 
 export function isRecepcionUser(user) {
-  return hasRole(user, ROLES.RECEPCION);
+  return hasRole(user, ROLES.RECEPCION) || hasRole(user, ROLES.CAJERO);
 }
 
 export function isAuditorUser(user) {
-  return hasRole(user, ROLES.AUDITOR);
+  return hasRole(user, ROLES.AUDITOR) || hasRole(user, ROLES.AUDITOR_EMPRESA);
 }
 
 export function isBusinessExecutive(user) {

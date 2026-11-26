@@ -5,13 +5,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { hasAnyPermission, hasPermission } from '../services/permissionsService';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
 export function AdminLayout({ currentView, onNavigate, children }) {
   const { user, logout, isAdmin, isGerente, isRecepcion } = useAuth();
   const isExecutive = isAdmin() || (isGerente && isGerente());
-  const auditorOnly = user?.roles?.includes('AUDITOR') && !isExecutive && !isRecepcion();
+  const auditorOnly = (user?.roles?.includes('AUDITOR') || user?.roles?.includes('AUDITOR_EMPRESA')) && !isExecutive && !isRecepcion();
 
   // Preferencia de plegado persistida en localStorage
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -47,25 +48,15 @@ export function AdminLayout({ currentView, onNavigate, children }) {
     { id: 'home', label: 'Dashboard', iconName: 'home', title: 'Dashboard Analítico Principal' },
   ];
 
-  // Grupos funcionales organizados por dominios de negocio según roles
-  const navigationGroups = auditorOnly ? [
-    {
-      id: 'analytics',
-      label: 'ANÁLISIS Y CONTROL',
-      iconName: 'bar-chart',
-      items: [
-        { id: 'reports', label: 'Reportes Personalizables', iconName: 'bar-chart', title: 'Constructor de Reportes y Métricas' },
-        { id: 'incidents', label: 'Incidencias Operativas', iconName: 'alert-triangle', title: 'Auditoría e Incidencias' },
-      ],
-    },
-  ] : [
+  // Grupos funcionales generados según permisos efectivos (RBAC granular)
+  const rawGroups = [
     {
       id: 'members',
       label: 'MIEMBROS',
       iconName: 'users',
       items: [
-        { id: 'clients', label: 'Directorio', iconName: 'users', title: 'Directorio y Registro de Miembros' },
-        { id: 'memberships', label: 'Membresías', iconName: 'credit-card', title: 'Membresías y Cobros' },
+        ...(hasPermission(user, 'members.read') ? [{ id: 'clients', label: 'Directorio', iconName: 'users', title: 'Directorio y Registro de Miembros' }] : []),
+        ...(hasPermission(user, 'memberships.read') ? [{ id: 'memberships', label: 'Membresías', iconName: 'credit-card', title: 'Membresías y Cobros' }] : []),
       ],
     },
     {
@@ -73,8 +64,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       label: 'OPERACIONES',
       iconName: 'check-circle',
       items: [
-        { id: 'attendance', label: 'Asistencia y Agenda', iconName: 'calendar', title: 'Marcaciones de Torniquete y Agenda' },
-        { id: 'facilities', label: 'Instalaciones VIP', iconName: 'tool', title: 'Áreas del Gimnasio y Canales' },
+        ...(hasPermission(user, 'attendance.read') ? [{ id: 'attendance', label: 'Asistencia y Agenda', iconName: 'calendar', title: 'Marcaciones de Torniquete y Agenda' }] : []),
+        ...(hasPermission(user, 'branches.read') && !auditorOnly ? [{ id: 'facilities', label: 'Instalaciones y Sedes', iconName: 'tool', title: 'Áreas, Sedes y Canales' }] : []),
       ],
     },
     {
@@ -82,12 +73,10 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       label: 'CATÁLOGO Y VENTAS',
       iconName: 'tag',
       items: [
-        { id: 'plans', label: 'Planes y Tarifas', iconName: 'tag', title: 'Catálogo Tarifario Oficial' },
-        { id: 'supplements', label: 'Suplementos y Stock', iconName: 'package', title: 'Kardex y Catálogo de Suplementos' },
-        { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Descuentos y Promociones Activas' },
-        ...(isExecutive || isRecepcion() ? [
-          { id: 'supplementOrders', label: 'Pedidos y Despacho QR', iconName: 'package', title: 'Bandeja de Pedidos y Retiro QR' },
-        ] : []),
+        ...(hasPermission(user, 'plans.read') ? [{ id: 'plans', label: 'Planes y Tarifas', iconName: 'tag', title: 'Catálogo Tarifario Oficial' }] : []),
+        ...(hasPermission(user, 'inventory.read') ? [{ id: 'supplements', label: 'Suplementos y Stock', iconName: 'package', title: 'Kardex y Catálogo de Suplementos' }] : []),
+        ...(hasAnyPermission(user, ['inventory.read', 'inventory.adjust']) ? [{ id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Descuentos y Promociones Activas' }] : []),
+        ...(hasPermission(user, 'inventory.transfer') ? [{ id: 'supplementOrders', label: 'Pedidos y Despacho QR', iconName: 'package', title: 'Bandeja de Pedidos y Retiro QR' }] : []),
       ],
     },
     {
@@ -95,33 +84,33 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       label: 'COMUNICACIONES',
       iconName: 'message-circle',
       items: [
-        ...(isExecutive ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell', title: 'Reglas de Corte y Avisos Automáticos' }] : []),
-        { id: 'faq', label: 'Respuestas Frecuentes', iconName: 'message-circle', title: 'Catálogo de FAQs Institucionales' },
-        { id: 'communications', label: 'Historial de Envíos', iconName: 'send', title: 'Trazabilidad de WhatsApp y Email' },
+        ...(hasPermission(user, 'communications.configure') ? [{ id: 'reminders', label: 'Recordatorios', iconName: 'bell', title: 'Reglas de Corte y Avisos Automáticos' }] : []),
+        ...(hasPermission(user, 'communications.read') ? [
+          { id: 'faq', label: 'Respuestas Frecuentes', iconName: 'message-circle', title: 'Catálogo de FAQs Institucionales' },
+          { id: 'communications', label: 'Historial de Envíos', iconName: 'send', title: 'Trazabilidad de WhatsApp y Email' },
+        ] : []),
       ],
     },
-    ...(isExecutive ? [
-      {
-        id: 'analytics',
-        label: 'ANÁLISIS Y CONTROL',
-        iconName: 'bar-chart',
-        items: [
-          { id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Constructor de Reportes Dinámicos' },
-          { id: 'incidents', label: 'Incidencias', iconName: 'alert-triangle', title: 'Libro de Incidencias y Auditoría' },
-        ],
-      },
-    ] : []),
-    ...(isExecutive || isRecepcion() ? [
-      {
-        id: 'administration',
-        label: 'ADMINISTRACIÓN',
-        iconName: 'settings',
-        items: [
-          { id: 'settings', label: 'Configuración General', iconName: 'settings', title: 'Ajustes Operativos del Sistema' },
-        ],
-      },
-    ] : []),
+    {
+      id: 'analytics',
+      label: 'ANÁLISIS Y CONTROL',
+      iconName: 'bar-chart',
+      items: [
+        ...(hasPermission(user, 'reports.read') ? [{ id: 'reports', label: 'Reportes', iconName: 'bar-chart', title: 'Constructor de Reportes Dinámicos' }] : []),
+        ...(hasPermission(user, 'incidents.read') ? [{ id: 'incidents', label: 'Incidencias', iconName: 'alert-triangle', title: 'Libro de Incidencias y Auditoría' }] : []),
+      ],
+    },
+    {
+      id: 'administration',
+      label: 'ADMINISTRACIÓN',
+      iconName: 'settings',
+      items: [
+        ...(hasPermission(user, 'employees.read') && !auditorOnly ? [{ id: 'staff', label: 'Personal y Roles', iconName: 'shield-check', title: 'Nómina, Roles RBAC y Auditoría' }] : []),
+        ...(hasAnyPermission(user, ['communications.configure', 'inventory.transfer']) ? [{ id: 'settings', label: 'Configuración General', iconName: 'settings', title: 'Ajustes Operativos del Sistema' }] : []),
+      ],
+    },
   ];
+  const navigationGroups = rawGroups.filter((group) => group.items.length > 0);
 
   const viewTitles = {
     home: 'Dashboard Analítico Principal',

@@ -15,16 +15,25 @@ import {
   Typography,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 import { getCurrentUserApi, updateCurrentUserApi } from '../api/authApi';
+import { enrollMfaApi, verifyMfaApi, disableMfaApi } from '../api/staffApi';
 import { httpClient } from '../api/httpClient';
 import { changeMemberPassword } from '../api/memberApi';
 import { dateLabel, planTypeLabel, stateLabel } from '../components/members/memberUtils';
 
 const roleLabels = {
+  SUPER_ADMIN: 'Super Administrador (Plataforma)',
+  ADMIN_EMPRESA: 'Administrador de Empresa',
+  GERENTE_GENERAL: 'Gerente General',
+  GERENTE_SEDE: 'Gerente de Sede',
+  ENTRENADOR_JEFE: 'Entrenador Jefe',
+  ENTRENADOR: 'Entrenador',
+  AUDITOR_EMPRESA: 'Auditor Empresarial',
   ADMIN: 'Administrador (Soporte TI)',
   GERENTE: 'Gerente General',
   RECEPCION: 'Recepción',
-  AUDITOR: 'Auditor Externo',
+  AUDITOR: 'Auditor',
   CLIENTE: 'Socio VIP',
 };
 
@@ -72,11 +81,15 @@ function Detail({ label, value }) {
 
 export default function ProfilePage({ embedded = false, memberData = null, onClose }) {
   const { token, user, logout } = useAuth();
+  const { showGuides, setShowGuides, resetGuides, syncing: savingGuides } = usePreferences();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
+  const [mfaSetup, setMfaSetup] = useState(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaPassword, setMfaPassword] = useState('');
 
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({ firstName: '', lastName: '', phone: '' });
@@ -431,6 +444,127 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
               </Box>
               {coverage?.reason && (
                 <Typography sx={{ mt: 2, color: 'var(--color-text-secondary)' }}>{coverage.reason}</Typography>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <Card variant="outlined" sx={panelSx}>
+          <CardContent sx={{ p: { xs: 2.2, sm: 3 } }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={2}>
+              <Box>
+                <Typography variant="h6" sx={{ color: 'var(--color-gold)', fontWeight: 800 }}>
+                  Preferencias de Experiencia y Guías
+                </Typography>
+                <Typography sx={{ color: 'var(--color-text-secondary)' }}>
+                  Modo actual: <strong>{showGuides ? 'Modo Guiado (con explicaciones)' : 'Modo Compacto (sin consejos opcionales)'}</strong>.
+                </Typography>
+              </Box>
+              <Stack direction="row" gap={1.2} flexWrap="wrap">
+                <Button
+                  variant={showGuides ? 'contained' : 'outlined'}
+                  disabled={savingGuides}
+                  onClick={() => setShowGuides(!showGuides)}
+                  sx={showGuides ? { bgcolor: 'var(--color-gold)', color: '#111318', fontWeight: 800 } : { borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                >
+                  {showGuides ? 'Mostrar guías: Activado' : 'Mostrar guías: Desactivado'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  disabled={savingGuides}
+                  onClick={resetGuides}
+                  sx={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                >
+                  Restablecer tutoriales
+                </Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        {!embedded && (
+          <Card variant="outlined" sx={panelSx}>
+            <CardContent sx={{ p: { xs: 2.2, sm: 3 } }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={2}>
+                <Box>
+                  <Typography variant="h6" sx={{ color: 'var(--color-gold)', fontWeight: 800 }}>
+                    Autenticación Multifactor (MFA TOTP)
+                  </Typography>
+                  <Typography sx={{ color: 'var(--color-text-secondary)' }}>
+                    Protege cuentas privilegiadas mediante app autenticadora RFC 6238 y códigos de recuperación.
+                  </Typography>
+                </Box>
+                {!profile?.mfaEnabled && !mfaSetup && (
+                  <Button
+                    variant="contained"
+                    onClick={async () => {
+                      setError(''); setSuccess('');
+                      try { setMfaSetup(await enrollMfaApi(token)); } catch (e) { setError(e.message); }
+                    }}
+                    sx={{ bgcolor: 'var(--color-gold)', color: '#111318', fontWeight: 800 }}
+                  >
+                    Configurar TOTP
+                  </Button>
+                )}
+              </Stack>
+
+              {mfaSetup && !profile?.mfaEnabled && (
+                <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
+                  <Typography sx={{ fontWeight: 700, mb: 1 }}>1. Escanea o copia tu secreto TOTP:</Typography>
+                  <Typography sx={{ fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all', mb: 1 }}>{mfaSetup.secret}</Typography>
+                  <Typography variant="caption" sx={{ color: 'var(--color-text-secondary)', display: 'block', mb: 1.5 }}>
+                    Guarda tus códigos de recuperación de un solo uso: {(mfaSetup.recoveryCodes || []).join(' · ')}
+                  </Typography>
+                  <Stack direction="row" gap={1.2} alignItems="center" flexWrap="wrap">
+                    <TextField
+                      sx={inputFieldSx}
+                      size="small"
+                      label="Código de 6 dígitos"
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value)}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={async () => {
+                        setError(''); setSuccess('');
+                        try {
+                          await verifyMfaApi(mfaCode, token);
+                          setProfile((p) => ({ ...p, mfaEnabled: true }));
+                          setMfaSetup(null);
+                          setMfaCode('');
+                          setSuccess('MFA TOTP activado en tu cuenta.');
+                        } catch (e) { setError(e.message); }
+                      }}
+                      sx={{ bgcolor: 'var(--color-gold)', color: '#111318', fontWeight: 800 }}
+                    >
+                      Verificar y activar
+                    </Button>
+                  </Stack>
+                </Box>
+              )}
+
+              {profile?.mfaEnabled && (
+                <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
+                  <Stack direction="row" gap={1.2} alignItems="center" flexWrap="wrap">
+                    <TextField sx={inputFieldSx} size="small" type="password" label="Contraseña actual" value={mfaPassword} onChange={(e) => setMfaPassword(e.target.value)} />
+                    <TextField sx={inputFieldSx} size="small" label="Código TOTP o recuperación" value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} />
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={async () => {
+                        setError(''); setSuccess('');
+                        try {
+                          await disableMfaApi(mfaPassword, mfaCode, token);
+                          setProfile((p) => ({ ...p, mfaEnabled: false }));
+                          setMfaPassword(''); setMfaCode('');
+                          setSuccess('MFA TOTP desactivado tras verificación.');
+                        } catch (e) { setError(e.message); }
+                      }}
+                    >
+                      Desactivar MFA
+                    </Button>
+                  </Stack>
+                </Box>
               )}
             </CardContent>
           </Card>
