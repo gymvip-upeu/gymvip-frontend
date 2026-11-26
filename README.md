@@ -239,3 +239,12 @@ npm test
 - **Fecha:** 23 de Noviembre de 2026.
 - **Revisión de Ingeniería:** Consolidación Maestra Sprint 1 & 2 / Release Candidate v2.5.
 - **Autoría:** Equipo de Ingeniería GYM VIP / VIP CENTER FIT.
+
+
+---
+
+## 25. Actualización Enterprise Web, RBAC y Guías Contextuales (25/11/2026 — Rama `develop`)
+- **Autorización por Permisos (`permissionsService.js`):** Navegación lateral filtrada en `AdminLayout.jsx` y protección de acciones críticas en `StaffPage.jsx`.
+- **Gestión Avanzada de Personal (`StaffPage.jsx`):** Búsqueda, filtros por rol y estado, paginación, cambio de rol integrado en modal de edición, visor de permisos efectivos, pestaña Catálogo RBAC y registro de auditoría.
+- **Experiencia Dual & Seguridad (`PreferencesContext.jsx`, `GuideHint.jsx`, `ProfilePage.jsx`):** Interruptor `"Mostrar guías y consejos"` (Modo Guiado vs Compacto + Restablecer tutoriales) sincronizado con `/api/v1/preferences`, más enrolamiento/verificación/desactivación MFA TOTP.
+- **Verificación:** ESLint `0` errores/warnings, `140/140` pruebas Node (`npm test`) y compilación de producción Vite (`npm run build`) aprobadas.
