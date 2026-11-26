@@ -200,7 +200,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       <div className="app-main-wrapper">
         <Header
           title={currentItem.title}
-          subtitle="VIP CENTER FIT · LUXURY FITNESS"
+          subtitle={isSuperAdmin ? 'GYM VIP 2.0 · CONSOLA SAAS GLOBAL' : 'GYM VIP · GESTIÓN DE GIMNASIO'}
           onOpenMobileMenu={() => setIsMobileOpen(true)}
           onNavigate={handleNavigate}
         />
