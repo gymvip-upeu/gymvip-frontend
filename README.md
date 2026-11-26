@@ -2,16 +2,16 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![React Version](https://img.shields.io/badge/React-18.3.1-blue.svg)]()
-[![Vite Version](https://img.shields.io/badge/Vite-6.4.4-purple.svg)]()
+[![Vite Version](https://img.shields.io/badge/Vite-6.4.6-purple.svg)]()
 [![UI Library](https://img.shields.io/badge/Material%20UI-v5-007FFF.svg)]()
 [![Charts Library](https://img.shields.io/badge/%40mui%2Fx--charts-v7.27.0-ff69b4.svg)]()
-[![Branch](https://img.shields.io/badge/branch-ACOSTA--MEJORAS--Y--ACTUALIZACIONES-yellow.svg)]()
+[![Branch](https://img.shields.io/badge/branch-develop-yellow.svg)]()
 [![License](https://img.shields.io/badge/license-Academic%20Proprietary-lightgrey.svg)]()
 
 > **Ubicación en el Workspace:** `gymvip-frontend/`  
 > **Organización Oficial:** [gymvip-upeu/gymvip-frontend](https://github.com/gymvip-upeu/gymvip-frontend)  
 > **Documentación Centralizada:** `../documentos/`  
-> **Fecha de Actualización:** 23 de Noviembre de 2026 | Revisión Canónica v2.5
+> **Fecha de Actualización:** 26 de Noviembre de 2026 | Revisión Enterprise (`develop`)
 
 ---
 
