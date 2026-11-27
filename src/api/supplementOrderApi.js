@@ -4,7 +4,7 @@
 
 import { httpClient } from './httpClient.js';
 
-export async function listAdminOrdersApi(statusOrParams = '', token = null) {
+export async function listAdminOrdersApi(statusOrParams = '', token = null, signal) {
   const params = new URLSearchParams();
   if (typeof statusOrParams === 'string') {
     if (statusOrParams && statusOrParams !== 'TODOS') {
@@ -23,7 +23,7 @@ export async function listAdminOrdersApi(statusOrParams = '', token = null) {
   }
   const qs = params.toString();
   const query = qs ? `?${qs}` : '';
-  const response = await httpClient(`/api/v1/admin/orders${query}`, {}, token);
+  const response = await httpClient(`/api/v1/admin/orders${query}`, { signal }, token);
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.message || 'Error al listar los pedidos de suplementos.');

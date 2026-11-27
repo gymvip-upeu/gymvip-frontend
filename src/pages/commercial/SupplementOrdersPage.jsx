@@ -39,6 +39,8 @@ export default function SupplementOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [queueError, setQueueError] = useState('');
+  const [pickupError, setPickupError] = useState('');
   const [notice, setNotice] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -55,27 +57,34 @@ export default function SupplementOrdersPage() {
   const [scannedTicket, setScannedTicket] = useState(null);
   const [deliveryNotes, setDeliveryNotes] = useState('');
 
-  const loadOrders = useCallback(async () => {
+  const loadOrders = useCallback(async (signal) => {
     if (!token || scannerMode) {
       setLoading(false);
       return;
     }
     setLoading(true);
-    setError('');
+    setQueueError('');
     try {
       const statusParam = activeTab === 'TODOS' ? undefined : activeTab;
-      const res = await listAdminOrdersApi({ status: statusParam, page: 0, size: 30 }, token);
-      const list = Array.isArray(res?.content) ? res.content : Array.isArray(res) ? res : [];
+      const res = await listAdminOrdersApi({ status: statusParam, page: 0, size: 30 }, token, signal);
+      if (signal.aborted) return;
+      const list = Array.isArray(res) ? res : res?.content;
+      if (!Array.isArray(list)) throw new Error('La respuesta no contiene una lista de pedidos.');
       setOrders(list);
     } catch (err) {
-      setError(err.message || 'No se pudo cargar la bandeja de pedidos.');
+      if (!signal.aborted) {
+        setOrders([]);
+        setQueueError(`Bandeja de pedidos: ${err.message || 'no se pudo cargar.'}`);
+      }
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }, [token, activeTab, scannerMode, reloadKey]);
 
   useEffect(() => {
-    loadOrders();
+    const request = new AbortController();
+    void loadOrders(request.signal);
+    return () => request.abort();
   }, [loadOrders]);
 
   const handleSelectOrder = async (orderId) => {
@@ -167,13 +176,13 @@ export default function SupplementOrdersPage() {
     e.preventDefault();
     if (!inputToken.trim()) return;
     setActionLoading(true);
-    setError('');
+    setPickupError('');
     setScannedTicket(null);
     try {
       const ticket = await inspectPickupTokenApi(inputToken.trim(), token);
       setScannedTicket(ticket);
     } catch (err) {
-      setError(err.message || 'Código QR o token de retiro inválido / no encontrado.');
+      setPickupError(`Inspección del ticket: ${err.message || 'código inválido o no encontrado.'}`);
     } finally {
       setActionLoading(false);
     }
@@ -182,11 +191,11 @@ export default function SupplementOrdersPage() {
   const handleConfirmDelivery = async () => {
     if (!scannedTicket) return;
     if (scannedTicket.isConsumed) {
-      setError('Este ticket ya fue entregado y no puede confirmarse nuevamente.');
+      setPickupError('Este ticket ya fue entregado y no puede confirmarse nuevamente.');
       return;
     }
     setActionLoading(true);
-    setError('');
+    setPickupError('');
     try {
       const delivered = await deliverOrderByTokenApi(
         scannedTicket.pickupToken,
@@ -199,7 +208,7 @@ export default function SupplementOrdersPage() {
       setDeliveryNotes('');
       setReloadKey((k) => k + 1);
     } catch (err) {
-      setError(err.message || 'Error al confirmar la entrega física.');
+      setPickupError(`Confirmación de entrega: ${err.message || 'no se pudo confirmar.'}`);
     } finally {
       setActionLoading(false);
     }
@@ -235,7 +244,10 @@ export default function SupplementOrdersPage() {
               setScannerMode((prev) => !prev);
               setSelectedOrder(null);
               setError('');
+              setPickupError('');
+              setScannedTicket(null);
             }}
+            disabled={actionLoading}
           >
             <Icon name="check-circle" size={15} />
             <span>{scannerMode ? 'Volver a Bandejas' : 'Mostrador / Lector QR'}</span>
@@ -253,6 +265,8 @@ export default function SupplementOrdersPage() {
 
       {notice && <Alert variant="success" message={notice} onClose={() => setNotice('')} />}
       {error && <Alert variant="danger" message={error} onClose={() => setError('')} />}
+      {!scannerMode && queueError && <Alert variant="danger" message={queueError} onClose={() => setQueueError('')} />}
+      {scannerMode && pickupError && <Alert variant="danger" message={pickupError} onClose={() => setPickupError('')} />}
 
       {!scannerMode && (
         <VipTabBar

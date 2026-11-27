@@ -22,9 +22,19 @@ import {
   approveCompanyRequestApi,
   listCompanyRequestsApi,
   reviewCompanyRequestApi,
+  resendCompanyInvitationApi,
 } from '../../api/saasPlatformApi';
 
-const STATUS_OPTIONS = ['', 'RECIBIDA', 'EN_REVISION', 'OBSERVADA', 'APROBADA', 'RECHAZADA', 'ARCHIVADA'];
+const STATUS_OPTIONS = ['', 'RECIBIDA', 'EN_REVISION', 'OBSERVADA', 'APROBADA', 'INVITACION_ENVIADA', 'ACTIVADA', 'RECHAZADA', 'ARCHIVADA'];
+
+function invitationFeedback(status) {
+  if (status === 'PENDING') return 'Invitación en cola. Consulta el estado de la solicitud para comprobar el envío.';
+  if (status === 'UNCONFIGURED') return 'Empresa aprobada. Falta configurar la URL de activación para enviar la invitación.';
+  if (status === 'SIMULATED') return 'La invitación está en simulación. El proveedor no envió un correo.';
+  if (status === 'FAILED') return 'El correo no pudo enviarse. Revisa Integraciones y vuelve a enviar la invitación.';
+  if (status === 'ACCEPTED') return 'El proveedor aceptó la invitación.';
+  return 'La solicitud ya fue procesada.';
+}
 
 export default function CompanyRequestsPage() {
   const { token } = useAuth();
@@ -73,12 +83,22 @@ export default function CompanyRequestsPage() {
     setNotice('');
     try {
       const res = await approveCompanyRequestApi(token, id, true);
-      setNotice(
-        `Aprobada y aprovisionada: organización "${res.organizationCode}" creada con sede principal, licencia TRIAL 14 días y cuenta invitada (${res.adminEmail} · código ${res.invitationCode}).`
-      );
+      setNotice(invitationFeedback(res.emailStatus));
       await loadRequests();
     } catch (err) {
       setError(err.message || 'No se pudo aprobar y aprovisionar la empresa.');
+    }
+  };
+
+  const handleInvite = async (id) => {
+    setError('');
+    setNotice('');
+    try {
+      const res = await resendCompanyInvitationApi(token, id);
+      setNotice(invitationFeedback(res.emailStatus));
+      await loadRequests();
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -150,6 +170,9 @@ export default function CompanyRequestsPage() {
                       size="small"
                       color={req.status === 'APROBADA' ? 'success' : req.status === 'RECHAZADA' ? 'error' : 'warning'}
                     />
+                    {req.invitationStatus && req.status !== 'ACTIVADA' && (
+                      <Typography variant="caption" display="block" color="text.secondary">{invitationFeedback(req.invitationStatus)}</Typography>
+                    )}
                   </TableCell>
                   <TableCell>
                     <TextField
@@ -162,7 +185,7 @@ export default function CompanyRequestsPage() {
                   </TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      {req.status !== 'APROBADA' && (
+                      {!req.approvedOrganizationId && (
                         <>
                           <Button size="small" variant="outlined" onClick={() => handleReview(req.id, 'OBSERVADA')}>Observar</Button>
                           <Button size="small" variant="contained" onClick={() => handleApproveAndProvision(req.id)}>Aprobar y Crear</Button>
@@ -173,6 +196,9 @@ export default function CompanyRequestsPage() {
                         <Chip label={req.activationToken || 'Provisionada'} size="small" color="success" />
                       )}
                     </Stack>
+                    {req.approvedOrganizationId && req.status !== 'ACTIVADA' && (
+                      <Button size="small" onClick={() => handleInvite(req.id)}>Reenviar invitación</Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

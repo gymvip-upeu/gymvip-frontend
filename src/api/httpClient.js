@@ -13,6 +13,9 @@ let unauthorizedHandler = null;
  */
 export function registerUnauthorizedHandler(callback) {
   unauthorizedHandler = callback;
+  return () => {
+    if (unauthorizedHandler === callback) unauthorizedHandler = null;
+  };
 }
 
 /**
@@ -25,6 +28,9 @@ export function registerUnauthorizedHandler(callback) {
  */
 export async function httpClient(endpoint, options = {}, token = null) {
   const url = `${config.apiBaseUrl}${endpoint}`;
+  const telemetryPath = endpoint.split('?')[0]
+    .replace(/(\/orders\/pickup\/)[^/]+/g, '$1:ticket')
+    .replace(/(\/public\/company-requests\/)[^/]+/g, '$1:trackingCode');
   const headers = {
     ...(typeof FormData !== 'undefined' && options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers || {}),
@@ -44,31 +50,28 @@ export async function httpClient(endpoint, options = {}, token = null) {
     });
   } catch (netError) {
     if (netError.name !== 'AbortError') {
-      addSentryBreadcrumb('http', `Fallo de red: ${method} ${endpoint}`, { error: netError.message }, 'warning');
+      addSentryBreadcrumb('http', `Fallo de red: ${method} ${telemetryPath}`, { error: netError.name }, 'warning');
     }
     throw netError;
   }
 
   // Registrar breadcrumb de respuesta HTTP (sin datos sensibles)
-  addSentryBreadcrumb('http', `${method} ${endpoint} -> ${response.status}`, {
+  addSentryBreadcrumb('http', `${method} ${telemetryPath} -> ${response.status}`, {
     status: response.status,
     statusText: response.statusText,
   });
 
   // Reportar errores técnicos del servidor (5xx) automáticamente a Sentry
   if (response.status >= 500) {
-    captureSentryException(new Error(`HTTP ${response.status} en ${method} ${endpoint}`), {
+    captureSentryException(new Error(`HTTP ${response.status} en ${method} ${telemetryPath}`), {
       module: 'httpClient',
       httpStatus: response.status,
-      action: `${method} ${endpoint}`,
+      action: `${method} ${telemetryPath}`,
     });
   }
 
-  if (response.status === 401 && unauthorizedHandler) {
-    // Si no es la ruta explícita de login, disparar desautenticación automática
-    if (!endpoint.includes('/auth/login')) {
-      unauthorizedHandler();
-    }
+  if (response.status === 401 && token && endpoint !== '/api/v1/auth/logout') {
+    unauthorizedHandler?.(token);
   }
 
   return response;

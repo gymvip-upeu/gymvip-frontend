@@ -25,7 +25,7 @@ export default function ClasesEntrenamientoPage() {
   const [exercises, setExercises] = useState([]);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [classForm, setClassForm] = useState({ title: '', category: 'FUNCIONAL', trainerName: '', startsAt: `${new Date().toISOString().slice(0, 10)}T18:00`, durationMinutes: 60, capacity: 20 });
+  const [classForm, setClassForm] = useState({ title: '', category: 'FUNCIONAL', trainerName: '', startsAt: `${new Date().toLocaleDateString("sv-SE", { timeZone: "America/Lima" })}T18:00`, durationMinutes: 60, capacity: 20 });
   const [routineForm, setRoutineForm] = useState({ title: '', goal: 'Hipertrofia', level: 'INTERMEDIO', durationMinutes: 50, exerciseId: '', notes: '' });
 
   const loadAll = useCallback(async () => {
