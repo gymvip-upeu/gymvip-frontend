@@ -1,4 +1,5 @@
 import FirstPasswordPage from '../pages/auth/FirstPasswordPage';
+import DirectoryAccessPage from '../pages/auth/DirectoryAccessPage';
 // ==============================================================================
 // GYM VIP — Definición y Guardas de Rutas / Navegación (HTML5 History API)
 // Sincronización bidireccional con URL, botón Atrás/Adelante, recarga y permisos RBAC
@@ -234,6 +235,7 @@ export function AppRoutes() {
   }
 
   if (user.firstAccessPasswordRequired) return <FirstPasswordPage />;
+  if (user.directoryOnly) return <DirectoryAccessPage />;
 
   if (user.mfaEnrollmentRequired) {
     return (
