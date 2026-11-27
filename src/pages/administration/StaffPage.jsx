@@ -3,6 +3,8 @@
 // ==============================================================================
 
 import React, { useMemo, useState } from 'react';
+import { Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField } from '@mui/material';
+import { changePrivilegedStaffRoleApi } from '../../api/staffApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStaff } from '../../hooks/useStaff';
 import { STAFF_ROLES } from '../../validators/staffValidator';
@@ -18,14 +20,17 @@ import { LoadingState, EmptyState } from '../../components/feedback/LoadingState
 import StaffModal from '../../components/modals/StaffModal';
 
 const PAGE_SIZE = 6;
+const PRIVILEGED_ROLES = ['SUPER_ADMIN', 'SOPORTE_PLATAFORMA', 'ADMIN_EMPRESA'];
 
 export default function StaffPage() {
   const { token, isAdmin, isGerente, user } = useAuth();
   const canViewStaff = hasPermission(user, 'employees.read') || isAdmin() || (isGerente && isGerente());
-  const canManageRoles = hasPermission(user, 'employees.assign_role') || isAdmin() || (isGerente && isGerente());
+  const canManageRoles = hasPermission(user, 'employees.assign_role');
+  const canManagePrivilegedRoles = user?.roles?.includes('SUPER_ADMIN') && !user?.mfaEnrollmentRequired;
 
   const {
     accounts,
+    assignableRoles,
     rolesCatalog,
     permissionsCatalog,
     auditEvents,
@@ -40,6 +45,9 @@ export default function StaffPage() {
     inactivateAccount,
   } = useStaff(token, canViewStaff);
 
+  const [privilegedTarget, setPrivilegedTarget] = useState(null);
+  const [privilegedSubmitting, setPrivilegedSubmitting] = useState(false);
+  const [privilegedError, setPrivilegedError] = useState(null);
   const [sectionTab, setSectionTab] = useState('directory');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
@@ -95,6 +103,32 @@ export default function StaffPage() {
     if (ok) setEditingProfile(null);
   };
 
+  const handlePrivilegedChange = async (event) => {
+    event.preventDefault();
+    if (privilegedSubmitting) return;
+    const fields = new FormData(event.currentTarget);
+    const role = String(fields.get('role'));
+    const roleKey = PRIVILEGED_ROLES.includes(role) ? 'targetRole' : 'replacementRole';
+    setPrivilegedError(null);
+    setPrivilegedSubmitting(true);
+    try {
+      await changePrivilegedStaffRoleApi({
+        accountId: privilegedTarget.id,
+        [roleKey]: role,
+        currentPassword: fields.get('currentPassword'),
+        mfaCode: fields.get('mfaCode'),
+        reason: String(fields.get('reason')).trim(),
+      }, token);
+      setPrivilegedTarget(null);
+      setSuccessToast('Rol actualizado. Se cerraron las sesiones del colaborador.');
+      loadAccounts();
+    } catch (err) {
+      setPrivilegedError(err.message);
+    } finally {
+      setPrivilegedSubmitting(false);
+    }
+  };
+
   return (
     <div className="staff-page" style={{ maxWidth: '1160px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
@@ -107,7 +141,7 @@ export default function StaffPage() {
           </p>
         </div>
 
-        {hasPermission(user, 'employees.create') && (
+        {hasPermission(user, 'employees.create') && assignableRoles.length > 0 && (
           <Button variant="primary" onClick={() => setIsCreateOpen(true)} style={{ minHeight: '44px', fontSize: '14px' }}>
             <Icon name="plus" size={16} />
             <span>Nuevo Colaborador</span>
@@ -197,7 +231,7 @@ export default function StaffPage() {
                       const isActive = acc.status === 'ACTIVO';
                       const roleName = acc.roles?.[0] || 'RECEPCION';
                       const initial = acc.email ? acc.email.charAt(0).toUpperCase() : 'C';
-                      const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_EMPRESA'].includes(roleName);
+                      const isPrivileged = PRIVILEGED_ROLES.includes(roleName);
 
                       return (
                         <tr key={acc.id}>
@@ -247,6 +281,14 @@ export default function StaffPage() {
                           </td>
                           <td style={{ textAlign: 'right' }}>
                             <div style={{ display: 'inline-flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                              {!isCurrent && isActive && canManagePrivilegedRoles && (
+                                <Button variant="secondary" onClick={() => {
+                                  setPrivilegedError(null);
+                                  setPrivilegedTarget(acc);
+                                }}>
+                                  Privilegios
+                                </Button>
+                              )}
                               <Button
                                 variant="secondary"
                                 onClick={() => setInspectAccount(acc)}
@@ -403,8 +445,43 @@ export default function StaffPage() {
         </div>
       )}
 
+      <Dialog
+        open={Boolean(privilegedTarget)}
+        onClose={() => { if (!privilegedSubmitting) setPrivilegedTarget(null); }}
+        fullWidth
+        maxWidth="xs"
+      >
+        {privilegedTarget && (
+          <form onSubmit={handlePrivilegedChange}>
+            <DialogTitle>Modificar privilegios</DialogTitle>
+            <DialogContent>
+              <Stack spacing={2} sx={{ pt: 1 }}>
+                <strong>{privilegedTarget.email}</strong>
+                <TextField select label="Rol de destino" name="role" required defaultValue="">
+                  {(privilegedTarget.roles?.some((role) => PRIVILEGED_ROLES.includes(role))
+                    ? rolesCatalog.filter(({ code }) => code !== 'CLIENTE' && !privilegedTarget.roles.includes(code))
+                    : rolesCatalog.filter(({ code }) => PRIVILEGED_ROLES.includes(code))
+                  ).map(({ code, displayName }) => <MenuItem key={code} value={code}>{displayName}</MenuItem>)}
+                </TextField>
+                <TextField label="Motivo del cambio" name="reason" required multiline minRows={2}
+                  slotProps={{ htmlInput: { minLength: 8, maxLength: 400 } }} />
+                <TextField label="Tu contraseña actual" name="currentPassword" type="password"
+                  autoComplete="current-password" required />
+                <TextField label="Código de autenticación" name="mfaCode" required
+                  slotProps={{ htmlInput: { inputMode: 'numeric', autoComplete: 'one-time-code', pattern: '[0-9]{6}' } }} />
+                {privilegedError && <Alert variant="danger" message={privilegedError} />}
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button type="button" variant="secondary" disabled={privilegedSubmitting} onClick={() => setPrivilegedTarget(null)}>Cancelar</Button>
+              <Button type="submit" variant="primary" disabled={privilegedSubmitting}>Confirmar cambio</Button>
+            </DialogActions>
+          </form>
+        )}
+      </Dialog>
+
       {isCreateOpen && (
-        <StaffModal token={token} onClose={() => setIsCreateOpen(false)} onSuccess={handleCreateSuccess} />
+        <StaffModal token={token} assignableRoles={assignableRoles} onClose={() => setIsCreateOpen(false)} onSuccess={handleCreateSuccess} />
       )}
 
       {/* Editar Usuario + Cambiar Rol integrado */}
@@ -439,11 +516,14 @@ export default function StaffPage() {
                   id="staff-edit-role"
                   className="form-select"
                   value={editingProfile.role}
-                  disabled={editingProfile.isCurrent}
+                  disabled={editingProfile.isCurrent || !assignableRoles.some(({ code }) => code === editingProfile.originalRole)}
                   onChange={(e) => setEditingProfile({ ...editingProfile, role: e.target.value })}
                 >
-                  {STAFF_ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
+                  {!assignableRoles.some(({ code }) => code === editingProfile.role) && (
+                    <option value={editingProfile.role}>{editingProfile.role}</option>
+                  )}
+                  {assignableRoles.map((r) => (
+                    <option key={r.code} value={r.code}>{r.displayName}</option>
                   ))}
                 </select>
                 {editingProfile.isCurrent && (

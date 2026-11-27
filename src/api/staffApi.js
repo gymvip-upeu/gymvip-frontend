@@ -142,3 +142,21 @@ export async function disableMfaApi(password, code, token = null) {
   }
   return response.json();
 }
+
+export async function listAssignableStaffRolesApi(token = null) {
+  const response = await httpClient('/api/v1/rbac/assignable-roles', {}, token);
+  if (!response.ok) throw new Error('No se pudieron consultar los roles que puedes asignar.');
+  return response.json();
+}
+
+export async function changePrivilegedStaffRoleApi(payload, token) {
+  const path = payload.targetRole ? 'migrate-admin-role' : 'revoke-role';
+  const response = await httpClient(`/api/v1/security/privileged/${path}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, token);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'No se pudo confirmar el cambio de privilegios.');
+  }
+}
