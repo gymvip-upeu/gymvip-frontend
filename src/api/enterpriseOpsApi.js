@@ -94,3 +94,23 @@ export const toggleLoyaltyOptInApi = (clientId, enrolled, token) =>
 
 export const recordLoyaltyPointsApi = (clientId, pointsDelta, reason, token) =>
   apiJson(`/api/v1/enterprise/ops/loyalty/clients/${clientId}/points`, { method: 'POST', body: JSON.stringify({ pointsDelta, reason }) }, token);
+
+export const listClassReservationsApi = (classId, token) =>
+  apiJson('/api/v1/training/classes/' + encodeURIComponent(classId) + '/reservations', {}, token);
+
+export const listClassNoticesApi = (token) =>
+  apiJson('/api/v1/training/classes/notifications', {}, token);
+
+export const listClassTrainersApi = (branchId, token) =>
+  apiJson('/api/v1/training/classes/trainers?' + new URLSearchParams({ branchId }), {}, token);
+
+export const listManagedExercisesApi = (branchId, token) =>
+  apiJson('/api/v1/training/exercises/manage?' + new URLSearchParams({ branchId }), {}, token);
+
+export const saveExerciseDraftApi = (id, branchId, payload, token) =>
+  apiJson(id ? '/api/v1/training/exercises/' + encodeURIComponent(id) + '/draft'
+    : '/api/v1/training/exercises?' + new URLSearchParams({ branchId }),
+  { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) }, token);
+
+export const publishExerciseApi = (id, token) =>
+  apiJson('/api/v1/training/exercises/' + encodeURIComponent(id) + '/publish', { method: 'POST' }, token);

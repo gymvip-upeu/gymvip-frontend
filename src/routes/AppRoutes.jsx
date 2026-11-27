@@ -59,6 +59,8 @@ const LicensesCommissionsPage = lazy(() => import('../pages/platform/LicensesCom
 const SimulatorPage = lazy(() => import('../pages/platform/SimulatorPage'));
 const CommercialProfilePage = lazy(() => import('../pages/organization/CommercialProfilePage'));
 
+import { hasPermission } from '../services/permissionsService';
+
 export function AppRoutes() {
   const { user, isAdmin, isGerente, isRecepcion } = useAuth();
   const isSuperAdmin = Boolean(user?.roles?.some((r) => String(r).toUpperCase().replace(/^ROLE_/, '') === 'SUPER_ADMIN'));
@@ -66,7 +68,9 @@ export function AppRoutes() {
   const isHr = isExecutive || Boolean(user?.roles?.includes('RECURSOS_HUMANOS'));
   const isInventoryStaff = isExecutive || Boolean(user?.roles?.some((r) => ['INVENTARIO', 'COMPRAS'].includes(r)));
   const isCashStaff = isExecutive || isRecepcion() || Boolean(user?.roles?.some((r) => ['CAJERO', 'CONTADOR'].includes(r)));
-  const isTrainerOrStaff = isExecutive || isRecepcion() || Boolean(user?.roles?.some((r) => ['ENTRENADOR_JEFE', 'ENTRENADOR'].includes(r)));
+  const canUseClasses = ['training.classes.roster', 'training.classes.manage', 'training.exercises.edit']
+    .some((permission) => hasPermission(user, permission));
+  const [reservationClassId, setReservationClassId] = useState(() => new URLSearchParams(window.location.search).get('clase'));
   const auditorOnly = (user?.roles?.includes('AUDITOR') || user?.roles?.includes('AUDITOR_EMPRESA')) && !isExecutive && !isRecepcion();
 
   const [currentView, setCurrentView] = useState(() => {
@@ -104,7 +108,7 @@ export function AppRoutes() {
   }, [user, isExecutive, isRecepcion, currentView]);
 
   // Navegación programática con sincronización a la barra de direcciones del navegador
-  const handleNavigate = useCallback((viewId) => {
+  const handleNavigate = useCallback((viewId, classId) => {
     if (auditorOnly && !['reports', 'incidents', 'profile'].includes(viewId)) return;
     // Guarda de permisos para rutas administrativas
     if (viewId === 'staff' && !isExecutive) {
@@ -141,9 +145,11 @@ export function AppRoutes() {
       return;
     }
     setAccessError(null);
-    const targetPath = VIEW_PATH_MAP[viewId] || '/inicio';
+    if (viewId === 'classes') setReservationClassId(classId || null);
+    const targetPath = (VIEW_PATH_MAP[viewId] || '/inicio')
+      + (viewId === 'classes' && classId ? '?' + new URLSearchParams({ clase: classId }) : '');
 
-    if (typeof window !== 'undefined' && window.location.pathname !== targetPath) {
+    if (typeof window !== 'undefined' && (window.location.pathname + window.location.search) !== targetPath) {
       window.history.pushState({ view: viewId }, '', targetPath);
     }
     setCurrentView(viewId);
@@ -196,6 +202,7 @@ export function AppRoutes() {
       }
 
       setAccessError(null);
+      setReservationClassId(new URLSearchParams(window.location.search).get('clase'));
       setCurrentView(nextView);
     };
 
@@ -259,7 +266,7 @@ export function AppRoutes() {
             {currentView === 'verification' && (isExecutive || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
             {currentView === 'attendance' && (isExecutive || isRecepcion()) && <AttendanceAgendaPage onNavigate={handleNavigate} />}
             {currentView === 'plans' && <PlansPage />}
-            {currentView === 'supplements' && <SupplementsPage />}
+            {currentView === 'supplements' && (isInventoryStaff || isRecepcion() || hasPermission(user, 'supplements.stock.read')) && <SupplementsPage />}
             {currentView === 'supplementOrders' && (isExecutive || isRecepcion()) && <SupplementOrdersPage />}
             {currentView === 'promotions' && <PromotionsPage />}
             {currentView === 'memberships' && (isExecutive || isRecepcion()) && <MembershipsPage onNavigate={handleNavigate} />}
@@ -271,7 +278,7 @@ export function AppRoutes() {
             {currentView === 'inventory' && (isInventoryStaff ? <InventarioActivosPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'INVENTARIO']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'purchasing' && (isInventoryStaff ? <ComprasProveedoresPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'COMPRAS']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'cash' && (isCashStaff ? <CajasFinanzasPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'CAJERO', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
-            {currentView === 'classes' && (isTrainerOrStaff ? <ClasesEntrenamientoPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN', 'ENTRENADOR', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'classes' && (canUseClasses ? <ClasesEntrenamientoPage key={reservationClassId ?? 'all-classes'} initialClassId={reservationClassId} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN', 'ENTRENADOR', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'loyalty' && (isExecutive || isRecepcion() ? <FidelizacionPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN', 'RECEPCION']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'integrations' && (isExecutive ? <IntegracionesPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'monitoring' && (isExecutive ? <ObservabilidadPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN']} onGoHome={() => handleNavigate('home')} />)}

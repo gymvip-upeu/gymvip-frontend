@@ -9,12 +9,16 @@ import { Icon } from './Icons';
 import { Badge } from './Badge';
 import { listCoverage } from '../../api/jorgeApi';
 import { listAdminOrdersApi } from '../../api/supplementOrderApi';
+import { hasPermission } from '../../services/permissionsService';
+import { listClassNoticesApi } from '../../api/enterpriseOpsApi';
 import { dateLabel } from '../members/memberUtils';
 
 export function NotificationsModal({ isOpen, onClose, onNavigate }) {
   const panelRef = useRef(null);
   const { token, user, isBusinessExecutive, isRecepcion } = useAuth();
   const canOperate = isBusinessExecutive() || isRecepcion();
+
+  const canSeeClasses = hasPermission(user, 'training.classes.notifications');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -40,13 +44,14 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
   };
 
   const loadData = useCallback(async () => {
-    if (!token || !canOperate) return;
+    if (!token || (!canOperate && !canSeeClasses)) return;
     setLoading(true);
     setError('');
     try {
-      const [coverageRes, ordersRes] = await Promise.all([
-        listCoverage({ state: 'ALERTAS', page: 0, size: 6 }, token).catch(() => ({ content: [] })),
-        listAdminOrdersApi({ status: 'PAGADO_POR_VERIFICAR', page: 0, size: 5 }, token).catch(() => ({ content: [] })),
+      const [coverageRes, ordersRes, classRes] = await Promise.all([
+        canOperate ? listCoverage({ state: 'ALERTAS', page: 0, size: 6 }, token).catch(() => ({ content: [] })) : null,
+        canOperate ? listAdminOrdersApi({ status: 'PAGADO_POR_VERIFICAR', page: 0, size: 5 }, token).catch(() => ({ content: [] })) : null,
+        canSeeClasses ? listClassNoticesApi(token).catch(() => null) : [],
       ]);
 
       const coverageAlerts = (Array.isArray(coverageRes?.content) ? coverageRes.content : []).map((item) => ({
@@ -74,13 +79,26 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
         actionLabel: 'Revisar Pago',
       }));
 
-      setFeedItems([...orderAlerts, ...coverageAlerts]);
+      const classAlerts = (classRes ?? []).map((item) => ({
+        id: 'class_' + item.id,
+        kind: 'CLASS',
+        title: item.classTitle,
+        subtitle: item.branchName,
+        badgeLabel: { RESERVADA: 'Reserva confirmada', LISTA_ESPERA: 'Lista de espera', PROMOVIDA: 'Cupo liberado y asignado', CANCELADA: 'Reserva cancelada' }[item.eventType] ?? 'Reserva',
+        badgeVariant: 'gold',
+        detail: (item.createdAt || '').replace('T', ' ').slice(0, 16) + ' · Lima',
+        targetView: 'classes',
+        actionLabel: 'Ver reservas',
+        classId: item.classId,
+      }));
+      setFeedItems([...classAlerts, ...orderAlerts, ...coverageAlerts]);
+      if (classRes === null) setError('No se pudieron consultar los avisos de reservas.');
     } catch (e) {
       setError(e.message || 'No fue posible consultar las alertas operativas.');
     } finally {
       setLoading(false);
     }
-  }, [token, canOperate]);
+  }, [token, canOperate, canSeeClasses]);
 
   useEffect(() => {
     if (isOpen) {
@@ -206,7 +224,7 @@ export function NotificationsModal({ isOpen, onClose, onNavigate }) {
                     style={{ fontSize: '11px', padding: '2px 8px', minHeight: '26px' }}
                     onClick={() => {
                       onClose();
-                      onNavigate?.(item.targetView);
+                      onNavigate?.(item.targetView, item.classId);
                     }}
                   >
                     {item.actionLabel}

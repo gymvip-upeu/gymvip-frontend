@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { MenuItem, TextField } from '@mui/material';
+import { getBranchesApi } from '../../api/staffApi';
+import StockEntriesPanel from './StockEntriesPanel';
+import { hasPermission } from '../../services/permissionsService';
 import { useAuth } from '../../contexts/AuthContext';
 import { listSupplements, listCatalogProducts, getSupplement } from '../../api/catalogApi';
 import { Alert } from '../../components/common/Alert';
@@ -12,8 +16,11 @@ import { categories, categoryLabel, availabilityLabel, presentationLabel, update
 import { formatCurrencyPen } from '../../utils/formatters';
 
 export default function SupplementsPage() {
-  const { token, isBusinessExecutive } = useAuth();
+  const { token, user, isBusinessExecutive } = useAuth();
   const isAdmin = isBusinessExecutive;
+  const canSeeCatalog = isAdmin() || user?.roles?.includes('RECEPCION');
+  const [branches, setBranches] = useState([]);
+  const [branchId, setBranchId] = useState('');
   const [draft, setDraft] = useState({ query: '', category: '', availability: '', published: '' });
   const [filters, setFilters] = useState(draft);
   const [page, setPage] = useState(0);
@@ -30,12 +37,24 @@ export default function SupplementsPage() {
   const [selectedPhoto, setSelectedPhoto] = useState(0);
 
   useEffect(() => {
-    if (view.kind !== 'list') return;
+    if (!canSeeCatalog) return;
+    let active = true;
+    getBranchesApi(token).then((result) => {
+      if (!active) return;
+      const options = result.filter((branch) => branch.status === 'ACTIVO');
+      setBranches(options);
+      setBranchId(options[0]?.id ?? '');
+    }).catch(() => { if (active) setError('No se pudieron cargar las sedes.'); });
+    return () => { active = false; };
+  }, [token, canSeeCatalog]);
+
+  useEffect(() => {
+    if (view.kind !== 'list' || !canSeeCatalog) return;
     let active = true;
     setLoading(true);
     setError('');
     setResult(null);
-    Promise.all([listSupplements({ ...filters, page, size: 12 }, token), listCatalogProducts(token)])
+    Promise.all([listSupplements({ ...filters, branchId, page, size: 12 }, token), listCatalogProducts(token, 60, branchId)])
       .then(([value, products]) => {
         if (!active) return;
         setResult(value);
@@ -46,7 +65,7 @@ export default function SupplementsPage() {
     return () => {
       active = false;
     };
-  }, [token, filters, page, reload, view.kind]);
+  }, [token, filters, page, reload, view.kind, branchId, canSeeCatalog]);
 
   useEffect(() => {
     if (!view.id) return;
@@ -81,12 +100,23 @@ export default function SupplementsPage() {
   };
 
   if (view.kind === 'new' || (view.kind === 'edit' && detail && !loading)) {
-    return <SupplementEditor key={view.id || 'new'} item={view.kind === 'edit' ? detail : null} onClose={back} onSaved={saved} />;
+    return <SupplementEditor key={view.id || 'new'} item={view.kind === 'edit' ? detail : null} onClose={back} onSaved={saved} branchId={branchId} branchName={branches.find((branch) => branch.id === branchId)?.name} />;
+  }
+
+  if (hasPermission(user, 'supplements.stock.read') && !canSeeCatalog) {
+    return <StockEntriesPanel token={token} user={user} />;
   }
 
   return (
     <section className="catalog-page">
-      {view.kind === 'detail' || view.kind === 'edit' ? (
+      {hasPermission(user, 'supplements.stock.read') && <StockEntriesPanel token={token} user={user} selectedId={detail?.id} initialBranchId={branchId} onStockChanged={() => setReload((value) => value + 1)} />}
+      {view.kind === 'list' && branches.length > 0 && (
+        <TextField select size="small" label="Sede del catálogo" value={branchId}
+          onChange={(event) => { setBranchId(event.target.value); setPage(0); }}>
+          {branches.map((branch) => <MenuItem key={branch.id} value={branch.id}>{branch.name}</MenuItem>)}
+        </TextField>
+      )}
+      {view.kind === 'detail'  || view.kind === 'edit' ? (
         <>
           <button className="catalog-back" onClick={back}>← Volver al catálogo</button>
           {error && <Alert variant="danger" message={error} />}
