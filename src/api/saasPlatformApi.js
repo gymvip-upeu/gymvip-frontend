@@ -140,3 +140,10 @@ export async function replyGymReviewApi(token, organizationId, reviewId, replyTe
     body: JSON.stringify({ replyText }),
   }, token);
 }
+
+export function recordCompanyVerificationApi(token, id, evidence) {
+  return apiJson('/api/v1/platform/company-requests/' + encodeURIComponent(id) + '/verification', {
+    method: 'PUT',
+    body: JSON.stringify(evidence),
+  }, token);
+}
