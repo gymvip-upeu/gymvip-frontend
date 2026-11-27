@@ -8,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { AdminLayout } from '../templates/AdminLayout';
 import HomePage from '../pages/dashboard/HomePage';
 import LoginModal from '../components/modals/LoginModal';
-import LockScreenModal from '../components/modals/LockScreenModal';
 import { Alert } from '../components/common/Alert';
 import { SentryErrorBoundary } from '../components/common/SentryErrorBoundary';
 import { addSentryBreadcrumb } from '../config/sentry';
@@ -61,7 +60,7 @@ const SimulatorPage = lazy(() => import('../pages/platform/SimulatorPage'));
 const CommercialProfilePage = lazy(() => import('../pages/organization/CommercialProfilePage'));
 
 export function AppRoutes() {
-  const { user, isLocked, isAdmin, isGerente, isRecepcion } = useAuth();
+  const { user, isAdmin, isGerente, isRecepcion } = useAuth();
   const isSuperAdmin = Boolean(user?.roles?.some((r) => String(r).toUpperCase().replace(/^ROLE_/, '') === 'SUPER_ADMIN'));
   const isExecutive = isSuperAdmin || isAdmin() || (isGerente && isGerente());
   const isHr = isExecutive || Boolean(user?.roles?.includes('RECURSOS_HUMANOS'));
@@ -220,11 +219,6 @@ export function AppRoutes() {
       }
     }
   }, [user]);
-
-  // Si la sesión fue bloqueada por inactividad o expiración 401, ocultar toda la UI operativa
-  if (isLocked) {
-    return <LockScreenModal />;
-  }
 
   // Si no hay sesión autenticada, presentar pantalla de acceso centrada
   if (!user) {

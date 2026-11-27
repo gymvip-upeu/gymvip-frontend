@@ -37,7 +37,7 @@ export async function verifyMfaLoginApi(challengeToken, code) {
 export async function logoutApi(token) {
   if (!token) return;
   try {
-    await httpClient('/api/v1/auth/logout', { method: 'POST' }, token);
+    await httpClient('/api/v1/auth/logout', { method: 'POST', keepalive: true }, token);
   } catch {
     // Silencio en logout local ante fallos de red
   }
