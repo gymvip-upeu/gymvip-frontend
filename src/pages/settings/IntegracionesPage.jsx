@@ -15,10 +15,23 @@ import { Button } from '../../components/common/Button';
 import { Icon } from '../../components/common/Icons';
 import ChannelStatusPanel from '../../components/common/ChannelStatusPanel';
 
+const stateLabel = {
+  UNVERIFIED: 'Sin verificar',
+  UNCONFIGURED: 'Sin configurar',
+  CONFIGURED_REAL: 'Configurado · pendiente de verificar',
+  TEST: 'Pruebas',
+  SIMULATION: 'Simulación',
+  VERIFIED: 'Verificado',
+  AVAILABLE: 'Disponible',
+  UP: 'Operativo',
+  DOWN: 'Caído',
+  DISABLED: 'Desactivado',
+};
+
 const badgeFor = (status) => {
   const norm = String(status || '').toUpperCase();
-  if (['UP', 'HEALTHY', 'CONFIGURED_REAL', 'AVAILABLE', 'ACTIVE', 'ENABLED'].includes(norm)) return 'success';
-  if (['SIMULATION', 'DEGRADED', 'UNVERIFIED'].includes(norm)) return 'warning';
+  if (['UP', 'HEALTHY', 'AVAILABLE', 'ACTIVE', 'ENABLED', 'VERIFIED'].includes(norm)) return 'success';
+  if (['SIMULATION', 'DEGRADED', 'UNVERIFIED', 'TEST', 'CONFIGURED_REAL'].includes(norm)) return 'warning';
   return 'danger';
 };
 
@@ -28,7 +41,7 @@ export default function IntegracionesPage() {
   const [error, setError] = useState('');
   const [systemStatus, setSystemStatus] = useState(null);
   const [channels, setChannels] = useState(null);
-  const [culqiEnabled, setCulqiEnabled] = useState(null);
+  const [culqiMode, setCulqiMode] = useState(null);
   const [lastChecked, setLastChecked] = useState(null);
 
   const loadAll = useCallback(async () => {
@@ -42,7 +55,7 @@ export default function IntegracionesPage() {
       ]);
       setSystemStatus(sysRes);
       setChannels(chanRes?.channels || null);
-      setCulqiEnabled(culqiRes ? Boolean(culqiRes.culqiEnabled) : null);
+      setCulqiMode(culqiRes?.culqiMode || (culqiRes?.culqiEnabled === false ? "UNCONFIGURED" : "UNVERIFIED"));
       setLastChecked(
         new Date().toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', second: '2-digit' })
       );
@@ -68,7 +81,7 @@ export default function IntegracionesPage() {
     {
       name: 'Microservicio Comunicaciones',
       category: 'Orquestación Outbox',
-      status: channels ? 'AVAILABLE' : 'UNVERIFIED',
+      status: channels && [channels.whatsapp, channels.email].some((channel) => channel?.source === 'comunicaciones' && channel.status !== 'UNVERIFIED') ? 'AVAILABLE' : 'UNVERIFIED',
       detail: 'Puente REST autenticado para WhatsApp Meta API y Resend Email.',
     },
     {
@@ -81,37 +94,43 @@ export default function IntegracionesPage() {
       name: 'Correo Electrónico (Resend API)',
       category: 'Activación y Recuperación',
       status: channels?.email?.status || 'UNVERIFIED',
-      detail: channels?.email?.provider || 'Resend API / Simulación segura',
+      detail: channels?.email?.provider || 'Resend API',
     },
     {
       name: 'Pasarela Culqi (Links y Webhook)',
       category: 'Pagos Digitales PEN',
-      status: culqiEnabled === true ? 'CONFIGURED_REAL' : culqiEnabled === false ? 'SIMULATION' : 'UNVERIFIED',
-      detail: culqiEnabled === true ? 'Cobros digitales habilitados para links' : 'Operación en modo Sandbox / Simulación local',
+      status: culqiMode || 'UNVERIFIED',
+      detail: culqiMode === 'TEST' ? 'CulqiLink acepta operaciones de prueba.' : 'Configuración de CulqiLink y conciliación de pagos.',
     },
     {
       name: 'Firebase Cloud Messaging (FCM)',
       category: 'Notificaciones Push Móvil',
       status: channels?.push?.status || 'UNVERIFIED',
-      detail: 'Entrega privada verificada desde servidor con outbox reintentable.',
+      detail: 'Configuración de envío push. La entrega se verifica en Android.',
     },
     {
       name: 'ApiPeruDev (RENIEC / DNI)',
       category: 'Validación Documentaria',
-      status: 'AVAILABLE',
+      status: 'UNVERIFIED',
       detail: 'Consulta bajo demanda con protección de cuota desde ClientRegisterModal.',
     },
     {
-      name: 'Sentry Telemetría Web & Backend',
+      name: 'Sentry · Portal web',
       category: 'Observabilidad de Errores',
-      status: import.meta.env.VITE_SENTRY_DSN ? 'CONFIGURED_REAL' : 'SIMULATION',
+      status: import.meta.env.VITE_SENTRY_DSN ? 'CONFIGURED_REAL' : 'UNVERIFIED',
       detail: 'Solo DSN público en cliente; tokens privados nunca se exponen en SPA.',
     },
     {
-      name: 'Azure Container Apps / CI GitHub',
+      name: 'Sentry · Backend',
+      category: 'Observabilidad de errores',
+      status: systemStatus?.features?.sentry || 'UNVERIFIED',
+      detail: 'Captura de errores técnicos del servidor.',
+    },
+    {
+      name: 'Azure Container Apps',
       category: 'Infraestructura Cloud',
-      status: systemStatus?.status === 'HEALTHY' ? 'UP' : 'UNVERIFIED',
-      detail: 'Grupo rg-gymvip / entorno env-gymvip · despliegues reproducibles.',
+      status: systemStatus?.runtime?.platform === 'AZURE_CONTAINER_APPS' && systemStatus?.status === 'HEALTHY' ? 'UP' : 'UNVERIFIED',
+      detail: 'Entorno informado por el backend: ' + (systemStatus?.runtime?.platform || 'sin verificar'),
     },
   ];
 
@@ -152,7 +171,7 @@ export default function IntegracionesPage() {
                   {item.name}
                 </h3>
               </div>
-              <Badge variant={badgeFor(item.status)}>{item.status}</Badge>
+              <Badge variant={badgeFor(item.status)}>{stateLabel[item.status] || item.status}</Badge>
             </div>
             <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
               {item.detail}

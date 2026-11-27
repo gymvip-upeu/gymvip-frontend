@@ -2,12 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getPlatformMetricsApi,
+  getCommercialProfileApi,
+  listGroupPromotionsApi,
   approveCompanyRequestApi,
   calculateCommissionApi,
   calculateSimulatorApi,
   saveCommercialProfileApi,
   createGroupPromotionApi,
 } from '../src/api/saasPlatformApi.js';
+import { registerUnauthorizedHandler } from '../src/api/httpClient.js';
 import { hasPermission } from '../src/services/permissionsService.js';
 import { resolveViewFromPath } from '../src/routes/routeConfig.js';
 
@@ -61,6 +64,24 @@ test('saasPlatformApi envía token Bearer y rutas /api/v1 exactas', async () => 
     await createGroupPromotionApi('tok-gym', { title: 'Dúo', discountPercent: 15 });
     assert.match(calls.at(-1).url, /\/api\/v1\/group-promotions$/);
   } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('el portal SaaS devuelve el JSON y propaga 401 con el token de la petición', async () => {
+  const original = globalThis.fetch;
+  const expired = [];
+  const unregister = registerUnauthorizedHandler((token) => expired.push(token));
+  try {
+    globalThis.fetch = async () => new Response(JSON.stringify({ slug: 'sede', publishStatus: 'BORRADOR' }));
+    assert.equal((await getCommercialProfileApi('sesion')).slug, 'sede');
+    globalThis.fetch = async () => new Response(JSON.stringify({ message: 'Sesión vencida' }), { status: 401 });
+    await assert.rejects(getCommercialProfileApi('sesion'), (error) => error.status === 401);
+    assert.deepEqual(expired, ['sesion']);
+    await assert.rejects(listGroupPromotionsApi('sesion', { onlyActive: true }), (error) => error.status === 401);
+    assert.deepEqual(expired, ['sesion']);
+  } finally {
+    unregister();
     globalThis.fetch = original;
   }
 });

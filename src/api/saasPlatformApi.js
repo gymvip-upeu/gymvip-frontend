@@ -1,47 +1,53 @@
 import { httpClient } from './httpClient.js';
 
-function authHeaders(token) {
-  return { Authorization: `Bearer ${token}` };
+async function apiJson(path, options = {}, token = null) {
+  const response = await httpClient(path, options, token);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const fallback = response.status === 404 ? 'Esta función no está disponible en la versión actual del servidor.' : 'No se pudo completar la solicitud.';
+    const error = new Error(response.status === 404 && body?.code === 'ENDPOINT_NOT_FOUND'
+      ? fallback : body?.message || fallback);
+    error.status = response.status;
+    throw error;
+  }
+  return body;
 }
 
 export async function getPlatformMetricsApi(token) {
-  return httpClient('/api/v1/platform/metrics', { headers: authHeaders(token) });
+  return apiJson('/api/v1/platform/metrics', {}, token);
 }
 
 export async function listSaasPlansApi(token) {
-  return httpClient('/api/v1/platform/plans', { headers: authHeaders(token) });
+  return apiJson('/api/v1/platform/plans', {}, token);
 }
 
 export async function listLicensesApi(token) {
-  return httpClient('/api/v1/platform/licenses', { headers: authHeaders(token) });
+  return apiJson('/api/v1/platform/licenses', {}, token);
 }
 
 export async function upsertLicenseApi(token, payload) {
-  return httpClient('/api/v1/platform/licenses', {
+  return apiJson('/api/v1/platform/licenses', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function updateLicenseStatusApi(token, organizationId, payload) {
-  return httpClient(`/api/v1/platform/licenses/${organizationId}/status`, {
+  return apiJson(`/api/v1/platform/licenses/${organizationId}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function listCommissionRulesApi(token) {
-  return httpClient('/api/v1/platform/commission-rules', { headers: authHeaders(token) });
+  return apiJson('/api/v1/platform/commission-rules', {}, token);
 }
 
 export async function createCommissionRuleApi(token, payload) {
-  return httpClient('/api/v1/platform/commission-rules', {
+  return apiJson('/api/v1/platform/commission-rules', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function listCommissionLedgerApi(token, { organizationId = '', status = '' } = {}) {
@@ -49,96 +55,88 @@ export async function listCommissionLedgerApi(token, { organizationId = '', stat
   if (organizationId) qs.set('organizationId', organizationId);
   if (status) qs.set('status', status);
   const query = qs.toString() ? `?${qs.toString()}` : '';
-  return httpClient(`/api/v1/platform/commission-ledger${query}`, { headers: authHeaders(token) });
+  return apiJson(`/api/v1/platform/commission-ledger${query}`, {}, token);
 }
 
 export async function calculateCommissionApi(token, payload) {
-  return httpClient('/api/v1/platform/commission-ledger/calculate', {
+  return apiJson('/api/v1/platform/commission-ledger/calculate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function updateLedgerStatusApi(token, id, payload) {
-  return httpClient(`/api/v1/platform/commission-ledger/${id}/status`, {
+  return apiJson(`/api/v1/platform/commission-ledger/${id}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function calculateSimulatorApi(token, payload) {
-  return httpClient('/api/v1/platform/simulator/calculate', {
+  return apiJson('/api/v1/platform/simulator/calculate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function listCompanyRequestsApi(token, status = '') {
   const query = status ? `?status=${encodeURIComponent(status)}` : '';
-  return httpClient(`/api/v1/platform/company-requests${query}`, { headers: authHeaders(token) });
+  return apiJson(`/api/v1/platform/company-requests${query}`, {}, token);
 }
 
 export async function reviewCompanyRequestApi(token, id, payload) {
-  return httpClient(`/api/v1/platform/company-requests/${id}/review`, {
+  return apiJson(`/api/v1/platform/company-requests/${id}/review`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function approveCompanyRequestApi(token, id, startTrial = true) {
-  return httpClient(`/api/v1/platform/company-requests/${id}/approve?startTrial=${startTrial}`, {
+  return apiJson(`/api/v1/platform/company-requests/${id}/approve?startTrial=${startTrial}`, {
     method: 'POST',
-    headers: authHeaders(token),
-  });
+  }, token);
+}
+
+export async function resendCompanyInvitationApi(token, id) {
+  return apiJson('/api/v1/platform/company-requests/' + encodeURIComponent(id) + '/invitation', { method: 'POST' }, token);
 }
 
 export async function exportOrganizationPortableApi(token, organizationId) {
-  return httpClient(`/api/v1/platform/export/organization/${organizationId}`, {
-    headers: authHeaders(token),
-  });
+  return apiJson(`/api/v1/platform/export/organization/${organizationId}`, {}, token);
 }
 
 export async function getCommercialProfileApi(token, organizationId = '') {
   const q = organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : '';
-  return httpClient(`/api/v1/organization/commercial-profile${q}`, { headers: authHeaders(token) });
+  return apiJson(`/api/v1/organization/commercial-profile${q}`, {}, token);
 }
 
 export async function saveCommercialProfileApi(token, payload) {
-  return httpClient('/api/v1/organization/commercial-profile', {
+  return apiJson('/api/v1/organization/commercial-profile', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function listGroupPromotionsApi(token, { organizationId = '', onlyActive = false } = {}) {
   const qs = new URLSearchParams({ onlyActive: String(onlyActive) });
   if (organizationId) qs.set('organizationId', organizationId);
-  return httpClient(`/api/v1/group-promotions?${qs.toString()}`, {
-    headers: token ? authHeaders(token) : {},
-  });
+  return apiJson(`/api/v1/group-promotions?${qs.toString()}`, {}, onlyActive ? null : token);
 }
 
 export async function createGroupPromotionApi(token, payload) {
-  return httpClient('/api/v1/group-promotions', {
+  return apiJson('/api/v1/group-promotions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function listGymReviewsApi(organizationId) {
-  return httpClient(`/api/v1/gyms/${organizationId}/reviews`);
+  return apiJson(`/api/v1/gyms/${organizationId}/reviews`);
 }
 
 export async function replyGymReviewApi(token, organizationId, reviewId, replyText) {
-  return httpClient(`/api/v1/gyms/${organizationId}/reviews/${reviewId}/reply`, {
+  return apiJson(`/api/v1/gyms/${organizationId}/reviews/${reviewId}/reply`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify({ replyText }),
-  });
+  }, token);
 }

@@ -16,7 +16,6 @@ import { LoadingState, EmptyState } from '../../components/feedback/LoadingState
 export default function EmpresasSedesPage() {
   const { token, user } = useAuth();
   const canManage = hasPermission(user, 'branches.manage');
-  const [gyms, setGyms] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,8 +30,8 @@ export default function EmpresasSedesPage() {
     district: '',
     address: '',
     phone: '',
-    scheduleSummary: 'Lun-Sáb 06:00-22:00 · Dom 08:00-14:00',
-    servicesSummary: 'Musculación, Cardio, Funcional, Suplementos',
+    scheduleSummary: '',
+    servicesSummary: '',
     capacity: 150,
   });
 
@@ -40,17 +39,12 @@ export default function EmpresasSedesPage() {
     setLoading(true);
     setError('');
     try {
-      const [gRes, bRes] = await Promise.all([
-        httpClient('/api/v1/enterprise/gyms', {}, token),
-        httpClient('/api/v1/enterprise/branches', {}, token),
-      ]);
-      const gList = gRes.ok ? await gRes.json() : [];
-      const bList = bRes.ok ? await bRes.json() : [];
-      setGyms(Array.isArray(gList) ? gList : []);
-      setBranches(Array.isArray(bList) ? bList : []);
-      if (Array.isArray(gList) && gList.length > 0 && !form.organizationId) {
-        setForm((prev) => ({ ...prev, organizationId: gList[0].id }));
+      const response = await httpClient('/api/v1/enterprise/branches', {}, token);
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !Array.isArray(data)) {
+        throw new Error(data?.message || 'No se pudo consultar las sedes de tu empresa.');
       }
+      setBranches(data);
     } catch (e) {
       setError(e.message || 'No se pudieron consultar las organizaciones y sedes.');
     } finally {
@@ -84,7 +78,7 @@ export default function EmpresasSedesPage() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.message || 'No se pudo registrar la nueva sede.');
       }
-      setNotice(`Sede «${form.name}» creada y publicada correctamente.`);
+      setNotice(`Sede «${form.name}» registrada. Puedes publicarla después de revisar sus datos.`);
       setShowCreate(false);
       setForm((prev) => ({ ...prev, code: '', name: '', district: '', address: '', phone: '' }));
       await loadEnterprise();
@@ -95,11 +89,34 @@ export default function EmpresasSedesPage() {
     }
   };
 
+  const updateBranch = async (branch, action) => {
+    setError('');
+    setNotice('');
+    setSubmitting(true);
+    try {
+      const path = '/api/v1/enterprise/branches/' + encodeURIComponent(branch.id) + '/' + action;
+      const response = await httpClient(path, action === 'primary' ? { method: 'PUT' } : {
+        method: 'PATCH',
+        body: JSON.stringify({ published: !branch.published }),
+      }, token);
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.message || 'No se pudo actualizar la sede.');
+      }
+      await loadEnterprise();
+      setNotice(action === 'primary' ? 'Sede principal actualizada.' : branch.published ? 'Sede retirada del directorio.' : 'Sede habilitada para aparecer en la ficha pública.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <section style={{ maxWidth: '1240px', margin: '0 auto', display: 'grid', gap: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-          Administración multi-empresa y sucursales publicadas en la plataforma VIP Center Fit.
+          Registra las sedes de tu empresa, elige tu sede principal y decide cuáles aparecen en la ficha pública.
         </p>
         <div style={{ display: 'flex', gap: '10px' }}>
           <Button variant="secondary" onClick={loadEnterprise} disabled={loading}>
@@ -143,6 +160,11 @@ export default function EmpresasSedesPage() {
               <input id="branch-address" className="form-input" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
             </div>
             <div>
+              <label className="form-label" htmlFor="branch-schedule">Horario de atención</label>
+              <input id="branch-schedule" className="form-input" value={form.scheduleSummary}
+                onChange={(e) => setForm({ ...form, scheduleSummary: e.target.value })} placeholder="Lun–Vie 06:00–22:00" />
+            </div>
+            <div>
               <label className="form-label" htmlFor="branch-capacity">Aforo máximo</label>
               <input id="branch-capacity" type="number" min="1" className="form-input" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: Math.max(1, Number(e.target.value) || 1) })} />
             </div>
@@ -156,7 +178,7 @@ export default function EmpresasSedesPage() {
 
       {loading ? (
         <div className="card" style={{ padding: '24px' }}><LoadingState message="Consultando empresas y sedes..." /></div>
-      ) : branches.length === 0 && gyms.length === 0 ? (
+      ) : branches.length === 0 ? (
         <div className="card" style={{ padding: '24px' }}>
           <EmptyState title="Sin sedes registradas" description="Registre la primera sucursal para habilitar operación multi-sede." />
         </div>
@@ -172,6 +194,7 @@ export default function EmpresasSedesPage() {
                 <th>Horario</th>
                 <th>Aforo</th>
                 <th>Estado</th>
+                {canManage && <th>Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -185,7 +208,14 @@ export default function EmpresasSedesPage() {
                   <td>{b.capacity ?? '—'} pers.</td>
                   <td>
                     <Badge variant={b.status === 'ACTIVO' ? 'success' : 'neutral'}>{b.status || 'ACTIVO'}</Badge>
+                    <span> {b.published ? 'Visible' : 'Privada'}</span>
                   </td>
+                  {canManage && (
+                    <td>
+                      <Button variant="secondary" disabled={submitting} onClick={() => updateBranch(b, 'primary')}>Usar como principal</Button>
+                      <Button variant="secondary" disabled={submitting} onClick={() => updateBranch(b, 'publication')}>{b.published ? 'Ocultar' : 'Publicar'}</Button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
