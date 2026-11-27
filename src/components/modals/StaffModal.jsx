@@ -3,15 +3,14 @@
 // ==============================================================================
 
 import React, { useState } from 'react';
-import { STAFF_ROLES } from '../../validators/staffValidator';
 import { createStaffAccount } from '../../services/staffService';
 import { Alert } from '../common/Alert';
 import { Button } from '../common/Button';
 
-export default function StaffModal({ token, onClose, onSuccess }) {
+export default function StaffModal({ token, assignableRoles, onClose, onSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('RECEPCION');
+  const [role, setRole] = useState(assignableRoles.find((item) => item.code === 'RECEPCION')?.code ?? assignableRoles[0]?.code ?? '');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
@@ -126,9 +125,9 @@ export default function StaffModal({ token, onClose, onSuccess }) {
               value={role}
               onChange={(e) => setRole(e.target.value)}
             >
-              {STAFF_ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
+              {assignableRoles.map((r) => (
+                <option key={r.code} value={r.code}>
+                  {r.displayName}
                 </option>
               ))}
             </select>
@@ -146,7 +145,7 @@ export default function StaffModal({ token, onClose, onSuccess }) {
             <Button
               type="submit"
               variant="primary"
-              disabled={submitting}
+              disabled={submitting || !role}
             >
               {submitting ? 'Creando Cuenta...' : 'Registrar Colaborador'}
             </Button>

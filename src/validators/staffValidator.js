@@ -12,9 +12,14 @@ export const STAFF_ROLES = [
   { value: 'ENTRENADOR', label: 'Entrenador (Rutinas y Progreso de Socios)', privileged: false, level: 'BRANCH' },
   { value: 'AUDITOR_EMPRESA', label: 'Auditor Empresarial (Solo Lectura Reportes e Incidencias)', privileged: false, level: 'ORGANIZATION' },
   { value: 'SOPORTE_PLATAFORMA', label: 'Soporte de Plataforma (Diagnóstico e Integraciones)', privileged: true, level: 'PLATFORM' },
-  { value: 'ADMIN', label: 'Admin TI Legacy (En migración a SUPER_ADMIN / ADMIN_EMPRESA)', privileged: true, level: 'ORGANIZATION' },
-  { value: 'GERENTE', label: 'Gerente Legacy (En migración a GERENTE_GENERAL)', privileged: false, level: 'ORGANIZATION' },
-  { value: 'AUDITOR', label: 'Auditor Legacy (En migración a AUDITOR_EMPRESA)', privileged: false, level: 'ORGANIZATION' },
+  { value: 'CONTADOR', label: 'Contabilidad', privileged: false, level: 'ORGANIZATION' },
+  { value: 'RECURSOS_HUMANOS', label: 'Recursos Humanos', privileged: false, level: 'ORGANIZATION' },
+  { value: 'CAJERO', label: 'Caja', privileged: false, level: 'BRANCH' },
+  { value: 'INVENTARIO', label: 'Inventario', privileged: false, level: 'BRANCH' },
+  { value: 'COMPRAS', label: 'Compras', privileged: false, level: 'BRANCH' },
+  { value: 'MARKETING', label: 'Marketing', privileged: false, level: 'BRANCH' },
+  { value: 'ATENCION_CLIENTE', label: 'Atención al Cliente', privileged: false, level: 'BRANCH' },
+  { value: 'MANTENIMIENTO', label: 'Mantenimiento', privileged: false, level: 'BRANCH' },
 ];
 
 export function validateStaffCreation(email, password, role) {

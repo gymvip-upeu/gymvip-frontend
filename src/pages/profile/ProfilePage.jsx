@@ -529,6 +529,10 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
                         setError(''); setSuccess('');
                         try {
                           await verifyMfaApi(mfaCode, token);
+                          if (user?.mfaEnrollmentRequired) {
+                            logout();
+                            return;
+                          }
                           setProfile((p) => ({ ...p, mfaEnabled: true }));
                           setMfaSetup(null);
                           setMfaCode('');

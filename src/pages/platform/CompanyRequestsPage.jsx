@@ -1,3 +1,5 @@
+import { Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel } from '@mui/material';
+import { recordCompanyVerificationApi } from '../../api/saasPlatformApi';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
@@ -29,7 +31,7 @@ const STATUS_OPTIONS = ['', 'RECIBIDA', 'EN_REVISION', 'OBSERVADA', 'APROBADA', 
 
 function invitationFeedback(status) {
   if (status === 'PENDING') return 'Invitación en cola. Consulta el estado de la solicitud para comprobar el envío.';
-  if (status === 'UNCONFIGURED') return 'Empresa aprobada. Falta configurar la URL de activación para enviar la invitación.';
+  if (status === 'UNCONFIGURED') return 'Empresa aprobada. Comprueba el canal de correo para enviar las instrucciones de primer acceso.';
   if (status === 'SIMULATED') return 'La invitación está en simulación. El proveedor no envió un correo.';
   if (status === 'FAILED') return 'El correo no pudo enviarse. Revisa Integraciones y vuelve a enviar la invitación.';
   if (status === 'ACCEPTED') return 'El proveedor aceptó la invitación.';
@@ -44,6 +46,21 @@ export default function CompanyRequestsPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [notesById, setNotesById] = useState({});
+  const [verification, setVerification] = useState(null);
+  const [savingVerification, setSavingVerification] = useState(false);
+  const [verificationError, setVerificationError] = useState('');
+  const openVerification = (request) => {
+    setVerificationError('');
+    setVerification({
+      id: request.id,
+      ruc: request.ruc,
+      fiscalStatus: request.fiscalStatus ?? 'OBSERVADO',
+      fiscalCondition: request.fiscalCondition ?? 'OBSERVADO',
+      verifiedBusinessName: request.verifiedBusinessName ?? '',
+      representativeEvidence: request.representativeEvidence ?? '',
+      contactConfirmed: Boolean(request.verifiedContactAt),
+    });
+  };
 
   const loadRequests = useCallback(async () => {
     if (!token) return;
@@ -62,6 +79,27 @@ export default function CompanyRequestsPage() {
   useEffect(() => {
     loadRequests();
   }, [loadRequests]);
+
+  const saveVerification = async (event) => {
+    event.preventDefault();
+    setSavingVerification(true);
+    setVerificationError('');
+    try {
+      await recordCompanyVerificationApi(token, verification.id, {
+        fiscalStatus: verification.fiscalStatus,
+        fiscalCondition: verification.fiscalCondition,
+        verifiedBusinessName: verification.verifiedBusinessName,
+        representativeEvidence: verification.representativeEvidence,
+        contactConfirmed: verification.contactConfirmed,
+      });
+      setVerification(null);
+      await loadRequests();
+    } catch (err) {
+      setVerificationError(err.message);
+    } finally {
+      setSavingVerification(false);
+    }
+  };
 
   const handleReview = async (id, nextStatus) => {
     setError('');
@@ -188,7 +226,11 @@ export default function CompanyRequestsPage() {
                       {!req.approvedOrganizationId && (
                         <>
                           <Button size="small" variant="outlined" onClick={() => handleReview(req.id, 'OBSERVADA')}>Observar</Button>
-                          <Button size="small" variant="contained" onClick={() => handleApproveAndProvision(req.id)}>Aprobar y Crear</Button>
+                          <Button size="small" variant="outlined" onClick={() => openVerification(req)}>Verificación SUNAT</Button>
+                          <Button size="small" variant="contained" onClick={() => handleApproveAndProvision(req.id)}
+                            disabled={req.fiscalStatus !== 'ACTIVO' || req.fiscalCondition !== 'HABIDO' || !req.verifiedContactAt}>
+                            Aprobar y crear
+                          </Button>
                           <Button size="small" color="error" onClick={() => handleReview(req.id, 'RECHAZADA')}>Rechazar</Button>
                         </>
                       )}
@@ -211,6 +253,40 @@ export default function CompanyRequestsPage() {
           </Table>
         </CardContent>
       </Card>
+      {verification && (
+        <Dialog open onClose={() => !savingVerification && setVerification(null)} fullWidth maxWidth="sm">
+          <form onSubmit={saveVerification}>
+            <DialogTitle>Verificar solicitud de empresa</DialogTitle>
+            <DialogContent sx={{ display: 'grid', gap: 2, pt: '12px !important' }}>
+              {verificationError && <Alert severity="error">{verificationError}</Alert>}
+              <Button href="https://www.gob.pe/institucion/sunat/pages/565-consultar-el-estado-del-ruc" target="_blank" rel="noreferrer">
+                Consultar RUC {verification.ruc} en SUNAT
+              </Button>
+              <TextField select label="Estado del RUC" value={verification.fiscalStatus}
+                onChange={(event) => setVerification({ ...verification, fiscalStatus: event.target.value })}>
+                <MenuItem value="ACTIVO">Activo</MenuItem><MenuItem value="OBSERVADO">Observado</MenuItem>
+              </TextField>
+              <TextField select label="Condición del domicilio" value={verification.fiscalCondition}
+                onChange={(event) => setVerification({ ...verification, fiscalCondition: event.target.value })}>
+                <MenuItem value="HABIDO">Habido</MenuItem><MenuItem value="OBSERVADO">Observado</MenuItem>
+              </TextField>
+              <TextField required label="Razón social en SUNAT" value={verification.verifiedBusinessName}
+                slotProps={{ htmlInput: { maxLength: 200 } }}
+                onChange={(event) => setVerification({ ...verification, verifiedBusinessName: event.target.value })} />
+              <TextField required label="Referencia de la evidencia de representación" value={verification.representativeEvidence}
+                slotProps={{ htmlInput: { maxLength: 240 } }}
+                onChange={(event) => setVerification({ ...verification, representativeEvidence: event.target.value })} />
+              <FormControlLabel label="Confirmé el control del correo registrado"
+                control={<Checkbox checked={verification.contactConfirmed} onChange={(event) =>
+                  setVerification({ ...verification, contactConfirmed: event.target.checked })} />} />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setVerification(null)} disabled={savingVerification}>Cancelar</Button>
+              <Button type="submit" variant="contained" disabled={savingVerification}>Guardar revisión</Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+      )}
     </Box>
   );
 }

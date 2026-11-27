@@ -4,10 +4,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { fetchStaffAccounts, modifyStaffRole, modifyStaffProfile, inactivateStaffAccount } from '../services/staffService';
-import { listRolesCatalogApi, listPermissionsCatalogApi, getStaffAuditHistoryApi } from '../api/staffApi';
+import { listRolesCatalogApi, listPermissionsCatalogApi, getStaffAuditHistoryApi, listAssignableStaffRolesApi } from '../api/staffApi';
 import { isStaffAccount } from '../services/permissionsService';
 
 export function useStaff(token, canManageStaff) {
+  const [assignableRoles, setAssignableRoles] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [rolesCatalog, setRolesCatalog] = useState([]);
   const [permissionsCatalog, setPermissionsCatalog] = useState([]);
@@ -22,12 +23,14 @@ export function useStaff(token, canManageStaff) {
     setLoading(true);
     setError(null);
     try {
-      const [data, roles, perms, audit] = await Promise.all([
+      const [data, roles, perms, audit, delegable] = await Promise.all([
         fetchStaffAccounts(token),
         listRolesCatalogApi(token).catch(() => []),
         listPermissionsCatalogApi(token).catch(() => []),
         getStaffAuditHistoryApi(token).catch(() => []),
+        listAssignableStaffRolesApi(token).catch(() => []),
       ]);
+      setAssignableRoles(Array.isArray(delegable) ? delegable : []);
       setAccounts(Array.isArray(data) ? data.filter(isStaffAccount) : []);
       setRolesCatalog(Array.isArray(roles) ? roles : []);
       setPermissionsCatalog(Array.isArray(perms) ? perms : []);
@@ -99,6 +102,7 @@ export function useStaff(token, canManageStaff) {
 
   return {
     accounts,
+    assignableRoles,
     rolesCatalog,
     permissionsCatalog,
     auditEvents,
