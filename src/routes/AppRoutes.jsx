@@ -1,4 +1,5 @@
 import FirstPasswordPage from '../pages/auth/FirstPasswordPage';
+import RequiredMfaPage from '../pages/auth/RequiredMfaPage';
 import DirectoryAccessPage from '../pages/auth/DirectoryAccessPage';
 // ==============================================================================
 // GYM VIP — Definición y Guardas de Rutas / Navegación (HTML5 History API)
@@ -237,13 +238,7 @@ export function AppRoutes() {
   if (user.firstAccessPasswordRequired) return <FirstPasswordPage />;
   if (user.directoryOnly) return <DirectoryAccessPage />;
 
-  if (user.mfaEnrollmentRequired) {
-    return (
-      <Suspense fallback={<p>Cargando configuración de seguridad…</p>}>
-        <ProfilePage />
-      </Suspense>
-    );
-  }
+  if (user.mfaEnrollmentRequired) return <RequiredMfaPage />;
 
   // Rutas de auto-servicio móvil para clientes
   if (user.roles?.includes('CLIENTE')) {

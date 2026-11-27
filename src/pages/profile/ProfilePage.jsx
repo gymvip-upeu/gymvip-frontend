@@ -206,15 +206,7 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
     .slice(0, 2)
     .toUpperCase();
 
-  const accountType = roles.includes('CLIENTE')
-    ? 'Cuenta de socio'
-    : roles.includes('GERENTE')
-    ? 'Cuenta de gerencia'
-    : roles.includes('ADMIN')
-    ? 'Cuenta técnica (TI)'
-    : roles.includes('RECEPCION')
-    ? 'Cuenta de recepción'
-    : 'Cuenta de auditoría';
+  const accountType = roleLabels[roles[0]] || (roles[0] ? roles[0].replaceAll('_', ' ') : 'Cuenta institucional');
 
   return (
     <Box sx={{ maxWidth: 1050, mx: 'auto', py: embedded ? 1 : 2, color: 'var(--color-text-primary)' }}>
