@@ -9,7 +9,7 @@ import CatalogImagePicker from './CatalogImagePicker';
 import { categories,categoryLabel,availabilityLabel,presentationLabel,validateSupplement } from './catalogUtils';
 import { formatCurrencyPen } from '../../utils/formatters';
 
-export default function SupplementEditor({item,onClose,onSaved}) {
+export default function SupplementEditor({item,onClose,onSaved,branchId,branchName}) {
   const {token}=useAuth();
   const [form,setForm]=useState({name:item?.name||'',brand:item?.brand||'',category:item?.category||'',presentation:item?.presentation||'',netContent:item?.netContent||'',flavor:item?.flavor||'',description:item?.description||'',ingredients:item?.ingredients||'',pricePen:item?.pricePen??'',availability:item?.availability||'DISPONIBLE',published:item?.published??false});
   const [photos,setPhotos]=useState(item?.images||[]),[tab,setTab]=useState('information'),[picker,setPicker]=useState(false),[review,setReview]=useState(false),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[errors,setErrors]=useState({});
@@ -18,10 +18,10 @@ export default function SupplementEditor({item,onClose,onSaved}) {
   const field=key=>({id:`supplement-${key}`,value:form[key],onChange:e=>{setForm(v=>({...v,[key]:e.target.value}));setErrors(v=>({...v,[key]:''}));},'aria-invalid':!!errors[key],'aria-describedby':errors[key]?`supplement-${key}-error`:undefined});
   const feedback=key=>errors[key]&&<span className="catalog-field-error" id={`supplement-${key}-error`}>{errors[key]}</span>;
   function preview(e){e.preventDefault();const invalid=validateSupplement(form,photos);setErrors(invalid);if(Object.keys(invalid).length){setTab(invalid.images&&Object.keys(invalid).length===1?'images':'information');setError('Revisa los campos señalados antes de continuar.');return;}setConfirmed(false);setError('');setReview(true);}
-  async function save(){if(saving.current||!confirmed)return;saving.current=true;setBusy(true);setError('');try{onSaved(await saveSupplement(item,{...form,reviewed:true},photos,token));}catch(e){setError(e.message);}finally{setBusy(false);saving.current=false;}}
+  async function save(){if(saving.current||!confirmed)return;saving.current=true;setBusy(true);setError('');try{onSaved(await saveSupplement(item,{...form,reviewed:true},photos,token,branchId));}catch(e){setError(e.message);}finally{setBusy(false);saving.current=false;}}
   function addPhotos(values){setPhotos(previous=>[...previous,...values.map(p=>{const url=URL.createObjectURL(p.file);urls.current.push(url);return {...p,url};})]);setPicker(false);setErrors(v=>({...v,images:''}));}
   return <section className="catalog-page catalog-editor">
-    <div className="catalog-page-heading"><div><div className="catalog-eyebrow">CATÁLOGO / {item?'EDICIÓN':'REGISTRO'}</div><h1>{item?'Editar suplemento':'Nuevo suplemento'}</h1><p>Información del producto según su rotulado.</p></div></div>
+    <div className="catalog-page-heading"><div><div className="catalog-eyebrow">CATÁLOGO / {item?'EDICIÓN':'REGISTRO'}</div><h1>{item?'Editar suplemento':'Nuevo suplemento'}</h1><p>Información del producto según su rotulado.{!item && branchName ? " Sede: " + branchName + "." : ""}</p></div></div>
     {error&&!review&&!picker&&<Alert variant="danger" message={error}/>}
     <div className="catalog-tabs" role="tablist" aria-label="Datos del suplemento">{[['information','Información'],['images','Imágenes'],['availability','Disponibilidad']].map(([key,label])=><button key={key} type="button" role="tab" aria-selected={tab===key} aria-controls={`supplement-panel-${key}`} id={`supplement-tab-${key}`} className={tab===key?'active':''} onClick={()=>setTab(key)}>{label}</button>)}</div>
     <form noValidate onSubmit={preview}>

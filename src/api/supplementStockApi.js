@@ -42,3 +42,18 @@ export async function getStockAlertsApi(token = null) {
   }
   return response.json();
 }
+
+export async function listBranchSupplementStockApi(branchId, token) {
+  const res = await httpClient('/api/v1/supplements/stock?' + new URLSearchParams({ branchId }), {}, token);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'No se pudo consultar el stock de la sede.');
+  return body;
+}
+
+export async function receiveSupplementStockApi(supplementId, payload, token) {
+  const res = await httpClient('/api/v1/supplements/' + encodeURIComponent(supplementId) + '/stock/entries',
+    { method: 'POST', body: JSON.stringify(payload) }, token);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'No se pudo registrar la entrada de stock.');
+  return body;
+}

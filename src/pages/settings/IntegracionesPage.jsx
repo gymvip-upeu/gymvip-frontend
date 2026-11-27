@@ -111,8 +111,8 @@ export default function IntegracionesPage() {
     {
       name: 'ApiPeruDev (RENIEC / DNI)',
       category: 'Validación Documentaria',
-      status: 'UNVERIFIED',
-      detail: 'Consulta bajo demanda con protección de cuota desde ClientRegisterModal.',
+      status: systemStatus?.features?.identityLookup || 'UNVERIFIED',
+      detail: 'La configuración se consulta sin consumir cuota. La respuesta se verifica al buscar un DNI.',
     },
     {
       name: 'Sentry · Portal web',
