@@ -16,6 +16,8 @@ function storageKeyFor(user) {
 
 export function PreferencesProvider({ children }) {
   const { user, token } = useAuth();
+  const canSync = Boolean(token && user && !user.mfaEnrollmentRequired
+    && !user.firstAccessPasswordRequired && !user.directoryOnly);
   const [showGuides, setShowGuidesState] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
@@ -31,7 +33,7 @@ export function PreferencesProvider({ children }) {
       setShowGuidesState(true);
     }
 
-    if (token) {
+    if (canSync) {
       let active = true;
       getPreferencesApi(token)
         .then((remote) => {
@@ -46,7 +48,7 @@ export function PreferencesProvider({ children }) {
         .catch(() => {});
       return () => { active = false; };
     }
-  }, [user, token]);
+  }, [user, token, canSync]);
 
   const setShowGuides = useCallback(async (nextValue) => {
     const val = Boolean(nextValue);
@@ -54,7 +56,7 @@ export function PreferencesProvider({ children }) {
     try {
       localStorage.setItem(storageKeyFor(user), String(val));
     } catch {}
-    if (token) {
+    if (canSync) {
       setSyncing(true);
       try {
         await updatePreferencesApi({
@@ -67,7 +69,7 @@ export function PreferencesProvider({ children }) {
         setSyncing(false);
       }
     }
-  }, [user, token]);
+  }, [user, token, canSync]);
 
   const resetGuides = useCallback(async () => {
     await setShowGuides(true);
