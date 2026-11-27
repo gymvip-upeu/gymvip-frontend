@@ -5,6 +5,8 @@
 // ==============================================================================
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { Button as MuiButton } from '@mui/material';
+import { config } from '../../config/environment';
 import { useAuth } from '../../contexts/AuthContext';
 import { httpClient } from '../../api/httpClient';
 import { getStaffAuditHistoryApi } from '../../api/staffApi';
@@ -62,6 +64,11 @@ export default function ObservabilidadPage() {
           Salud de JVM, latencia de PostgreSQL, capacidades habilitadas y bitácora reciente de eventos de seguridad.
         </p>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {isAdmin() && config.grafanaUrl.startsWith('https://') && (
+            <MuiButton component="a" href={config.grafanaUrl} target="_blank" rel="noopener noreferrer" variant="outlined">
+              Abrir Grafana
+            </MuiButton>
+          )}
           {isAdmin() && (
             <Button variant="secondary" onClick={handleTestSentry}>
               <Icon name="alert-triangle" size={15} />
