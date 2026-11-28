@@ -62,7 +62,7 @@ const LicensesCommissionsPage = lazy(() => import('../pages/platform/LicensesCom
 const SimulatorPage = lazy(() => import('../pages/platform/SimulatorPage'));
 const CommercialProfilePage = lazy(() => import('../pages/organization/CommercialProfilePage'));
 
-import { hasPermission } from '../services/permissionsService';
+import { hasPermission, isPlatformSupportOnly } from '../services/permissionsService';
 
 export function AppRoutes() {
   const { user, isAdmin, isGerente, isRecepcion } = useAuth();
@@ -70,6 +70,8 @@ export function AppRoutes() {
   const isExecutive = isSuperAdmin || isAdmin() || (isGerente && isGerente());
   const isHr = isExecutive || Boolean(user?.roles?.includes('RECURSOS_HUMANOS'));
   const isInventoryStaff = isExecutive || Boolean(user?.roles?.some((r) => ['INVENTARIO', 'COMPRAS'].includes(r)));
+  const supportOnly = isPlatformSupportOnly(user);
+  const canReadDiagnostics = isExecutive || hasPermission(user, 'integrations.read');
   const canReadStaff = hasPermission(user, 'employees.read');
   const canReadReports = hasPermission(user, 'reports.read');
   const canReadIncidents = hasPermission(user, 'incidents.read');
@@ -93,11 +95,15 @@ export function AppRoutes() {
   }, [currentView]);
 
   useEffect(() => {
+    if (supportOnly && !['integrations', 'monitoring', 'profile'].includes(currentView)) {
+      setCurrentView('integrations');
+      window.history.replaceState({ view: 'integrations' }, '', VIEW_PATH_MAP.integrations);
+    }
     if (auditorOnly && !['reports', 'incidents', 'profile'].includes(currentView)) {
       setCurrentView('reports');
       window.history.replaceState({ view: 'reports' }, '', '/reportes');
     }
-  }, [auditorOnly, currentView]);
+  }, [supportOnly, auditorOnly, currentView]);
 
   useEffect(() => {
     const deniedReminder = currentView === 'reminders' && !isExecutive;
@@ -115,6 +121,7 @@ export function AppRoutes() {
 
   // Navegación programática con sincronización a la barra de direcciones del navegador
   const handleNavigate = useCallback((viewId, classId) => {
+    if (supportOnly && !['integrations', 'monitoring', 'profile'].includes(viewId)) return;
     if (auditorOnly && !['reports', 'incidents', 'profile'].includes(viewId)) return;
     // Guarda de permisos para rutas administrativas
     if (viewId === 'staff' && !canReadStaff) {
@@ -129,7 +136,8 @@ export function AppRoutes() {
       setAccessError('Acceso Denegado (403): La configuración de recordatorios está reservada para Gerentes y Administradores.');
       return;
     }
-    if (['integrations', 'monitoring', 'branches'].includes(viewId) && !isExecutive && !isRecepcion()) {
+    if ((viewId === 'branches' && !isExecutive && !isRecepcion())
+      || (['integrations', 'monitoring'].includes(viewId) && !canReadDiagnostics)) {
       setAccessError('Acceso Denegado (403): Esta vista de plataforma requiere privilegios operativos o ejecutivos.');
       return;
     }
@@ -159,7 +167,7 @@ export function AppRoutes() {
       window.history.pushState({ view: viewId }, '', targetPath);
     }
     setCurrentView(viewId);
-  }, [isExecutive, isSuperAdmin, isAdmin, isRecepcion, auditorOnly, canReadStaff, canReadReports, canReadIncidents]);
+  }, [isExecutive, isSuperAdmin, isAdmin, isRecepcion, auditorOnly, canReadStaff, canReadReports, canReadIncidents, supportOnly, canReadDiagnostics]);
 
   // Manejo de eventos popstate (botones Atrás / Adelante del navegador)
   useEffect(() => {
@@ -251,6 +259,19 @@ export function AppRoutes() {
           <MemberAppPage />
         </Suspense>
       </SentryErrorBoundary>
+    );
+  }
+
+  if (supportOnly) {
+    const selected = ['monitoring', 'profile'].includes(currentView) ? currentView : 'integrations';
+    return (
+      <AdminLayout currentView={selected} onNavigate={handleNavigate}>
+        <SentryErrorBoundary section="Diagnóstico de plataforma">
+          <Suspense fallback={<p role="status">Cargando diagnóstico…</p>}>
+            {selected === 'profile' ? <ProfilePage /> : selected === 'monitoring' ? <ObservabilidadPage /> : <IntegracionesPage />}
+          </Suspense>
+        </SentryErrorBoundary>
+      </AdminLayout>
     );
   }
 

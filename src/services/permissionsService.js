@@ -48,7 +48,7 @@ const SUPER_ADMIN_PERMS = [
 
 export const ROLE_PERMISSION_MAP = {
   SUPER_ADMIN: SUPER_ADMIN_PERMS,
-  SOPORTE_PLATAFORMA: [ 'branches.read', 'integrations.read', 'integrations.test', 'incidents.read', 'reports.read', 'preferences.manage'],
+  SOPORTE_PLATAFORMA: ['integrations.read', 'preferences.manage'],
   ADMIN_EMPRESA: CORP_ADMIN_PERMS,
   GERENTE_GENERAL: [...MANAGER_BRANCH_PERMS, 'plans.manage', 'employees.create', 'employees.assign_role', 'employees.inactivate', 'branches.manage', 'integrations.read'],
   AUDITOR_EMPRESA: AUDITOR_PERMS,
@@ -89,6 +89,11 @@ export function resolveEffectivePermissions(user) {
   return Array.isArray(user.permissions)
     ? Array.from(new Set(user.permissions))
     : resolvePermissionsForRoles(user.roles || []);
+}
+
+export function isPlatformSupportOnly(user) {
+  const roles = (user?.roles || []).map(normalizeRoleCode).filter(Boolean);
+  return roles.length > 0 && roles.every((role) => role === 'SOPORTE_PLATAFORMA');
 }
 
 export function hasPermission(user, permission) {
