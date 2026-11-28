@@ -6,6 +6,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { isPlatformSupportOnly } from '../../services/permissionsService';
 import { getChannelStatusApi } from '../../api/facilityApi';
 import { getMembershipPaymentConfig } from '../../api/membershipApi';
 import { httpClient } from '../../api/httpClient';
@@ -36,7 +37,8 @@ const badgeFor = (status) => {
 };
 
 export default function IntegracionesPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const supportOnly = isPlatformSupportOnly(user);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [systemStatus, setSystemStatus] = useState(null);
@@ -51,7 +53,7 @@ export default function IntegracionesPage() {
       const [sysRes, chanRes, culqiRes] = await Promise.all([
         httpClient('/api/v1/system/status', {}, token).then((r) => (r.ok ? r.json() : null)).catch(() => null),
         getChannelStatusApi(token).catch(() => null),
-        getMembershipPaymentConfig(token).catch(() => null),
+        supportOnly ? null : getMembershipPaymentConfig(token).catch(() => null),
       ]);
       setSystemStatus(sysRes);
       setChannels(chanRes?.channels || null);
@@ -65,7 +67,7 @@ export default function IntegracionesPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, supportOnly]);
 
   useEffect(() => {
     loadAll();
@@ -96,12 +98,12 @@ export default function IntegracionesPage() {
       status: channels?.email?.status || 'UNVERIFIED',
       detail: channels?.email?.provider || 'Resend API',
     },
-    {
+    ...(supportOnly ? [] : [{
       name: 'Pasarela Culqi (Links y Webhook)',
       category: 'Pagos Digitales PEN',
       status: culqiMode || 'UNVERIFIED',
       detail: culqiMode === 'TEST' ? 'CulqiLink acepta operaciones de prueba.' : 'Configuración de CulqiLink y conciliación de pagos.',
-    },
+    }]),
     {
       name: 'Firebase Cloud Messaging (FCM)',
       category: 'Notificaciones Push Móvil',

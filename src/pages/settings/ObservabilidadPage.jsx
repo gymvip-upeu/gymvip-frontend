@@ -9,6 +9,7 @@ import { Button as MuiButton } from '@mui/material';
 import { config } from '../../config/environment';
 import { useAuth } from '../../contexts/AuthContext';
 import { httpClient } from '../../api/httpClient';
+import { hasPermission } from '../../services/permissionsService';
 import { getStaffAuditHistoryApi } from '../../api/staffApi';
 import { triggerSentryTestVerification } from '../../config/sentry';
 import { Alert } from '../../components/common/Alert';
@@ -17,7 +18,8 @@ import { Button } from '../../components/common/Button';
 import { Icon } from '../../components/common/Icons';
 
 export default function ObservabilidadPage() {
-  const { token, isAdmin } = useAuth();
+  const { token, user, isAdmin } = useAuth();
+  const canReadAudit = hasPermission(user, 'employees.read');
   const [statusData, setStatusData] = useState(null);
   const [auditEvents, setAuditEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ export default function ObservabilidadPage() {
     try {
       const [sys, audits] = await Promise.all([
         httpClient('/api/v1/system/status', {}, token).then((r) => (r.ok ? r.json() : null)),
-        getStaffAuditHistoryApi(token).catch(() => []),
+        canReadAudit ? getStaffAuditHistoryApi(token).catch(() => []) : [],
       ]);
       setStatusData(sys);
       setAuditEvents(Array.isArray(audits) ? audits.slice(0, 15) : []);
@@ -42,7 +44,7 @@ export default function ObservabilidadPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, canReadAudit]);
 
   useEffect(() => {
     loadTelemetry();

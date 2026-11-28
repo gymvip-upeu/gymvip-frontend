@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { hasAnyPermission, hasPermission } from '../services/permissionsService';
+import { hasAnyPermission, hasPermission, isPlatformSupportOnly } from '../services/permissionsService';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
@@ -45,7 +45,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
   }, [isMobileOpen]);
 
   // Elementos directos en la raíz de navegación (COR-01: Inicio)
-  const directItems = [
+  const directItems = isPlatformSupportOnly(user) ? [] : [
     { id: 'home', label: 'Inicio', iconName: 'home', title: 'Inicio y Resumen Operativo' },
   ];
 
