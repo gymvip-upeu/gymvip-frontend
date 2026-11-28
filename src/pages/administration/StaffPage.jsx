@@ -7,7 +7,7 @@ import { Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Tex
 import { changePrivilegedStaffRoleApi } from '../../api/staffApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStaff } from '../../hooks/useStaff';
-import { STAFF_ROLES } from '../../validators/staffValidator';
+import { STAFF_ROLES, RETIRED_STAFF_ROLES } from '../../validators/staffValidator';
 import { hasPermission, resolveEffectivePermissions } from '../../services/permissionsService';
 import { formatDate } from '../../utils/formatters';
 import { Alert } from '../../components/common/Alert';
@@ -158,7 +158,7 @@ export default function StaffPage() {
         <VipTabBar
           tabs={[
             { id: 'directory', label: `Nómina de Personal (${filteredAccounts.length})`, icon: 'users' },
-            { id: 'rbac', label: 'Roles y Permisos RBAC', icon: 'shield-check', badge: String(rolesCatalog.length || 21) },
+            { id: 'rbac', label: 'Roles y Permisos RBAC', icon: 'shield-check', badge: String(rolesCatalog.length || STAFF_ROLES.length) },
             { id: 'audit', label: `Historial de Cambios (${auditEvents.length})`, icon: 'activity' },
           ]}
           activeTab={sectionTab}
@@ -190,7 +190,7 @@ export default function StaffPage() {
               aria-label="Filtrar por rol"
             >
               <option value="ALL">Todos los roles</option>
-              {STAFF_ROLES.map((r) => (
+              {[...STAFF_ROLES, ...RETIRED_STAFF_ROLES].map((r) => (
                 <option key={r.value} value={r.value}>{r.value}</option>
               ))}
             </select>
@@ -266,7 +266,7 @@ export default function StaffPage() {
                             </div>
                           </td>
                           <td>
-                            <Badge variant={isPrivileged ? 'gold' : 'neutral'}>{roleName}</Badge>
+                            <Badge variant={isPrivileged ? 'gold' : 'neutral'}>{[...STAFF_ROLES, ...RETIRED_STAFF_ROLES].find((role) => role.value === roleName)?.label ?? roleName}</Badge>
                           </td>
                           <td>
                             <Badge variant={acc.mfaEnabled ? 'success' : 'neutral'}>
@@ -516,7 +516,7 @@ export default function StaffPage() {
                   id="staff-edit-role"
                   className="form-select"
                   value={editingProfile.role}
-                  disabled={editingProfile.isCurrent || !assignableRoles.some(({ code }) => code === editingProfile.originalRole)}
+                  disabled={editingProfile.isCurrent || (!assignableRoles.some(({ code }) => code === editingProfile.originalRole) && !RETIRED_STAFF_ROLES.some(({ value }) => value === editingProfile.originalRole))}
                   onChange={(e) => setEditingProfile({ ...editingProfile, role: e.target.value })}
                 >
                   {!assignableRoles.some(({ code }) => code === editingProfile.role) && (

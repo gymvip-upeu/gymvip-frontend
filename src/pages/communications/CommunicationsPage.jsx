@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import AnnouncementDraftsPanel from './AnnouncementDraftsPanel.jsx';
+import { hasPermission } from '../../services/permissionsService.js';
 import { Button } from '../../components/common/Button';
 import {
   WhatsAppDialog, WhatsAppDispatchDetail, WhatsAppTemplateEditor,
@@ -59,7 +61,7 @@ function DispatchTable({ rows, empty, canRetry, open }) {
 }
 
 export default function CommunicationsPage() {
-  const { token, isBusinessExecutive } = useAuth();
+  const { token, user, isBusinessExecutive } = useAuth();
   const admin = isBusinessExecutive();
   const [type, setType] = useState(MESSAGE_TYPES[0]);
   const [history, setHistory] = useState(initialHistory);
@@ -171,6 +173,9 @@ export default function CommunicationsPage() {
         ) : <span className="whatsapp-muted">{accountState}</span>}
       </header>
 
+      {!demo && hasPermission(user, 'communications.drafts') && (
+        <AnnouncementDraftsPanel token={token} canPublish={user.roles?.some((role) => ['ADMIN', 'ADMIN_EMPRESA'].includes(role))} />
+      )}
       <nav className="whatsapp-types" aria-label="Tipos de mensaje">
         {MESSAGE_TYPES.map(item => (
           <Button key={item.id} variant={type.id === item.id ? 'primary' : 'secondary'}

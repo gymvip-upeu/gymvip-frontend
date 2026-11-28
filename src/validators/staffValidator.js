@@ -6,14 +6,17 @@ export const STAFF_ROLES = [
   { value: 'SUPER_ADMIN', label: 'Super Administrador (Plataforma SaaS Global)', privileged: true, level: 'PLATFORM' },
   { value: 'ADMIN_EMPRESA', label: 'Administrador de Empresa (Gestión Corporativa Total)', privileged: true, level: 'ORGANIZATION' },
   { value: 'GERENTE_GENERAL', label: 'Gerente General (Finanzas, Catálogo y Sedes)', privileged: false, level: 'ORGANIZATION' },
-  { value: 'GERENTE_SEDE', label: 'Gerente de Sede (Operación Local)', privileged: false, level: 'BRANCH' },
-  { value: 'RECEPCION', label: 'Recepción (Check-in, Registro y Cobros Mostrador)', privileged: false, level: 'BRANCH' },
-  { value: 'ENTRENADOR_JEFE', label: 'Entrenador Jefe (Rutinas, Clases y Metodología)', privileged: false, level: 'BRANCH' },
-  { value: 'ENTRENADOR', label: 'Entrenador (Rutinas y Progreso de Socios)', privileged: false, level: 'BRANCH' },
-  { value: 'AUDITOR_EMPRESA', label: 'Auditor Empresarial (Solo Lectura Reportes e Incidencias)', privileged: false, level: 'ORGANIZATION' },
+  { value: 'GERENTE_SEDE', label: 'Responsable de sede', privileged: false, level: 'BRANCH' },
+  { value: 'RECEPCION', label: 'Colaborador', privileged: false, level: 'BRANCH' },
+  { value: 'ENTRENADOR', label: 'Entrenador', privileged: false, level: 'BRANCH' },
+  { value: 'AUDITOR_EMPRESA', label: 'Auditor empresarial', privileged: false, level: 'ORGANIZATION' },
   { value: 'SOPORTE_PLATAFORMA', label: 'Soporte de Plataforma (Diagnóstico e Integraciones)', privileged: true, level: 'PLATFORM' },
   { value: 'CONTADOR', label: 'Contabilidad', privileged: false, level: 'ORGANIZATION' },
   { value: 'RECURSOS_HUMANOS', label: 'Recursos Humanos', privileged: false, level: 'ORGANIZATION' },
+];
+
+export const RETIRED_STAFF_ROLES = [
+  { value: 'ENTRENADOR_JEFE', label: 'Entrenador Jefe (Rutinas, Clases y Metodología)', privileged: false, level: 'BRANCH' },
   { value: 'CAJERO', label: 'Caja', privileged: false, level: 'BRANCH' },
   { value: 'INVENTARIO', label: 'Inventario', privileged: false, level: 'BRANCH' },
   { value: 'COMPRAS', label: 'Compras', privileged: false, level: 'BRANCH' },
