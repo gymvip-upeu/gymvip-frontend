@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { hasAnyPermission, hasPermission } from '../../services/permissionsService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { listIncidentsApi, createIncidentApi, closeIncidentApi } from '../../api/incidentsApi.js';
 import { Alert, Box, Button, Chip, CircularProgress, FormControl, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography } from '@mui/material';
@@ -12,7 +13,9 @@ function limaTime(raw) {
 }
 
 export default function IncidentsPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const canCreate = hasPermission(user, 'incidents.manage');
+  const canClose = hasAnyPermission(user, ['incidents.manage', 'incidents.close']);
   const [status, setStatus] = useState('ABIERTA');
   const [priority, setPriority] = useState('MEDIA');
   const [category, setCategory] = useState('OPERACION');
@@ -65,7 +68,7 @@ export default function IncidentsPage() {
   return <ThemeProvider theme={operationalTheme}>
     <Box component="section" sx={{ maxWidth: 1120, mx: 'auto', p: 2 }}>
       <Typography color="text.secondary" mb={2}>Registra situaciones operativas por categoría y prioridad, conservando el motivo y responsable de cierre.</Typography>
-      <Paper component="form" onSubmit={create} sx={{ p: 2, mb: 3 }}>
+      {canCreate && <Paper component="form" onSubmit={create} sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" mb={2}>Nueva incidencia</Typography>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -91,7 +94,7 @@ export default function IncidentsPage() {
           <TextField label="Descripción" value={description} onChange={event => setDescription(event.target.value)} slotProps={{ htmlInput: { maxLength: 2000 } }} required multiline minRows={3} fullWidth />
           <Button type="submit" disabled={busy} sx={{ alignSelf: 'flex-start' }}>Registrar incidencia</Button>
         </Stack>
-      </Paper>
+      </Paper>}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
         <FormControl size="small" sx={{ minWidth: 170 }}><InputLabel id="incident-status-label">Estado</InputLabel><Select labelId="incident-status-label" label="Estado" value={status} onChange={event => setStatus(event.target.value)}><MenuItem value="ABIERTA">Abiertas</MenuItem><MenuItem value="CERRADA">Cerradas</MenuItem></Select></FormControl>
         <TextField size="small" label="Buscar en incidencias" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} sx={{ flex: 1, minWidth: 220 }} />
@@ -104,10 +107,11 @@ export default function IncidentsPage() {
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}><Typography variant="h6">{item.title}</Typography><Chip label={item.status} color={item.status === 'ABIERTA' ? 'warning' : 'success'} size="small" /></Stack>
         <Typography my={1}>{item.description}</Typography>
         <Typography variant="caption" color="text.secondary">Registrada por {item.reportedBy} · {limaTime(item.createdAtUtc)}</Typography>
-        {item.status === 'ABIERTA' ? <Stack spacing={1} mt={2}>
+        {item.status === 'ABIERTA' && canClose && <Stack spacing={1} mt={2}>
           <TextField label="Motivo de cierre" value={reason[item.id] || ''} onChange={event => setReason(current => ({ ...current, [item.id]: event.target.value }))} slotProps={{ htmlInput: { maxLength: 1000 } }} multiline minRows={2} fullWidth />
           <Button disabled={busy || !reason[item.id]?.trim()} onClick={() => close(item.id)} sx={{ alignSelf: 'flex-start' }}>Cerrar con motivo</Button>
-        </Stack> : <Typography mt={2} color="text.secondary">Cerrada por {item.closedBy} · {limaTime(item.closedAtUtc)}<br />Motivo: {item.closeReason}</Typography>}
+        </Stack>}
+        {item.status === 'CERRADA' && <Typography mt={2} color="text.secondary">Cerrada por {item.closedBy} · {limaTime(item.closedAtUtc)}<br />Motivo: {item.closeReason}</Typography>}
       </Paper>)}</Stack>
     </Box>
   </ThemeProvider>;

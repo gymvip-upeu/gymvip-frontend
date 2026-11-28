@@ -69,7 +69,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         ...(hasPermission(user, 'attendance.read') ? [{ id: 'attendance', label: 'Asistencia y Agenda', iconName: 'calendar', title: 'Calendario y Registro de Asistencias' }] : []),
         ...(hasPermission(user, 'attendance.manage') ? [{ id: 'verification', label: 'Verificar Acceso QR', iconName: 'shield-check', title: 'Control de Torniquete y Acceso QR' }] : []),
         ...(['training.classes.roster', 'training.classes.manage', 'training.exercises.edit'].some((permission) => hasPermission(user, permission)) ? [{ id: 'classes', label: 'Clases y Entrenamiento', iconName: 'check-circle', title: 'Clases Grupales y Rutinas de Entrenadores' }] : []),
-        ...(hasPermission(user, 'branches.read') && !auditorOnly ? [{ id: 'facilities', label: 'Áreas del Gimnasio', iconName: 'tool', title: 'Zonas, Horarios y Disponibilidad' }] : []),
+        ...((isExecutive || hasPermission(user, 'facilities.update_status')) ? [{ id: 'facilities', label: 'Áreas del Gimnasio', iconName: 'tool', title: 'Zonas, Horarios y Disponibilidad' }] : []),
         ...(hasPermission(user, 'incidents.read') ? [{ id: 'incidents', label: 'Incidencias', iconName: 'alert-triangle', title: 'Incidencias Operativas y Seguimiento' }] : []),
       ],
     },
@@ -80,8 +80,8 @@ export function AdminLayout({ currentView, onNavigate, children }) {
       items: [
         ...(hasPermission(user, 'plans.read') ? [{ id: 'plans', label: 'Planes y Tarifas', iconName: 'tag', title: 'Catálogo Tarifario Oficial' }] : []),
         ...((hasPermission(user, 'inventory.read') || hasPermission(user, 'supplements.stock.read')) ? [{ id: 'supplements', label: 'Suplementos y Stock', iconName: 'package', title: 'Catálogo de Suplementos y Stock' }] : []),
-        ...(hasPermission(user, 'inventory.transfer') ? [{ id: 'supplementOrders', label: 'Pedidos y Despacho QR', iconName: 'package', title: 'Verificación de Pagos y Retiro QR' }] : []),
-        ...(hasAnyPermission(user, ['inventory.read', 'inventory.adjust']) ? [
+        ...(hasPermission(user, 'orders.dispatch') ? [{ id: 'supplementOrders', label: 'Pedidos y Despacho QR', iconName: 'package', title: 'Verificación de Pagos y Retiro QR' }] : []),
+        ...(hasPermission(user, 'inventory.adjust') || user?.roles?.includes('COMPRAS') ? [
           { id: 'promotions', label: 'Promociones', iconName: 'percent', title: 'Descuentos y Campañas Activas' },
           { id: 'inventory', label: 'Inventario y Equipos', iconName: 'package', title: 'Stock por Sede, Kardex y Activos' },
           { id: 'purchasing', label: 'Proveedores y Compras', iconName: 'credit-card', title: 'Proveedores y Órdenes de Compra' },
@@ -125,7 +125,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
         ...(hasPermission(user, 'members.import') ? [{ id: 'dataImport', label: 'Importación Masiva', iconName: 'file-text', title: 'Centro de Migración Excel Multientidad' }] : []),
         ...(hasPermission(user, 'integrations.read') ? [{ id: 'integrations', label: 'Integraciones y APIs', iconName: 'send', title: 'Conectividad Meta, Resend, Culqi y Firebase' }] : []),
         ...(hasPermission(user, 'platform.manage') || hasPermission(user, 'integrations.read') ? [{ id: 'monitoring', label: 'Observabilidad', iconName: 'bar-chart', title: 'Salud JVM, PostgreSQL y Auditoría' }] : []),
-        ...(hasAnyPermission(user, ['communications.configure', 'inventory.transfer']) ? [{ id: 'settings', label: 'Configuración General', iconName: 'settings', title: 'Parámetros Operativos del Sistema' }] : []),
+        ...(hasAnyPermission(user, ['communications.configure', 'orders.dispatch']) ? [{ id: 'settings', label: 'Configuración General', iconName: 'settings', title: 'Parámetros Operativos del Sistema' }] : []),
       ],
     },
   ];

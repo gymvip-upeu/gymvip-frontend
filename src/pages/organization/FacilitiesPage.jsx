@@ -91,14 +91,14 @@ export default function FacilitiesPage() {
     setSubmittingStatus(true);
     setError(null);
     try {
-      await updateFacilityStatusApi(
+      const result = await updateFacilityStatusApi(
         selectedFacility.id,
         newStatus,
         statusReason,
         notifyMembers,
         token
       );
-      setSuccessMsg(`Estado de "${selectedFacility.name}" actualizado a ${newStatus}. ${notifyMembers && newStatus !== 'DISPONIBLE' ? 'Notificación outbox generada.' : ''}`);
+      setSuccessMsg(`Estado de "${selectedFacility.name}" actualizado a ${newStatus}. ${result.noticeDrafted ? 'Borrador disponible en Comunicaciones para revisión.' : ''}`);
       setSelectedFacility(null);
       await loadData();
     } catch (err) {
@@ -400,7 +400,7 @@ export default function FacilitiesPage() {
                       onChange={(e) => setNotifyMembers(e.target.checked)}
                     />
                     <label htmlFor="notifyMembersCheck" style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>
-                      Notificar a socios mediante aviso en App y Push FCM (Outbox)
+                      Preparar borrador de aviso para revisión
                     </label>
                   </div>
                 </>
