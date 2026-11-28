@@ -145,24 +145,35 @@ export default function ClientsPage() {
           gap: '16px',
         }}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: 'var(--font-size-2xl)',
-              fontWeight: 800,
-              margin: '0 0 6px 0',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            Directorio de Miembros
-          </h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-            {loading
-              ? 'Cargando padrón oficial de miembros…'
-              : `${totalElements || clients.length} ${(totalElements || clients.length) === 1 ? 'miembro registrado' : 'miembros registrados'} en el sistema.`}
-          </p>
-        </div>
-
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', flex: '1 1 320px' }}>
+          <div className="input-with-icon" style={{ flex: 1, minWidth: 0 }}>
+            <span className="input-icon" aria-hidden="true">
+              <Icon name="search" size={16} color="var(--color-gold)" />
+            </span>
+            <input
+              type="text"
+              className="form-input with-left-icon"
+              placeholder="Buscar por código de miembro, nombre, email, teléfono o documento..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Buscar miembros"
+            />
+          </div>
+          <Button type="submit" variant="primary" style={{ minHeight: '42px' }} disabled={loading}>
+            <Icon name="search" size={15} />
+            <span>Buscar</span>
+          </Button>
+          {searchQuery && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClearSearch}
+              style={{ minHeight: '42px' }}
+            >
+              <span>Limpiar</span>
+            </Button>
+          )}
+        </form>
         {/* Acciones principales de alta e importación */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           {isAdmin() && (
@@ -197,52 +208,12 @@ export default function ClientsPage() {
         />
       )}
 
-      {error && (
-        <Alert
-          variant="danger"
-          message={error}
-        />
-      )}
-
       {overviewError && (
         <Alert
           variant="danger"
           message={`No se pudieron verificar los estados de membresía: ${overviewError}`}
         />
       )}
-
-      {/* Buscador de Miembros */}
-      <div className="card" style={{ padding: '20px', marginBottom: '24px' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <div className="input-with-icon" style={{ flex: 1, minWidth: '260px' }}>
-            <span className="input-icon" aria-hidden="true">
-              <Icon name="search" size={16} color="var(--color-gold)" />
-            </span>
-            <input
-              type="text"
-              className="form-input with-left-icon"
-              placeholder="Buscar por código de miembro, nombre, email, teléfono o documento..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Buscar miembros"
-            />
-          </div>
-          <Button type="submit" variant="primary" style={{ minHeight: '42px' }} disabled={loading}>
-            <Icon name="search" size={15} />
-            <span>Buscar</span>
-          </Button>
-          {searchQuery && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleClearSearch}
-              style={{ minHeight: '42px' }}
-            >
-              <span>Limpiar</span>
-            </Button>
-          )}
-        </form>
-      </div>
 
       {/* Tabla de Miembros */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -251,7 +222,7 @@ export default function ClientsPage() {
         ) : error ? (
           <div style={{ padding: '32px', textAlign: 'center' }}>
             <p style={{ color: 'var(--color-danger)', marginBottom: '16px' }}>
-              No se pudo cargar el listado de miembros.
+              {error}
             </p>
             <Button variant="secondary" onClick={() => loadClients(searchQuery, page)}>
               Reintentar
@@ -432,8 +403,7 @@ export default function ClientsPage() {
         )}
       </div>
 
-      {/* Paginación */}
-      <div
+      {!error && !loading && <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -444,7 +414,7 @@ export default function ClientsPage() {
         }}
       >
         <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-          Página {page + 1} de {Math.max(totalPages, 1)} ({totalElements || clients.length} resultados)
+          Página {page + 1} de {Math.max(totalPages, 1)} ({totalElements} resultados)
         </span>
         <div style={{ display: 'flex', gap: '8px' }}>
           <Button
@@ -462,7 +432,7 @@ export default function ClientsPage() {
             Siguiente
           </Button>
         </div>
-      </div>
+      </div>}
 
       {/* Modales de Flujo de Miembros */}
       {action?.kind === 'import' && isAdmin() && (

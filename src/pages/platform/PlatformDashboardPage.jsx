@@ -17,6 +17,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import CompanyWorkspace from './CompanyWorkspace';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   exportOrganizationPortableApi,
@@ -29,7 +30,7 @@ function formatPen(value) {
   return `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-export default function PlatformDashboardPage({ onNavigate }) {
+export default function PlatformDashboardPage({ onNavigate, company, onSelectCompany }) {
   const { token } = useAuth();
   const [metrics, setMetrics] = useState(null);
   const [licenses, setLicenses] = useState([]);
@@ -75,6 +76,8 @@ export default function PlatformDashboardPage({ onNavigate }) {
       setError(err.message || 'No se pudo exportar el resumen portable.');
     }
   };
+
+  if (company) return <CompanyWorkspace key={company.organizationId} token={token} company={company} onExit={() => onSelectCompany(null)} />;
 
   return (
     <Box sx={{ p: { xs: 1.5, md: 3 } }}>
@@ -188,6 +191,7 @@ export default function PlatformDashboardPage({ onNavigate }) {
                       <TableCell>{lic.maxBranches} sedes / {lic.maxUsers} usuarios</TableCell>
                       <TableCell>{lic.expiresAt}</TableCell>
                       <TableCell align="right">
+                        {onSelectCompany && <Button size="small" onClick={() => onSelectCompany(lic)}>Abrir empresa</Button>}
                         <Button
                           size="small"
                           variant="text"

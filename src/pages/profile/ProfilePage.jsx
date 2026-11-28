@@ -206,29 +206,9 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
     .slice(0, 2)
     .toUpperCase();
 
-  const accountType = roleLabels[roles[0]] || (roles[0] ? roles[0].replaceAll('_', ' ') : 'Cuenta institucional');
-
   return (
     <Box sx={{ maxWidth: 1050, mx: 'auto', py: embedded ? 1 : 2, color: 'var(--color-text-primary)' }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="overline" sx={{ color: 'var(--color-gold)', letterSpacing: '.16em', fontWeight: 700 }}>
-            CUENTA PERSONAL
-          </Typography>
-          <Typography variant="h4" sx={{ color: 'var(--color-text-primary)', fontWeight: 800 }}>
-            Mi perfil
-          </Typography>
-          <Typography sx={{ color: 'var(--color-text-secondary)' }}>
-            Consulta o actualiza tus datos personales y gestiona la seguridad de tu sesión.
-          </Typography>
-        </Box>
-        {embedded && (
-          <Button variant="outlined" color="warning" onClick={onClose}>
-            Volver
-          </Button>
-        )}
-      </Stack>
-
+      {embedded && <Button variant="outlined" onClick={onClose} sx={{ mb: 3 }}>Volver</Button>}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
           {error}
@@ -240,7 +220,7 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
         </Alert>
       )}
 
-      <Stack spacing={2.5}>
+      <Stack useFlexGap spacing={{ xs: 3, md: 4 }}>
         <Card variant="outlined" sx={panelSx}>
           <CardContent sx={{ p: { xs: 2.2, sm: 3.2 } }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ sm: 'center' }}>
@@ -289,29 +269,15 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
                   />
                 </Stack>
               </Box>
-              <Box
-                sx={{
-                  px: 2,
-                  py: 1.3,
-                  borderRadius: 2,
-                  bgcolor: 'var(--color-bg-elevated)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                <Typography variant="caption" sx={labelSx}>
-                  TIPO DE PERFIL
-                </Typography>
-                <Typography sx={{ color: 'var(--color-gold)', fontWeight: 800 }}>{accountType}</Typography>
-              </Box>
             </Stack>
           </CardContent>
         </Card>
 
         <Card variant="outlined" sx={panelSx}>
           <CardContent sx={{ p: { xs: 2.2, sm: 3 } }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} justifyContent="space-between" alignItems={{ sm: 'center' }} mb={2}>
               <Typography variant="h6" sx={{ color: 'var(--color-gold)', fontWeight: 800 }}>
-                Información personal
+                Datos personales
               </Typography>
               {!memberData && (
                 <Button
@@ -378,7 +344,7 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
               </Box>
             </Collapse>
 
-            <Box
+            {!editOpen && <Box
               sx={{
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
@@ -387,14 +353,11 @@ export default function ProfilePage({ embedded = false, memberData = null, onClo
             >
               <Detail label="Nombres" value={person?.firstName} />
               <Detail label="Apellidos" value={person?.lastName} />
-              <Detail label="Correo electrónico" value={profile?.email || person?.email || user?.email} />
               <Detail label="Teléfono" value={person?.phone || profile?.phone} />
               {person?.birthDate && <Detail label="Fecha de nacimiento" value={dateLabel(person.birthDate)} />}
               {person?.age && <Detail label="Edad" value={`${person.age} años`} />}
               {person?.memberCode && <Detail label="Código de socio" value={person.memberCode} />}
-              <Detail label="Estado de la cuenta" value={person?.status || profile?.status || 'ACTIVO'} />
-              <Detail label="MFA / autenticación reforzada" value={profile?.mfaEnabled ? 'Activada' : 'No activada'} />
-            </Box>
+            </Box>}
           </CardContent>
         </Card>
 

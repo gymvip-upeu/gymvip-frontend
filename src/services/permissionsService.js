@@ -31,7 +31,7 @@ const MANAGER_BRANCH_PERMS = [
   ...RECEPTION_PERMS,
   'inventory.adjust', 'inventory.transfer', 'supplements.stock.receive', 'supplements.stock.adjust', 'training.exercises.edit', 'training.classes.notifications', 'training.routines.create', 'training.routines.assign',
   'training.progress.read', 'training.classes.manage', 'reports.read', 'reports.export',
-  'incidents.read', 'incidents.manage', 'employees.read', 'communications.configure',
+  'incidents.read', 'incidents.manage', 'employees.read', 'employees.create', 'employees.assign_role', 'communications.configure',
 ];
 
 const CORP_ADMIN_PERMS = [
@@ -53,7 +53,7 @@ export const ROLE_PERMISSION_MAP = {
   GERENTE_GENERAL: [...MANAGER_BRANCH_PERMS, 'plans.manage', 'employees.create', 'employees.assign_role', 'employees.inactivate', 'branches.manage', 'integrations.read'],
   AUDITOR_EMPRESA: AUDITOR_PERMS,
   CONTADOR: ['branches.read', 'payments.read', 'reports.read', 'reports.export', 'preferences.manage'],
-  RECURSOS_HUMANOS: ['branches.read', 'employees.read', 'employees.create', 'employees.inactivate', 'preferences.manage'],
+  RECURSOS_HUMANOS: ['branches.read', 'employees.read', 'employees.create', 'employees.assign_role', 'employees.inactivate', 'preferences.manage'],
   GERENTE_SEDE: MANAGER_BRANCH_PERMS,
   RECEPCION: RECEPTION_PERMS,
   CAJERO: ['branches.read', 'members.read', 'memberships.read', 'memberships.create', 'memberships.renew', 'payments.read', 'payments.create', 'orders.dispatch', 'preferences.manage'],

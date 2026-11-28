@@ -70,6 +70,9 @@ export function AppRoutes() {
   const isExecutive = isSuperAdmin || isAdmin() || (isGerente && isGerente());
   const isHr = isExecutive || Boolean(user?.roles?.includes('RECURSOS_HUMANOS'));
   const isInventoryStaff = isExecutive || Boolean(user?.roles?.some((r) => ['INVENTARIO', 'COMPRAS'].includes(r)));
+  const [selection, setSelection] = useState(null);
+  const company = selection?.owner === user?.id && selection?.session === user ? selection.company : null;
+  const selectCompany = (value) => setSelection(value ? { owner: user?.id, session: user, company: value } : null);
   const supportOnly = isPlatformSupportOnly(user);
   const canReadDiagnostics = isExecutive || hasPermission(user, 'integrations.read');
   const canReadStaff = hasPermission(user, 'employees.read');
@@ -292,7 +295,7 @@ export function AppRoutes() {
       <AdminLayout currentView={currentView} onNavigate={handleNavigate}>
         <SentryErrorBoundary section={`Vista ${currentView}`}>
           <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: '#D4AF37' }}>Cargando sección...</div>}>
-            {currentView === 'home' && <HomePage onNavigate={handleNavigate} />}
+            {currentView === 'home' && (isSuperAdmin ? <PlatformDashboardPage company={company} onSelectCompany={selectCompany} onNavigate={handleNavigate} /> : <HomePage onNavigate={handleNavigate} />)}
             {currentView === 'clients' && <ClientsPage />}
             {currentView === 'coverage' && (isExecutive || isRecepcion()) && <CoveragePage onNavigate={handleNavigate} />}
             {currentView === 'verification' && (isExecutive || isRecepcion()) && <VerificationPage onNavigate={handleNavigate} />}
@@ -321,7 +324,7 @@ export function AppRoutes() {
             {currentView === 'reports' && (canReadReports ? <ReportsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'incidents' && (canReadIncidents ? <IncidentsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['GERENTE', 'ADMIN', 'AUDITOR']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'dataImport' && (isAdmin() ? <DataImportPage onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['ADMIN (Soporte TI)']} onGoHome={() => handleNavigate('home')} />)}
-            {currentView === 'platformDashboard' && (isSuperAdmin ? <PlatformDashboardPage onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}
+            {currentView === 'platformDashboard' && (isSuperAdmin ? <PlatformDashboardPage company={company} onSelectCompany={selectCompany} onNavigate={handleNavigate} /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'platformRequests' && (isSuperAdmin ? <CompanyRequestsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'platformLicenses' && (isSuperAdmin ? <LicensesCommissionsPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}
             {currentView === 'platformSimulator' && (isSuperAdmin ? <SimulatorPage /> : <Error403Page userRole={user?.roles?.[0]} requiredRoles={['SUPER_ADMIN']} onGoHome={() => handleNavigate('home')} />)}

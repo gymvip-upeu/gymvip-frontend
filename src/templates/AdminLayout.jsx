@@ -132,7 +132,7 @@ export function AdminLayout({ currentView, onNavigate, children }) {
   const navigationGroups = rawGroups.filter((group) => group.items.length > 0);
 
   const viewTitles = {
-    home: 'Inicio · Resumen Operativo',
+    home: isSuperAdmin ? 'Inicio · Consola de plataforma' : 'Inicio · Resumen Operativo',
     clients: 'Directorio de Miembros',
     operations: 'Membresías y Cobros',
     memberships: 'Membresías y Cobros',
